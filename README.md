@@ -29,12 +29,6 @@ APIキーもターミナルも不要です。Notionのエクスポートファ�
 > （`.md` はNotionのページIDを、`.csv` は英文から生成した安定IDを使用）。
 > 初期状態は `sample-*` のサンプルデータです。取り込むと置き換わります。
 
-### （上級者向け・任意）スクリプトで同期する `npm run sync`
-
-ビルド時に `public/data/phrases.json` を生成する従来の方法も残しています。
-`.env` に `NOTION_TOKEN`（Internal Integration）を設定して `npm run sync` を実行します。
-通常はアプリ内インポートで十分です。
-
 ## ビルド / 配信
 
 ```bash
@@ -49,7 +43,7 @@ npm run preview    # 本番ビルドのプレビュー（オフライン確認�
 
 | 領域 | 場所 |
 |---|---|
-| Notion同期 | `scripts/export-notion.mjs` |
+| 取り込み（zip/csv/md解析） | `src/lib/import.ts` |
 | SRS（復習間隔） | `src/lib/srs.ts` |
 | 進捗保存（IndexedDB） | `src/lib/db.ts` |
 | TTS（読み上げ） | `src/lib/tts.ts` |
