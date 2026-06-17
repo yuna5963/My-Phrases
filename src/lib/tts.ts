@@ -42,6 +42,28 @@ export function getEnglishVoices(): SpeechSynthesisVoice[] {
   return voicesCache.filter((v) => v.lang.toLowerCase().startsWith('en'))
 }
 
+function pickEnglishVoice(): SpeechSynthesisVoice | undefined {
+  const en = getEnglishVoices()
+  return (
+    en.find((v) => v.lang.toLowerCase() === 'en-us') ||
+    en.find((v) => v.default) ||
+    en[0]
+  )
+}
+
+export interface VoiceStatus {
+  supported: boolean
+  total: number
+  english: number
+}
+
+/** Quick diagnostic of the device's TTS capability (for the Settings panel). */
+export function getVoiceStatus(): VoiceStatus {
+  if (!isTTSAvailable()) return { supported: false, total: 0, english: 0 }
+  if (!voicesCache.length) voicesCache = window.speechSynthesis.getVoices()
+  return { supported: true, total: voicesCache.length, english: getEnglishVoices().length }
+}
+
 let unlocked = false
 
 /**
@@ -66,33 +88,47 @@ export function primeTTS(): void {
 export interface SpeakOptions {
   voiceURI?: string | null
   rate?: number
+  onStart?: () => void
+  onEnd?: () => void
+  onError?: (message: string) => void
 }
 
 export function speak(text: string, opts: SpeakOptions = {}): void {
-  if (!isTTSAvailable() || !text) return
+  if (!text) return
+  if (!isTTSAvailable()) {
+    opts.onError?.('この端末は読み上げに対応していません')
+    return
+  }
   const synth = window.speechSynthesis
 
-  // Refresh the voice cache lazily (iOS often has voices ready only later).
+  // Refresh the voice cache lazily (voices are often ready only later).
   if (!voicesCache.length) voicesCache = synth.getVoices()
 
-  // iOS can get stuck in a paused state; nudge it before/after speaking.
+  // Some engines get stuck in a paused state; nudge before/after speaking.
   if (synth.paused) synth.resume()
   if (synth.speaking || synth.pending) synth.cancel()
 
   const u = new SpeechSynthesisUtterance(text)
   u.rate = opts.rate ?? 1
   u.lang = 'en-US'
-  if (opts.voiceURI) {
-    const v = voicesCache.find((x) => x.voiceURI === opts.voiceURI)
-    if (v) {
-      u.voice = v
-      u.lang = v.lang
-    }
+
+  // Explicitly assign a voice object. On Android, setting only `lang` often
+  // fails to select an English voice, producing silence — so auto-pick one.
+  let chosen: SpeechSynthesisVoice | undefined
+  if (opts.voiceURI) chosen = voicesCache.find((x) => x.voiceURI === opts.voiceURI)
+  if (!chosen) chosen = pickEnglishVoice()
+  if (chosen) {
+    u.voice = chosen
+    u.lang = chosen.lang
   }
+
+  if (opts.onStart) u.onstart = () => opts.onStart!()
+  if (opts.onEnd) u.onend = () => opts.onEnd!()
+  u.onerror = (e) => opts.onError?.(e.error || '再生に失敗しました')
 
   unlocked = true
   synth.speak(u)
-  // Some iOS versions start the queue paused — kick it.
+  // Some engines start the queue paused — kick it.
   setTimeout(() => {
     try {
       if (synth.paused) synth.resume()

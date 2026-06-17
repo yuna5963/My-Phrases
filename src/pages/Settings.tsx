@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ALL_STATUSES, useSettings } from '../store/useSettings'
 import { useDeck } from '../store/useDeck'
-import { getEnglishVoices, loadVoices, speak } from '../lib/tts'
+import { getEnglishVoices, getVoiceStatus, loadVoices, speak } from '../lib/tts'
 
 export default function Settings() {
   const s = useSettings()
@@ -13,11 +13,45 @@ export default function Settings() {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
   const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const [busy, setBusy] = useState(false)
+  const [voiceStatus, setVoiceStatus] = useState(getVoiceStatus())
+  const [testMsg, setTestMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    loadVoices().then(() => setVoices(getEnglishVoices()))
+    loadVoices().then(() => {
+      setVoices(getEnglishVoices())
+      setVoiceStatus(getVoiceStatus())
+    })
   }, [])
+
+  const runTest = () => {
+    setTestMsg({ ok: true, text: '再生中…' })
+    let started = false
+    speak('Hello, this is a test.', {
+      voiceURI: s.voiceURI,
+      rate: s.rate,
+      onStart: () => {
+        started = true
+        setTestMsg({ ok: true, text: '✓ 再生されました（音量・マナーモードを確認）' })
+      },
+      onEnd: () => {
+        if (!started) setTestMsg({ ok: false, text: '⚠ 再生イベントが発生しませんでした' })
+      },
+      onError: (m) => setTestMsg({ ok: false, text: `⚠ エラー: ${m}` }),
+    })
+    // If nothing fired at all, the engine is likely missing/silent.
+    setTimeout(() => {
+      if (!started) {
+        setTestMsg({
+          ok: false,
+          text:
+            voiceStatus.english === 0
+              ? '⚠ 英語の音声データが見つかりません。端末設定で英語の読み上げを追加してください'
+              : '⚠ 音が出ない場合はメディア音量・マナーモードを確認してください',
+        })
+      }
+    }, 1500)
+  }
 
   const onPickFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return
@@ -68,18 +102,34 @@ export default function Settings() {
           <Toggle checked={s.autoPlay} onChange={s.setAutoPlay} />
         </Row>
         <button
-          onClick={() => speak('Hello, this is a test.', { voiceURI: s.voiceURI, rate: s.rate })}
+          onClick={runTest}
           className="w-full rounded-xl bg-sky-500 px-4 py-2.5 font-medium text-white"
         >
           🔊 テスト再生
         </button>
+        {testMsg && (
+          <p className={`text-sm ${testMsg.ok ? 'text-emerald-500' : 'text-rose-500'}`}>
+            {testMsg.text}
+          </p>
+        )}
+        <p className="text-xs text-slate-400">
+          診断: 読み上げ {voiceStatus.supported ? '対応' : '非対応'} / 英語の音声{' '}
+          {voiceStatus.english}個 / 全{voiceStatus.total}個
+        </p>
         <details className="text-sm text-slate-500">
-          <summary className="cursor-pointer">音が出ないとき</summary>
+          <summary className="cursor-pointer">音が出ないとき（Android）</summary>
           <ul className="ml-4 mt-2 list-disc space-y-1">
-            <li>端末のマナーモード／消音スイッチを解除し、音量を上げる</li>
-            <li>まず「テスト再生」など<strong>ボタンをタップ</strong>してから使う（自動再生は最初の操作後に有効化されます）</li>
-            <li>iPhoneでホーム画面に追加したアプリで出ない場合は、<strong>Safariのタブで</strong>開いて試す</li>
-            <li>「読み上げ音声」を別の英語音声に変える</li>
+            <li>
+              <strong>メディア音量</strong>を上げる（着信音量とは別。動画など他の音が鳴るか確認）／マナーモード解除
+            </li>
+            <li>
+              上の診断で「英語の音声 0個」の場合は、端末の
+              <strong>設定 → システム → 言語と入力 → テキスト読み上げ（音声出力）</strong>
+              で英語（English）の音声データをインストール
+            </li>
+            <li>Google テキスト読み上げエンジンが有効か確認（無効なら有効化）</li>
+            <li>まず「テスト再生」など<strong>ボタンをタップ</strong>してから練習する</li>
+            <li>「読み上げ音声」を別の英語音声に変えて試す</li>
           </ul>
         </details>
       </Section>
