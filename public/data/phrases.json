@@ -1,0 +1,122 @@
+[
+  {
+    "id": "sample-001",
+    "en": "It's fine once in a while.",
+    "ja": "たまにはいいよね。",
+    "example": "",
+    "status": "未着手",
+    "createdTime": "2026-06-17T00:08:00.000Z"
+  },
+  {
+    "id": "sample-002",
+    "en": "I shouldn't get carried away.",
+    "ja": "調子に乗らないようにしないと。",
+    "example": "",
+    "status": "未着手",
+    "createdTime": "2026-06-16T09:21:00.000Z"
+  },
+  {
+    "id": "sample-003",
+    "en": "I had been studying until I fell asleep.",
+    "ja": "寝落ちするまで勉強していた。",
+    "example": "",
+    "status": "未着手",
+    "createdTime": "2026-06-15T21:28:00.000Z"
+  },
+  {
+    "id": "sample-004",
+    "en": "Went for a run right after waking up.",
+    "ja": "起きてすぐにランニングに行った。",
+    "example": "",
+    "status": "未着手",
+    "createdTime": "2026-06-14T04:06:00.000Z"
+  },
+  {
+    "id": "sample-005",
+    "en": "I slept well because my constipation is gone.",
+    "ja": "便秘が治ったのでよく眠れた。",
+    "example": "",
+    "status": "未着手",
+    "createdTime": "2026-06-13T10:19:00.000Z"
+  },
+  {
+    "id": "sample-006",
+    "en": "I've posted a new article on note.",
+    "ja": "noteに新しい記事を投稿した。",
+    "example": "",
+    "status": "未着手",
+    "createdTime": "2026-06-13T10:18:00.000Z"
+  },
+  {
+    "id": "sample-007",
+    "en": "Actually, this phrase was suggested by ChatGPT.",
+    "ja": "実は、このフレーズはChatGPTが提案してくれたものです。",
+    "example": "",
+    "status": "未着手",
+    "createdTime": "2026-06-11T04:35:00.000Z"
+  },
+  {
+    "id": "sample-008",
+    "en": "My mind won't shut off.",
+    "ja": "考えごとが止まらなくて眠れない。",
+    "example": "",
+    "status": "未着手",
+    "createdTime": "2026-06-09T11:52:00.000Z"
+  },
+  {
+    "id": "sample-009",
+    "en": "Let's call it a day.",
+    "ja": "今日はこの辺にしておこう。",
+    "example": "",
+    "status": "未着手",
+    "createdTime": "2026-06-08T10:00:00.000Z"
+  },
+  {
+    "id": "sample-010",
+    "en": "I'm just killing time.",
+    "ja": "ただ時間をつぶしているだけだよ。",
+    "example": "",
+    "status": "未着手",
+    "createdTime": "2026-06-07T10:00:00.000Z"
+  },
+  {
+    "id": "sample-011",
+    "en": "That makes sense.",
+    "ja": "なるほど、納得。",
+    "example": "",
+    "status": "未着手",
+    "createdTime": "2026-06-06T10:00:00.000Z"
+  },
+  {
+    "id": "sample-012",
+    "en": "I'll take a rain check.",
+    "ja": "また今度にするよ。",
+    "example": "",
+    "status": "未着手",
+    "createdTime": "2026-06-05T10:00:00.000Z"
+  },
+  {
+    "id": "sample-013",
+    "en": "Don't push yourself too hard.",
+    "ja": "無理しすぎないでね。",
+    "example": "",
+    "status": "未着手",
+    "createdTime": "2026-06-04T10:00:00.000Z"
+  },
+  {
+    "id": "sample-014",
+    "en": "I lost track of time.",
+    "ja": "時間を忘れてた。",
+    "example": "",
+    "status": "未着手",
+    "createdTime": "2026-06-03T10:00:00.000Z"
+  },
+  {
+    "id": "sample-015",
+    "en": "It's not a big deal.",
+    "ja": "大したことないよ。",
+    "example": "",
+    "status": "未着手",
+    "createdTime": "2026-06-02T10:00:00.000Z"
+  }
+]

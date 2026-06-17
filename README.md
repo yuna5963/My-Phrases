@@ -1,1 +1,67 @@
-# My-Phrases
+# My Phrases — 瞬間英作文 & 発音練習 PWA
+
+Notionの英語フレーズ集（DB: `🔠 フレーズ集`）を取り込み、**瞬間英作文**（日本語→英語の即作文）と
+**発音練習**（TTS再生→声に出す→自己採点）ができるスマホ向けPWAです。
+
+- 完全オフライン動作（初回ロード後、Service Workerがキャッシュ）
+- 学習進捗は端末内（IndexedDB）に保存。SRS（Leitnerボックス）で復習間隔を自動調整
+- ホーム画面に追加してアプリのように使える
+
+## セットアップ
+
+```bash
+npm install
+npm run dev        # 開発サーバ（スマホ幅で確認）
+```
+
+## Notionからフレーズを取り込む（アプリ内インポート・推奨）
+
+APIキーもターミナルも不要です。Notionのエクスポートファイルをアプリの【設定】画面から読み込むだけ。
+
+1. Notionでフレーズ集DBを開き「•••」→ **エクスポート**
+2. 形式は **「Markdown & CSV」** を選択してダウンロード（`.zip` が落ちてきます）
+3. アプリの【設定】→「フレーズの取り込み」→ その **`.zip` をそのまま選択**（解凍不要）
+
+取り込んだデータは端末内（IndexedDB）に保存され、以降は **完全オフライン** で動作します。
+`.zip` のほか、解凍後の `.csv` や `.md`（複数選択可）も読み込めます。
+
+> 進捗はフレーズIDをキーに保存するため、再インポートしても学習データは保持されます
+> （`.md` はNotionのページIDを、`.csv` は英文から生成した安定IDを使用）。
+> 初期状態は `sample-*` のサンプルデータです。取り込むと置き換わります。
+
+### （上級者向け・任意）スクリプトで同期する `npm run sync`
+
+ビルド時に `public/data/phrases.json` を生成する従来の方法も残しています。
+`.env` に `NOTION_TOKEN`（Internal Integration）を設定して `npm run sync` を実行します。
+通常はアプリ内インポートで十分です。
+
+## ビルド / 配信
+
+```bash
+npm run build      # 型チェック + 本番ビルド（dist/）
+npm run preview    # 本番ビルドのプレビュー（オフライン確認）
+```
+
+`dist/` を Vercel / Netlify / GitHub Pages などの静的ホスティングに置けば公開できます
+（`base: './'` 設定済みでサブパス配信も可）。
+
+## 構成
+
+| 領域 | 場所 |
+|---|---|
+| Notion同期 | `scripts/export-notion.mjs` |
+| SRS（復習間隔） | `src/lib/srs.ts` |
+| 進捗保存（IndexedDB） | `src/lib/db.ts` |
+| TTS（読み上げ） | `src/lib/tts.ts` |
+| セッション制御 | `src/hooks/useSession.ts`, `src/lib/session.ts` |
+| 画面 | `src/pages/*` |
+
+## ドキュメント
+
+- [要件定義書](docs/要件定義書.md)
+- [仕様書](docs/仕様書.md)
+
+## 既知の注意点
+
+- **iOS Safari**: TTSは最初の再生にユーザー操作（ボタンタップ）が必要です。
+- 音声の種類・品質は端末に依存します（設定画面で選択可）。
