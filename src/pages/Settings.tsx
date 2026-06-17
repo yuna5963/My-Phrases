@@ -67,6 +67,21 @@ export default function Settings() {
         <Row label="解答時に自動で読み上げ">
           <Toggle checked={s.autoPlay} onChange={s.setAutoPlay} />
         </Row>
+        <button
+          onClick={() => speak('Hello, this is a test.', { voiceURI: s.voiceURI, rate: s.rate })}
+          className="w-full rounded-xl bg-sky-500 px-4 py-2.5 font-medium text-white"
+        >
+          🔊 テスト再生
+        </button>
+        <details className="text-sm text-slate-500">
+          <summary className="cursor-pointer">音が出ないとき</summary>
+          <ul className="ml-4 mt-2 list-disc space-y-1">
+            <li>端末のマナーモード／消音スイッチを解除し、音量を上げる</li>
+            <li>まず「テスト再生」など<strong>ボタンをタップ</strong>してから使う（自動再生は最初の操作後に有効化されます）</li>
+            <li>iPhoneでホーム画面に追加したアプリで出ない場合は、<strong>Safariのタブで</strong>開いて試す</li>
+            <li>「読み上げ音声」を別の英語音声に変える</li>
+          </ul>
+        </details>
       </Section>
 
       <Section title="セッション">

@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useDeck } from './store/useDeck'
-import { loadVoices } from './lib/tts'
+import { loadVoices, primeTTS } from './lib/tts'
 import BottomNav from './components/BottomNav'
 import Home from './pages/Home'
 import Compose from './pages/Compose'
@@ -17,6 +17,10 @@ export default function App() {
   useEffect(() => {
     load()
     loadVoices()
+    // Unlock iOS audio on the very first user interaction.
+    const onFirstGesture = () => primeTTS()
+    window.addEventListener('pointerdown', onFirstGesture, { once: true })
+    return () => window.removeEventListener('pointerdown', onFirstGesture)
   }, [load])
 
   return (
