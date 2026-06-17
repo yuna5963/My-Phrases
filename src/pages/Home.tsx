@@ -58,7 +58,14 @@ export default function Home() {
           className="w-full rounded-2xl bg-sky-500 px-5 py-4 text-left text-white shadow active:scale-[0.99]"
         >
           <div className="text-lg font-bold">⚡ 瞬間英作文</div>
-          <div className="text-sm text-sky-100">日本語を見て英語を即作文</div>
+          <div className="text-sm text-sky-100">日本語を見て英語を即作文（1文）</div>
+        </button>
+        <button
+          onClick={() => navigate('/modeling')}
+          className="w-full rounded-2xl bg-teal-500 px-5 py-4 text-left text-white shadow active:scale-[0.99]"
+        >
+          <div className="text-lg font-bold">📝 モデリング</div>
+          <div className="text-sm text-teal-100">お手本を見て音読（2文以上）</div>
         </button>
         <button
           onClick={() => navigate('/pronounce')}

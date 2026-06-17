@@ -6,8 +6,10 @@ import BottomNav from './components/BottomNav'
 import SupportBanner from './components/SupportBanner'
 import Home from './pages/Home'
 import Compose from './pages/Compose'
+import Modeling from './pages/Modeling'
 import Pronounce from './pages/Pronounce'
 import Browse from './pages/Browse'
+import PhraseDetail from './pages/PhraseDetail'
 import Settings from './pages/Settings'
 
 export default function App() {
@@ -41,8 +43,10 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/compose" element={<Compose />} />
+            <Route path="/modeling" element={<Modeling />} />
             <Route path="/pronounce" element={<Pronounce />} />
             <Route path="/browse" element={<Browse />} />
+            <Route path="/phrase/:id" element={<PhraseDetail />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -1,14 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import type { Phrase } from '../types'
 import { useSession } from '../hooks/useSession'
 import { useSettings } from '../store/useSettings'
 import { speak } from '../lib/tts'
+import { isMultiSentence } from '../lib/text'
 import SessionHeader from '../components/SessionHeader'
 import SessionSummary from '../components/SessionSummary'
 import PlayButton from '../components/PlayButton'
 
+// 瞬間英作文 covers single-sentence phrases; multi-sentence ones go to モデリング.
+const isSingle = (p: Phrase) => !isMultiSentence(p.en)
+
 export default function Compose() {
-  const s = useSession()
+  const s = useSession({ filter: isSingle })
   const autoPlay = useSettings((x) => x.autoPlay)
   const voiceURI = useSettings((x) => x.voiceURI)
   const rate = useSettings((x) => x.rate)
