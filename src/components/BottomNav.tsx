@@ -8,11 +8,11 @@ const tabs = [
 
 // Full-screen practice routes hide the nav so its fixed bar can't overlap
 // the on-screen action buttons.
-const HIDDEN_ON = ['/compose', '/pronounce']
+const HIDDEN_PREFIXES = ['/compose', '/modeling', '/pronounce', '/phrase']
 
 export default function BottomNav() {
   const { pathname } = useLocation()
-  if (HIDDEN_ON.includes(pathname)) return null
+  if (HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))) return null
   return (
     <nav className="safe-bottom fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
       <ul className="flex">

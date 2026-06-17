@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useDeck } from '../store/useDeck'
 import { speak } from '../lib/tts'
 import { useSettings } from '../store/useSettings'
@@ -6,6 +7,7 @@ import { isMastered } from '../lib/srs'
 import { ALL_STATUSES } from '../store/useSettings'
 
 export default function Browse() {
+  const navigate = useNavigate()
   const phrases = useDeck((s) => s.phrases)
   const progress = useDeck((s) => s.progress)
   const voiceURI = useSettings((s) => s.voiceURI)
@@ -58,10 +60,17 @@ export default function Browse() {
               key={p.id}
               className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm dark:bg-slate-900"
             >
-              <div className="min-w-0 flex-1">
+              <button
+                onClick={() =>
+                  navigate(`/phrase/${p.id}`, {
+                    state: { ids: filtered.map((x) => x.id) },
+                  })
+                }
+                className="min-w-0 flex-1 text-left active:opacity-70"
+              >
                 <p className="truncate font-medium">{p.en}</p>
                 <p className="truncate text-sm text-slate-500">{p.ja}</p>
-              </div>
+              </button>
               {mastered && <span title="習得済み">✅</span>}
               <button
                 onClick={() => speak(p.en, { voiceURI, rate })}
