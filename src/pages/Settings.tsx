@@ -126,6 +126,35 @@ export default function Settings() {
           診断: 読み上げ {voiceStatus.supported ? '対応' : '非対応'} / 英語の音声{' '}
           {voiceStatus.english}個 / 全{voiceStatus.total}個
         </p>
+
+        {voiceStatus.english === 0 && (
+          <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
+            <p className="font-medium">英語の読み上げ音声が端末にありません</p>
+            <p className="mt-1">
+              端末に音声合成エンジンが無いと、どのアプリでも英語を読み上げできません。
+              「Google テキスト読み上げ」を入れて英語(US)の音声を追加してください。
+            </p>
+            <a
+              href="https://play.google.com/store/apps/details?id=com.google.android.tts"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-block font-medium underline"
+            >
+              ▶ Google テキスト読み上げを入手（Playストア）
+            </a>
+            <ol className="ml-4 mt-2 list-decimal space-y-0.5 text-xs">
+              <li>上のアプリをインストール</li>
+              <li>
+                端末の設定で<strong>「読み上げ」で検索</strong> → テキスト読み上げの出力
+                （多くは 設定 → ユーザー補助 の中）
+              </li>
+              <li>エンジンを「Google テキスト読み上げ」に設定</li>
+              <li>歯車 → 音声データをインストール → English (US) をダウンロード</li>
+              <li>このアプリを再読み込みして「テスト再生」</li>
+            </ol>
+          </div>
+        )}
+
         <details className="text-sm text-slate-500">
           <summary className="cursor-pointer">音が出ないとき（Android）</summary>
           <ul className="ml-4 mt-2 list-disc space-y-1">
