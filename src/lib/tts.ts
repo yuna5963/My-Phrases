@@ -44,11 +44,24 @@ export function getEnglishVoices(): SpeechSynthesisVoice[] {
 
 function pickEnglishVoice(): SpeechSynthesisVoice | undefined {
   const en = getEnglishVoices()
+  // Prefer on-device (localService) voices so audio works offline; some Android
+  // "online" voices stay silent when the app is offline.
+  const local = en.filter((v) => v.localService)
+  const pool = local.length ? local : en
   return (
-    en.find((v) => v.lang.toLowerCase() === 'en-us') ||
-    en.find((v) => v.default) ||
-    en[0]
+    pool.find((v) => v.lang.toLowerCase() === 'en-us') ||
+    pool.find((v) => v.default) ||
+    pool[0]
   )
+}
+
+/** The voice speak() would actually use for the given preference. */
+export function resolveVoice(voiceURI?: string | null): SpeechSynthesisVoice | undefined {
+  if (!voicesCache.length && isTTSAvailable()) voicesCache = window.speechSynthesis.getVoices()
+  let v: SpeechSynthesisVoice | undefined
+  if (voiceURI) v = voicesCache.find((x) => x.voiceURI === voiceURI)
+  if (!v) v = pickEnglishVoice()
+  return v
 }
 
 export interface VoiceStatus {
@@ -104,19 +117,13 @@ export function speak(text: string, opts: SpeakOptions = {}): void {
   // Refresh the voice cache lazily (voices are often ready only later).
   if (!voicesCache.length) voicesCache = synth.getVoices()
 
-  // Some engines get stuck in a paused state; nudge before/after speaking.
-  if (synth.paused) synth.resume()
-  if (synth.speaking || synth.pending) synth.cancel()
-
   const u = new SpeechSynthesisUtterance(text)
   u.rate = opts.rate ?? 1
   u.lang = 'en-US'
 
   // Explicitly assign a voice object. On Android, setting only `lang` often
   // fails to select an English voice, producing silence — so auto-pick one.
-  let chosen: SpeechSynthesisVoice | undefined
-  if (opts.voiceURI) chosen = voicesCache.find((x) => x.voiceURI === opts.voiceURI)
-  if (!chosen) chosen = pickEnglishVoice()
+  const chosen = resolveVoice(opts.voiceURI)
   if (chosen) {
     u.voice = chosen
     u.lang = chosen.lang
@@ -126,16 +133,28 @@ export function speak(text: string, opts: SpeakOptions = {}): void {
   if (opts.onEnd) u.onend = () => opts.onEnd!()
   u.onerror = (e) => opts.onError?.(e.error || '再生に失敗しました')
 
-  unlocked = true
-  synth.speak(u)
-  // Some engines start the queue paused — kick it.
-  setTimeout(() => {
-    try {
-      if (synth.paused) synth.resume()
-    } catch {
-      /* ignore */
-    }
-  }, 60)
+  const start = () => {
+    unlocked = true
+    if (synth.paused) synth.resume()
+    synth.speak(u)
+    // Some engines start the queue paused — kick it.
+    setTimeout(() => {
+      try {
+        if (synth.paused) synth.resume()
+      } catch {
+        /* ignore */
+      }
+    }, 60)
+  }
+
+  // Chrome (esp. Android) can drop an utterance spoken immediately after
+  // cancel(); when something is already queued, cancel then start on a delay.
+  if (synth.speaking || synth.pending) {
+    synth.cancel()
+    setTimeout(start, 120)
+  } else {
+    start()
+  }
 }
 
 export function stopSpeaking(): void {

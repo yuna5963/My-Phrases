@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ALL_STATUSES, useSettings } from '../store/useSettings'
 import { useDeck } from '../store/useDeck'
-import { getEnglishVoices, getVoiceStatus, loadVoices, speak } from '../lib/tts'
+import {
+  getEnglishVoices,
+  getVoiceStatus,
+  loadVoices,
+  resolveVoice,
+  speak,
+} from '../lib/tts'
 
 export default function Settings() {
   const s = useSettings()
@@ -25,19 +31,23 @@ export default function Settings() {
   }, [])
 
   const runTest = () => {
-    setTestMsg({ ok: true, text: '再生中…' })
+    const v = resolveVoice(s.voiceURI)
+    const vinfo = v
+      ? `${v.name}（${v.localService ? '端末内' : 'オンライン'}）`
+      : '英語音声なし'
+    setTestMsg({ ok: true, text: `再生中… 使用音声: ${vinfo}` })
     let started = false
     speak('Hello, this is a test.', {
       voiceURI: s.voiceURI,
       rate: s.rate,
       onStart: () => {
         started = true
-        setTestMsg({ ok: true, text: '✓ 再生されました（音量・マナーモードを確認）' })
+        setTestMsg({ ok: true, text: `✓ 再生されました / 音声: ${vinfo}（音量も確認）` })
       },
       onEnd: () => {
         if (!started) setTestMsg({ ok: false, text: '⚠ 再生イベントが発生しませんでした' })
       },
-      onError: (m) => setTestMsg({ ok: false, text: `⚠ エラー: ${m}` }),
+      onError: (m) => setTestMsg({ ok: false, text: `⚠ エラー: ${m} / 音声: ${vinfo}` }),
     })
     // If nothing fired at all, the engine is likely missing/silent.
     setTimeout(() => {
@@ -79,10 +89,10 @@ export default function Settings() {
             onChange={(e) => s.setVoiceURI(e.target.value || null)}
             className="max-w-[60%] rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
           >
-            <option value="">自動（端末既定）</option>
+            <option value="">自動（端末内を優先）</option>
             {voices.map((v) => (
               <option key={v.voiceURI} value={v.voiceURI}>
-                {v.name} ({v.lang})
+                {v.name} ({v.lang}){v.localService ? ' ・端末内' : ' ・オンライン'}
               </option>
             ))}
           </select>
@@ -128,8 +138,11 @@ export default function Settings() {
               で英語（English）の音声データをインストール
             </li>
             <li>Google テキスト読み上げエンジンが有効か確認（無効なら有効化）</li>
+            <li>
+              テスト再生で音声が「オンライン」と出てオフライン時に鳴らない場合は、上の「読み上げ音声」で
+              <strong>「端末内」</strong>と付いた音声を選ぶ（または英語の音声データを端末にインストール）
+            </li>
             <li>まず「テスト再生」など<strong>ボタンをタップ</strong>してから練習する</li>
-            <li>「読み上げ音声」を別の英語音声に変えて試す</li>
           </ul>
         </details>
       </Section>
