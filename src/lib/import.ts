@@ -4,8 +4,18 @@ import type { Phrase } from '../types'
 // Notion property names in the フレーズ集 database.
 const COL_EN = 'フレーズ'
 const COL_JA = '日本語訳'
-const COL_EX = '使用例（例文）'
+// Example column has gone by a few names across exports/sheets.
+const COL_EX_ALIASES = ['使用例（例文）', '例文', '使用例', '例']
 const COL_STATUS = 'ステータス'
+
+/** First index in `header` matching any of `names`, or -1. */
+function firstIndexOf(header: string[], names: string[]): number {
+  for (const name of names) {
+    const i = header.indexOf(name)
+    if (i !== -1) return i
+  }
+  return -1
+}
 
 const TEXT_EXT = /\.(md|markdown|txt|csv)$/i
 
@@ -76,7 +86,7 @@ function fromCsv(text: string): Phrase[] {
   const iEn = idx(COL_EN)
   const iJa = idx(COL_JA)
   if (iEn === -1 || iJa === -1) return [] // not the phrase table
-  const iEx = idx(COL_EX)
+  const iEx = firstIndexOf(header, COL_EX_ALIASES)
   const iStatus = idx(COL_STATUS)
   const out: Phrase[] = []
   for (let r = 1; r < rows.length; r++) {
@@ -115,7 +125,7 @@ function fromMarkdownTable(text: string): Phrase[] {
   const header = splitRow(lines[headerIdx])
   const iEn = header.indexOf(COL_EN)
   const iJa = header.indexOf(COL_JA)
-  const iEx = header.indexOf(COL_EX)
+  const iEx = firstIndexOf(header, COL_EX_ALIASES)
   const iStatus = header.indexOf(COL_STATUS)
   const out: Phrase[] = []
   for (let i = headerIdx + 2; i < lines.length; i++) {
@@ -149,12 +159,13 @@ function fromMarkdownPage(text: string, filename: string): Phrase[] {
   }
   const ja = prop(COL_JA)
   if (!ja) return []
+  const example = COL_EX_ALIASES.map(prop).find((v) => v) ?? ''
   return [
     {
       id: idFromFilename(filename) ?? stableId(en),
       en,
       ja,
-      example: prop(COL_EX),
+      example,
       status: prop(COL_STATUS) || '未着手',
       createdTime: '',
     },
