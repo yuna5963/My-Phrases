@@ -42,25 +42,43 @@ export function getEnglishVoices(): SpeechSynthesisVoice[] {
   return voicesCache.filter((v) => v.lang.toLowerCase().startsWith('en'))
 }
 
-function pickEnglishVoice(): SpeechSynthesisVoice | undefined {
-  const en = getEnglishVoices()
+/** True if the engine exposes at least one voice for the given language prefix. */
+export function hasVoiceForLang(prefix: string): boolean {
+  if (!voicesCache.length && isTTSAvailable()) voicesCache = window.speechSynthesis.getVoices()
+  const p = prefix.toLowerCase()
+  return voicesCache.some((v) => v.lang.toLowerCase().startsWith(p))
+}
+
+function pickVoiceForLang(prefix: string): SpeechSynthesisVoice | undefined {
+  const p = prefix.toLowerCase()
+  const matches = voicesCache.filter((v) => v.lang.toLowerCase().startsWith(p))
   // Prefer on-device (localService) voices so audio works offline; some Android
   // "online" voices stay silent when the app is offline.
-  const local = en.filter((v) => v.localService)
-  const pool = local.length ? local : en
+  const local = matches.filter((v) => v.localService)
+  const pool = local.length ? local : matches
+  const preferred = p === 'en' ? 'en-us' : p === 'ja' ? 'ja-jp' : p
   return (
-    pool.find((v) => v.lang.toLowerCase() === 'en-us') ||
+    pool.find((v) => v.lang.toLowerCase() === preferred) ||
     pool.find((v) => v.default) ||
     pool[0]
   )
 }
 
-/** The voice speak() would actually use for the given preference. */
-export function resolveVoice(voiceURI?: string | null): SpeechSynthesisVoice | undefined {
+/** The voice speak() would actually use for the given preference + language. */
+export function resolveVoice(
+  voiceURI?: string | null,
+  lang = 'en-US',
+): SpeechSynthesisVoice | undefined {
   if (!voicesCache.length && isTTSAvailable()) voicesCache = window.speechSynthesis.getVoices()
+  const prefix = lang.slice(0, 2).toLowerCase()
   let v: SpeechSynthesisVoice | undefined
-  if (voiceURI) v = voicesCache.find((x) => x.voiceURI === voiceURI)
-  if (!v) v = pickEnglishVoice()
+  if (voiceURI) {
+    // Only honour the saved voice when it matches the requested language;
+    // the user's stored preference is an English voice.
+    const match = voicesCache.find((x) => x.voiceURI === voiceURI)
+    if (match && match.lang.toLowerCase().startsWith(prefix)) v = match
+  }
+  if (!v) v = pickVoiceForLang(prefix)
   return v
 }
 
@@ -101,6 +119,8 @@ export function primeTTS(): void {
 export interface SpeakOptions {
   voiceURI?: string | null
   rate?: number
+  /** BCP-47 tag, e.g. 'en-US' (default) or 'ja-JP' for the translation. */
+  lang?: string
   onStart?: () => void
   onEnd?: () => void
   onError?: (message: string) => void
@@ -117,13 +137,14 @@ export function speak(text: string, opts: SpeakOptions = {}): void {
   // Refresh the voice cache lazily (voices are often ready only later).
   if (!voicesCache.length) voicesCache = synth.getVoices()
 
+  const lang = opts.lang ?? 'en-US'
   const u = new SpeechSynthesisUtterance(text)
   u.rate = opts.rate ?? 1
-  u.lang = 'en-US'
+  u.lang = lang
 
   // Explicitly assign a voice object. On Android, setting only `lang` often
-  // fails to select an English voice, producing silence — so auto-pick one.
-  const chosen = resolveVoice(opts.voiceURI)
+  // fails to select a voice, producing silence — so auto-pick one.
+  const chosen = resolveVoice(opts.voiceURI, lang)
   if (chosen) {
     u.voice = chosen
     u.lang = chosen.lang
