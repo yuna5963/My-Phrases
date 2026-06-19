@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useDeck } from '../store/useDeck'
 import { useSettings } from '../store/useSettings'
 import { hasVoiceForLang, loadVoices, speak, stopSpeaking } from '../lib/tts'
+import { useWakeLock } from '../lib/wakeLock'
 import type { Phrase } from '../types'
 
 /** Fisher–Yates shuffle that keeps `firstId` at the front so playback can
@@ -103,6 +104,9 @@ export default function PhraseDetail() {
   })
   const [playing, setPlaying] = useState(false)
   const [jaVoiceAvailable, setJaVoiceAvailable] = useState(true)
+
+  // 連続再生中は画面スリープを抑止（消灯で再生が止まらないように）。
+  useWakeLock(playing)
 
   // Read settings inside async callbacks without re-triggering the player effect.
   const repeatRef = useRef(repeat)

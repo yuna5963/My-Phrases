@@ -139,7 +139,9 @@ export function speak(text: string, opts: SpeakOptions = {}): void {
 
   const lang = opts.lang ?? 'en-US'
   const u = new SpeechSynthesisUtterance(text)
-  u.rate = opts.rate ?? 1
+  // 再生速度の設定は英語読み上げのみ対象。日本語訳は常に等倍で再生する。
+  const isJa = lang.toLowerCase().startsWith('ja')
+  u.rate = isJa ? 1 : opts.rate ?? 1
   u.lang = lang
 
   // Explicitly assign a voice object. On Android, setting only `lang` often

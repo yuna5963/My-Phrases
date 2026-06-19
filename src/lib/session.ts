@@ -22,11 +22,16 @@ export function buildSession(
   progress: Record<string, Progress>,
   statuses: string[],
   size: number,
+  opts: { onlyUnsure?: boolean } = {},
 ): Phrase[] {
+  const { onlyUnsure = false } = opts
   const ref = todayStr()
   const due = phrases.filter((p) => {
     const pr = progress[p.id]
-    return pr && included(p, statuses) && isDue(pr, ref) && !isMastered(pr)
+    if (!pr || !included(p, statuses)) return false
+    // 「自信なし」=「覚えた」未チェックのみを対象にする。
+    if (onlyUnsure && pr.learned) return false
+    return isDue(pr, ref) && !isMastered(pr)
   })
   due.sort((a, b) => {
     const pa = progress[a.id]

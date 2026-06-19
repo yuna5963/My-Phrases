@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Grade, Phrase } from '../types'
 import { useDeck } from '../store/useDeck'
 import { useSettings } from '../store/useSettings'
@@ -22,6 +22,10 @@ export interface Tally {
 export interface SessionOptions {
   /** Restrict the practice pool, e.g. by sentence count. */
   filter?: (p: Phrase) => boolean
+  /** ランダム順で出題する。 */
+  shuffle?: boolean
+  /** 「自信なし」=「覚えた」未チェックのみを対象にする。 */
+  onlyUnsure?: boolean
 }
 
 /**
@@ -31,7 +35,7 @@ export interface SessionOptions {
  * doesn't reshuffle the cards under the user.
  */
 export function useSession(options: SessionOptions = {}) {
-  const { filter } = options
+  const { filter, shuffle: shuffleOpt = false, onlyUnsure = false } = options
   const phrases = useDeck((s) => s.phrases)
   const grade = useDeck((s) => s.grade)
   const includeStatuses = useSettings((s) => s.includeStatuses)
@@ -49,21 +53,39 @@ export function useSession(options: SessionOptions = {}) {
 
   const buildQueue = () => {
     const progress = useDeck.getState().progress
-    let ids = buildSession(pool, progress, includeStatuses, sessionSize).map((p) => p.id)
+    let ids = buildSession(pool, progress, includeStatuses, sessionSize, {
+      onlyUnsure,
+    }).map((p) => p.id)
     if (ids.length === 0) {
       const fallback = pool.filter(
-        (p) => includeStatuses.length === 0 || includeStatuses.includes(p.status),
+        (p) =>
+          (includeStatuses.length === 0 || includeStatuses.includes(p.status)) &&
+          (!onlyUnsure || !progress[p.id]?.learned),
       )
       ids = shuffle(fallback)
         .slice(0, sessionSize)
         .map((p) => p.id)
     }
+    if (shuffleOpt) ids = shuffle(ids)
     return ids
   }
 
   const [queue, setQueue] = useState<string[]>(buildQueue)
   const [pos, setPos] = useState(0)
   const [tally, setTally] = useState<Tally>({ good: 0, vague: 0, bad: 0 })
+
+  // シャッフル / 自信なし の切り替えで出題を組み直す（初回マウントは初期化済みなので除外）。
+  const didMount = useRef(false)
+  useEffect(() => {
+    if (!didMount.current) {
+      didMount.current = true
+      return
+    }
+    setQueue(buildQueue())
+    setPos(0)
+    setTally({ good: 0, vague: 0, bad: 0 })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shuffleOpt, onlyUnsure])
 
   const current = queue[pos] ? phraseById[queue[pos]] : null
   const empty = queue.length === 0

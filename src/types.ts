@@ -14,6 +14,7 @@ export interface Progress {
   correct: number
   wrong: number
   lastSeen: string // ISO datetime, '' if never studied
+  learned: boolean // 手動「覚えた」チェック（SRSの習得済みとは別）
 }
 
 export type Grade = 'good' | 'vague' | 'bad'
