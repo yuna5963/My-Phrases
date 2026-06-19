@@ -24,6 +24,7 @@ interface DeckState {
   error: string | null
   load: () => Promise<void>
   grade: (id: string, g: Grade) => Promise<void>
+  setLearned: (id: string, learned: boolean) => Promise<void>
   reset: () => Promise<void>
   importFiles: (files: File[]) => Promise<number>
   clearImported: () => Promise<void>
@@ -80,7 +81,9 @@ export const useDeck = create<DeckState>((set, get) => ({
       const stored = await getAllProgress()
       const progress: Record<string, Progress> = {}
       for (const p of phrases) {
-        progress[p.id] = stored[p.id] ?? newProgress(p.id)
+        const base = stored[p.id] ?? newProgress(p.id)
+        // 旧データは learned 欄が無いので false 既定で補完する。
+        progress[p.id] = { ...base, learned: base.learned ?? false }
       }
       const streak = await getMeta<number>('streak', 0)
       set({ phrases, progress, streak, source, loaded: true, error: null })
@@ -116,6 +119,13 @@ export const useDeck = create<DeckState>((set, get) => ({
       progress: { ...state.progress, [id]: updated },
       streak,
     }))
+  },
+
+  setLearned: async (id, learned) => {
+    const current = get().progress[id] ?? newProgress(id)
+    const updated = { ...current, learned }
+    await saveProgress(updated)
+    set((state) => ({ progress: { ...state.progress, [id]: updated } }))
   },
 
   reset: async () => {

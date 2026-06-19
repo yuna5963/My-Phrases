@@ -20,7 +20,7 @@ export function addDays(dateStr: string, n: number): string {
 }
 
 export function newProgress(id: string): Progress {
-  return { id, box: 0, due: todayStr(), correct: 0, wrong: 0, lastSeen: '' }
+  return { id, box: 0, due: todayStr(), correct: 0, wrong: 0, lastSeen: '', learned: false }
 }
 
 /** Apply a self-grade and return the updated progress (SRS scheduling). */
