@@ -104,9 +104,18 @@ export default function PhraseDetail() {
   })
   const [playing, setPlaying] = useState(false)
   const [jaVoiceAvailable, setJaVoiceAvailable] = useState(true)
+  // 「画面を暗くして再生」モード：全画面を黒く覆い、誤タッチを無効化する。
+  // バックライト自体は消せない（Web に明るさ API が無い）ので“黒く塗る”だけ。
+  const [dark, setDark] = useState(false)
 
   // 連続再生中は画面スリープを抑止（消灯で再生が止まらないように）。
-  useWakeLock(playing)
+  // 暗転モード中も同様に点けたままにして Web Speech を止めない。
+  useWakeLock(playing || dark)
+
+  // 再生が止まったら暗転も解除（無音の黒画面が残らないように）。
+  useEffect(() => {
+    if (!playing && dark) setDark(false)
+  }, [playing, dark])
 
   // Read settings inside async callbacks without re-triggering the player effect.
   const repeatRef = useRef(repeat)
@@ -228,6 +237,16 @@ export default function PhraseDetail() {
     }
   }
 
+  // 再生を始めつつ画面を暗転。停止中から押されたら再生も開始する。
+  const startDark = () => {
+    if (!playing) {
+      manualToken.current++
+      stopSpeaking()
+      setPlaying(true)
+    }
+    setDark(true)
+  }
+
   const step = (delta: number) => {
     const next = play.cursor + delta
     if (next < 0 || next >= play.order.length) return
@@ -273,14 +292,22 @@ export default function PhraseDetail() {
           )}
         </div>
 
-        <button
-          onClick={togglePlay}
-          className={`rounded-full px-8 py-3 text-lg font-semibold text-white active:scale-95 ${
-            playing ? 'bg-rose-500' : 'bg-violet-500'
-          }`}
-        >
-          {playing ? '⏸ 停止' : '▶ 自動再生'}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={togglePlay}
+            className={`rounded-full px-8 py-3 text-lg font-semibold text-white active:scale-95 ${
+              playing ? 'bg-rose-500' : 'bg-violet-500'
+            }`}
+          >
+            {playing ? '⏸ 停止' : '▶ 自動再生'}
+          </button>
+          <button
+            onClick={startDark}
+            className="rounded-full bg-slate-700 px-5 py-3 text-base font-semibold text-white active:scale-95"
+          >
+            🌙 暗くして再生
+          </button>
+        </div>
 
         <div className="flex flex-wrap justify-center gap-2">
           <ToggleChip active={repeat} onClick={() => setRepeat(!repeat)}>
@@ -332,6 +359,44 @@ export default function PhraseDetail() {
           進む →
         </button>
       </div>
+
+      {dark && <DarkOverlay onExit={() => setDark(false)} />}
+    </div>
+  )
+}
+
+/**
+ * 全画面を黒く覆い、再生を続けたまま誤タッチを無効化する“おやすみ”オーバーレイ。
+ * 1本指のタッチは握り潰し（ポケット誤操作防止）、2本指同時タッチで解除する。
+ * ※ バックライト自体は Web から消せないため、見た目を黒くするのみ。
+ *   有機ELなら実質消灯に近く、液晶では手動で明るさを下げると効果的。
+ */
+function DarkOverlay({ onExit }: { onExit: () => void }) {
+  const [showHint, setShowHint] = useState(true)
+  useEffect(() => {
+    const t = setTimeout(() => setShowHint(false), 4000)
+    return () => clearTimeout(t)
+  }, [])
+  return (
+    <div
+      onTouchStart={(e) => {
+        // 2本指同時タッチでのみ解除。1本指は無効化して誤操作を防ぐ。
+        if (e.touches.length >= 2) {
+          e.preventDefault()
+          onExit()
+        }
+      }}
+      onClick={(e) => e.preventDefault()}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black"
+      style={{ touchAction: 'none' }}
+    >
+      <p
+        className={`select-none text-xs text-slate-600 transition-opacity duration-1000 ${
+          showHint ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
+        2本指でタッチすると解除
+      </p>
     </div>
   )
 }
