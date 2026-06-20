@@ -1,0 +1,37 @@
+name: Tag & release on version bump
+
+# package.json の version が上がった状態で main に入ると、
+# 同名のタグがまだ無ければ vX.Y.Z タグと GitHub Release を自動作成する。
+# （手順は CHANGELOG.md を更新し `npm run bump:minor` 等で番号を上げて PR を出すだけ）
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: ver
+        name: Read version from package.json
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Create tag and release if new
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="v${{ steps.ver.outputs.version }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists — nothing to release."
+            exit 0
+          fi
+          git tag "$TAG"
+          git push origin "$TAG"
+          gh release create "$TAG" --title "$TAG" --generate-notes
