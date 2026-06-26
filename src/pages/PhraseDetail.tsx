@@ -2,10 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useDeck } from '../store/useDeck'
 import { useSettings } from '../store/useSettings'
-import { hasVoiceForLang, loadVoices, speak, speakSequence, stopSpeaking } from '../lib/tts'
+import { hasVoiceForLang, loadVoices, speakSequence, stopSpeaking } from '../lib/tts'
 import type { SeqPart } from '../lib/tts'
 import { useWakeLock } from '../lib/wakeLock'
 import MetaChips from '../components/MetaChips'
+import ReproCard from '../components/ReproCard'
 import type { Phrase } from '../types'
 
 /** Fisher–Yates shuffle that keeps `firstId` at the front so playback can
@@ -102,12 +103,6 @@ export default function PhraseDetail() {
   // 「画面を暗くして再生」モード：全画面を黒く覆い、誤タッチを無効化する。
   // バックライト自体は消せない（Web に明るさ API が無い）ので“黒く塗る”だけ。
   const [dark, setDark] = useState(false)
-  // 通常時（自動再生でも暗転でもない）かつ日本語訳ONの「再現練習」進行状態。
-  // idx=現在の項目、revealed=英文を表示済みか。
-  const [repro, setRepro] = useState<{ idx: number; revealed: boolean }>({
-    idx: 0,
-    revealed: false,
-  })
 
   // 連続再生中は画面スリープを抑止（消灯で再生が止まらないように）。
   // 暗転モード中も同様に点けたままにして Web Speech を止めない。
@@ -224,40 +219,6 @@ export default function PhraseDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing, play.cursor, play.order])
 
-  // カードや対象項目が変わったら再現練習を先頭に戻す。
-  useEffect(() => {
-    setRepro({ idx: 0, revealed: false })
-  }, [currentId, speakPhrase, speakExample, speakJa])
-
-  // 再現練習ドライバ: 未公開なら和訳を読み上げ、公開後は英文を読み上げて
-  // 2s 空けてから次の項目（和訳）へ自動で進む。タッチは onReveal が担う。
-  useEffect(() => {
-    if (!reproActive) return
-    const it = items[repro.idx]
-    if (!it) return
-    let cancelled = false
-    let timer: ReturnType<typeof setTimeout> | undefined
-    const toNext = () => {
-      timer = setTimeout(() => {
-        if (!cancelled) {
-          setRepro((r) => (r.idx + 1 < items.length ? { idx: r.idx + 1, revealed: false } : r))
-        }
-      }, GAP_NEXT)
-    }
-    stopSpeaking()
-    if (!repro.revealed) {
-      if (it.ja) speak(it.ja, { voiceURI, rate, lang: 'ja-JP' })
-    } else {
-      speak(it.en, { voiceURI, rate, lang: 'en-US', onEnd: toNext, onError: toNext })
-    }
-    return () => {
-      cancelled = true
-      if (timer) clearTimeout(timer)
-      stopSpeaking()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reproActive, repro.idx, repro.revealed, items, voiceURI, rate])
-
   if (!phrase) {
     return (
       <div className="pt-20 text-center text-slate-500">
@@ -301,13 +262,6 @@ export default function PhraseDetail() {
     }
   }
 
-  // 再現練習のタッチ送り: 未公開→英文を公開、公開済み→次の項目へ即送り。
-  const onReveal = () => {
-    if (!reproActive) return
-    if (!repro.revealed) setRepro((r) => ({ ...r, revealed: true }))
-    else setRepro((r) => (r.idx + 1 < items.length ? { idx: r.idx + 1, revealed: false } : r))
-  }
-
   const onToggleShuffle = () => {
     const nextOn = !shuffle
     setShuffle(nextOn)
@@ -332,27 +286,7 @@ export default function PhraseDetail() {
 
       <div className="flex flex-1 flex-col items-center justify-center gap-5 py-6">
         {reproActive ? (
-          <button
-            onClick={onReveal}
-            className="w-full rounded-2xl bg-white p-6 text-center shadow-sm active:opacity-90 dark:bg-slate-900"
-          >
-            <p className="text-xs text-slate-400">
-              {repro.idx + 1} / {items.length}
-            </p>
-            <MetaChips phrase={phrase} className="mt-2" />
-            <p className="mt-3 text-lg font-medium leading-relaxed text-slate-700 dark:text-slate-200">
-              {items[repro.idx]?.ja}
-            </p>
-            {repro.revealed ? (
-              <p className="mt-4 border-t border-slate-100 pt-4 text-xl font-bold leading-relaxed text-violet-600 dark:border-slate-800 dark:text-violet-400">
-                {items[repro.idx]?.en}
-              </p>
-            ) : (
-              <p className="mt-4 border-t border-slate-100 pt-4 text-sm text-slate-400 dark:border-slate-800">
-                タッチして英文を表示 👆
-              </p>
-            )}
-          </button>
+          <ReproCard items={items} meta={<MetaChips phrase={phrase} className="mt-2" />} />
         ) : (
           <div className="w-full rounded-2xl bg-white p-6 shadow-sm dark:bg-slate-900">
             <div className="text-center">
