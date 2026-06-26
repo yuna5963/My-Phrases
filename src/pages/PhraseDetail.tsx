@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useDeck } from '../store/useDeck'
 import { useSettings } from '../store/useSettings'
-import { hasVoiceForLang, loadVoices, speak, stopSpeaking } from '../lib/tts'
+import { hasVoiceForLang, loadVoices, speak, speakSequence, stopSpeaking } from '../lib/tts'
+import type { SeqPart } from '../lib/tts'
 import { useWakeLock } from '../lib/wakeLock'
+import MetaChips from '../components/MetaChips'
 import type { Phrase } from '../types'
 
 /** Fisher–Yates shuffle that keeps `firstId` at the front so playback can
@@ -23,45 +25,38 @@ interface SpeakFlags {
   ja: boolean
 }
 
-interface Part {
-  text: string
-  lang: string
+// 間（ま）の長さ。1項目内（和訳↔英文）の間、次の項目との間。
+const GAP_EN_JA = 1500
+const GAP_NEXT = 2000
+
+/** 1項目（チャンク or 例文）の英文と和訳。 */
+interface Item {
+  en: string
+  ja: string
 }
 
-/** The ordered list of utterances for a card given the on/off toggles:
- * フレーズ(英) → 日本語訳(日) → 例文(英)。空欄・OFFの項目は飛ばす。 */
-function buildParts(p: Phrase, flags: SpeakFlags): Part[] {
-  const parts: Part[] = []
-  if (flags.phrase && p.en) parts.push({ text: p.en, lang: 'en-US' })
-  if (flags.ja && p.ja) parts.push({ text: p.ja, lang: 'ja-JP' })
-  if (flags.example && p.example) parts.push({ text: p.example, lang: 'en-US' })
-  return parts
+/** トグルに従って読み上げ・再現の対象となる項目列を作る（チャンク→例文）。 */
+function buildItems(p: Phrase, opts: { phrase: boolean; example: boolean }): Item[] {
+  const items: Item[] = []
+  if (opts.phrase && p.en) items.push({ en: p.en, ja: p.ja })
+  if (opts.example) for (const ex of p.examples) if (ex.en) items.push({ en: ex.en, ja: ex.ja })
+  return items
 }
 
-/** Speak the parts back-to-back, bailing out as soon as `isCancelled()` is true. */
-function speakParts(
-  parts: Part[],
-  opts: { voiceURI: string | null; rate: number },
-  isCancelled: () => boolean,
-  onDone: () => void,
-): void {
-  let i = 0
-  const next = () => {
-    if (isCancelled()) return
-    if (i >= parts.length) {
-      onDone()
-      return
-    }
-    const part = parts[i++]
-    speak(part.text, {
-      voiceURI: opts.voiceURI,
-      rate: opts.rate,
-      lang: part.lang,
-      onEnd: next,
-      onError: next,
-    })
-  }
-  next()
+/** 連続/単発再生の読み上げ列。日本語訳ONなら「和訳→英文」の順、OFFなら英文のみ。
+ * 間は1項目内（和訳↔英文）が1.5s、次の項目へが2s。最後は間なし。 */
+function buildParts(p: Phrase, flags: SpeakFlags): SeqPart[] {
+  type Raw = { text: string; lang: string; item: number }
+  const raw: Raw[] = []
+  buildItems(p, { phrase: flags.phrase, example: flags.example }).forEach((it, idx) => {
+    if (flags.ja && it.ja) raw.push({ text: it.ja, lang: 'ja-JP', item: idx })
+    if (it.en) raw.push({ text: it.en, lang: 'en-US', item: idx })
+  })
+  return raw.map((r, i) => {
+    const next = raw[i + 1]
+    const gapAfter = !next ? 0 : next.item === r.item ? GAP_EN_JA : GAP_NEXT
+    return { text: r.text, lang: r.lang, gapAfter }
+  })
 }
 
 /**
@@ -107,6 +102,12 @@ export default function PhraseDetail() {
   // 「画面を暗くして再生」モード：全画面を黒く覆い、誤タッチを無効化する。
   // バックライト自体は消せない（Web に明るさ API が無い）ので“黒く塗る”だけ。
   const [dark, setDark] = useState(false)
+  // 通常時（自動再生でも暗転でもない）かつ日本語訳ONの「再現練習」進行状態。
+  // idx=現在の項目、revealed=英文を表示済みか。
+  const [repro, setRepro] = useState<{ idx: number; revealed: boolean }>({
+    idx: 0,
+    revealed: false,
+  })
 
   // 連続再生中は画面スリープを抑止（消灯で再生が止まらないように）。
   // 暗転モード中も同様に点けたままにして Web Speech を止めない。
@@ -140,18 +141,25 @@ export default function PhraseDetail() {
   const currentId = play.order[play.cursor]
   const phrase = phrases.find((p) => p.id === currentId)
 
+  // 再現練習の対象項目（チャンク→例文）。トグルに従う。
+  const items = useMemo(
+    () => (phrase ? buildItems(phrase, { phrase: speakPhrase, example: speakExample }) : []),
+    [phrase, speakPhrase, speakExample],
+  )
+  // 通常時 × 日本語訳ON × 項目あり のときだけ「タッチ送りの再現練習」を行う。
+  const reproActive = !playing && speakJa && items.length > 0
+
   // Token to cancel an in-flight single-card playback (manual navigation).
   const manualToken = useRef(0)
   const playCardOnce = (pid: string) => {
     const p = phrases.find((x) => x.id === pid)
     if (!p) return
     const token = ++manualToken.current
-    speakParts(
-      buildParts(p, flagsFromRefs()),
-      { voiceURI: voiceRef.current, rate: rateRef.current },
-      () => token !== manualToken.current,
-      () => {},
-    )
+    speakSequence(buildParts(p, flagsFromRefs()), {
+      voiceURI: voiceRef.current,
+      rate: rateRef.current,
+      isCancelled: () => token !== manualToken.current,
+    })
   }
 
   useEffect(() => {
@@ -169,11 +177,12 @@ export default function PhraseDetail() {
 
   // Auto-play the card once when it first appears (mirrors the previous open
   // behaviour). Continuous playback / manual nav handle later cards themselves.
+  // 日本語訳ONの再現練習中は専用ドライバが音声を出すので、ここでは鳴らさない。
   const didOpenPlay = useRef(false)
   useEffect(() => {
     if (didOpenPlay.current || !phrase) return
     didOpenPlay.current = true
-    if (autoPlay) playCardOnce(phrase.id)
+    if (autoPlay && !jaRef.current) playCardOnce(phrase.id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phrase])
 
@@ -201,12 +210,12 @@ export default function PhraseDetail() {
       if (cancelled) return
       gapTimer = setTimeout(goNext, 2000)
     }
-    speakParts(
-      buildParts(p, flagsFromRefs()),
-      { voiceURI: voiceRef.current, rate: rateRef.current },
-      () => cancelled,
-      advance,
-    )
+    speakSequence(buildParts(p, flagsFromRefs()), {
+      voiceURI: voiceRef.current,
+      rate: rateRef.current,
+      isCancelled: () => cancelled,
+      onDone: advance,
+    })
     return () => {
       cancelled = true
       if (gapTimer) clearTimeout(gapTimer)
@@ -214,6 +223,40 @@ export default function PhraseDetail() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing, play.cursor, play.order])
+
+  // カードや対象項目が変わったら再現練習を先頭に戻す。
+  useEffect(() => {
+    setRepro({ idx: 0, revealed: false })
+  }, [currentId, speakPhrase, speakExample, speakJa])
+
+  // 再現練習ドライバ: 未公開なら和訳を読み上げ、公開後は英文を読み上げて
+  // 2s 空けてから次の項目（和訳）へ自動で進む。タッチは onReveal が担う。
+  useEffect(() => {
+    if (!reproActive) return
+    const it = items[repro.idx]
+    if (!it) return
+    let cancelled = false
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const toNext = () => {
+      timer = setTimeout(() => {
+        if (!cancelled) {
+          setRepro((r) => (r.idx + 1 < items.length ? { idx: r.idx + 1, revealed: false } : r))
+        }
+      }, GAP_NEXT)
+    }
+    stopSpeaking()
+    if (!repro.revealed) {
+      if (it.ja) speak(it.ja, { voiceURI, rate, lang: 'ja-JP' })
+    } else {
+      speak(it.en, { voiceURI, rate, lang: 'en-US', onEnd: toNext, onError: toNext })
+    }
+    return () => {
+      cancelled = true
+      if (timer) clearTimeout(timer)
+      stopSpeaking()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reproActive, repro.idx, repro.revealed, items, voiceURI, rate])
 
   if (!phrase) {
     return (
@@ -253,8 +296,16 @@ export default function PhraseDetail() {
     setPlay((cur) => ({ ...cur, cursor: next }))
     if (!playing) {
       stopSpeaking()
-      if (autoPlay) playCardOnce(play.order[next])
+      // 日本語訳ONの再現練習中は専用ドライバ（カード切替で先頭から）が鳴らす。
+      if (autoPlay && !speakJa) playCardOnce(play.order[next])
     }
+  }
+
+  // 再現練習のタッチ送り: 未公開→英文を公開、公開済み→次の項目へ即送り。
+  const onReveal = () => {
+    if (!reproActive) return
+    if (!repro.revealed) setRepro((r) => ({ ...r, revealed: true }))
+    else setRepro((r) => (r.idx + 1 < items.length ? { idx: r.idx + 1, revealed: false } : r))
   }
 
   const onToggleShuffle = () => {
@@ -280,17 +331,53 @@ export default function PhraseDetail() {
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center gap-5 py-6">
-        <div className="w-full rounded-2xl bg-white p-6 text-center shadow-sm dark:bg-slate-900">
-          <p className="text-2xl font-bold leading-relaxed text-violet-600 dark:text-violet-400">
-            {phrase.en}
-          </p>
-          <p className="mt-3 text-sm text-slate-500">{phrase.ja}</p>
-          {phrase.example && (
-            <p className="mt-4 border-t border-slate-100 pt-3 text-base leading-relaxed text-slate-600 dark:border-slate-800 dark:text-slate-300">
-              {phrase.example}
+        {reproActive ? (
+          <button
+            onClick={onReveal}
+            className="w-full rounded-2xl bg-white p-6 text-center shadow-sm active:opacity-90 dark:bg-slate-900"
+          >
+            <p className="text-xs text-slate-400">
+              {repro.idx + 1} / {items.length}
             </p>
-          )}
-        </div>
+            <MetaChips phrase={phrase} className="mt-2" />
+            <p className="mt-3 text-lg font-medium leading-relaxed text-slate-700 dark:text-slate-200">
+              {items[repro.idx]?.ja}
+            </p>
+            {repro.revealed ? (
+              <p className="mt-4 border-t border-slate-100 pt-4 text-xl font-bold leading-relaxed text-violet-600 dark:border-slate-800 dark:text-violet-400">
+                {items[repro.idx]?.en}
+              </p>
+            ) : (
+              <p className="mt-4 border-t border-slate-100 pt-4 text-sm text-slate-400 dark:border-slate-800">
+                タッチして英文を表示 👆
+              </p>
+            )}
+          </button>
+        ) : (
+          <div className="w-full rounded-2xl bg-white p-6 shadow-sm dark:bg-slate-900">
+            <div className="text-center">
+              <p className="text-2xl font-bold leading-relaxed text-violet-600 dark:text-violet-400">
+                {phrase.en}
+              </p>
+              <p className="mt-2 text-sm text-slate-500">{phrase.ja}</p>
+              <MetaChips phrase={phrase} />
+            </div>
+            {phrase.examples.length > 0 && (
+              <ol className="mt-4 space-y-3 border-t border-slate-100 pt-4 dark:border-slate-800">
+                {phrase.examples.map((ex, i) => (
+                  <li key={i} className="text-left">
+                    <p className="text-base leading-relaxed text-slate-700 dark:text-slate-200">
+                      {ex.en}
+                    </p>
+                    {ex.ja && (
+                      <p className="mt-0.5 text-xs text-slate-400">{ex.ja}</p>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center gap-3">
           <button
@@ -322,7 +409,7 @@ export default function PhraseDetail() {
           <p className="text-xs text-slate-400">読み上げる項目</p>
           <div className="flex flex-wrap justify-center gap-2">
             <ToggleChip active={speakPhrase} onClick={() => setSpeakPhrase(!speakPhrase)}>
-              🔊 フレーズ
+              🔊 チャンク
             </ToggleChip>
             <ToggleChip active={speakExample} onClick={() => setSpeakExample(!speakExample)}>
               🔊 例文

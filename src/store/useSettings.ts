@@ -38,7 +38,7 @@ export const useSettings = create<SettingsState>()(
       repeat: false,
       shuffle: false,
       speakPhrase: true,
-      speakExample: false,
+      speakExample: true,
       speakJa: false,
       setVoiceURI: (voiceURI) => set({ voiceURI }),
       setRate: (rate) => set({ rate }),

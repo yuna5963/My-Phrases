@@ -75,9 +75,13 @@ export const useDeck = create<DeckState>((set, get) => ({
         phrases = await loadSample()
         source = 'sample'
       }
-      phrases = [...phrases].sort((a, b) =>
-        (a.createdTime || '') < (b.createdTime || '') ? 1 : -1,
-      )
+      // 新しい順（createdTime 降順）。createdTime が無い新CSVは ID 昇順で安定化。
+      phrases = [...phrases].sort((a, b) => {
+        const ta = a.createdTime || ''
+        const tb = b.createdTime || ''
+        if (ta !== tb) return ta < tb ? 1 : -1
+        return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
+      })
       const stored = await getAllProgress()
       const progress: Record<string, Progress> = {}
       for (const p of phrases) {

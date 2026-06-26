@@ -1,12 +1,18 @@
 import { unzipSync, strFromU8 } from 'fflate'
-import type { Phrase } from '../types'
+import type { Example, Phrase } from '../types'
 
-// Notion property names in the フレーズ集 database.
-const COL_EN = 'フレーズ'
-const COL_JA = '日本語訳'
-// Example column has gone by a few names across exports/sheets.
-const COL_EX_ALIASES = ['使用例（例文）', '例文', '使用例', '例']
-const COL_STATUS = 'ステータス'
+// 新CSV（My Phrases Enhanced）と旧Notionエクスポートの両方の列名を許容する。
+const COL_ID = ['ID', 'Id', 'id']
+const COL_EN = ['Chunk', 'フレーズ'] // 見出しの語・型
+const COL_JA = ['日本語', '日本語訳'] // チャンクの和訳
+const COL_TYPE = ['Type', '品詞', 'タイプ']
+const COL_CATEGORY = ['Category', 'カテゴリ', 'カテゴリー']
+const COL_LEVEL = ['Level', 'Difficulty', '難易度']
+const COL_PRIORITY = ['Priority', '優先度']
+const COL_NOTE = ['Note', 'メモ', '備考']
+const COL_STATUS = ['ステータス', 'Status']
+// 旧フォーマットの単一例文列。
+const COL_EX_SINGLE = ['使用例（例文）', '例文', '使用例', '例']
 
 /** First index in `header` matching any of `names`, or -1. */
 function firstIndexOf(header: string[], names: string[]): number {
@@ -20,7 +26,7 @@ function firstIndexOf(header: string[], names: string[]): number {
 const TEXT_EXT = /\.(md|markdown|txt|csv)$/i
 
 /** Deterministic id from the English text so re-imports keep the same key
- *  (and therefore preserve SRS progress) when no Notion page id is available. */
+ *  (and therefore preserve SRS progress) when no explicit id is available. */
 function stableId(en: string): string {
   let h = 0x811c9dc5
   for (let i = 0; i < en.length; i++) {
@@ -40,6 +46,66 @@ function idFromFilename(name: string): string | null {
 
 function clean(s: string): string {
   return s.replace(/\r/g, '').trim()
+}
+
+/**
+ * Pair up the example columns. Supports two layouts:
+ *  - 交互列: Example1, 日本語訳1, Example2, 日本語訳2, ...（推奨の新CSV）
+ *  - 英語のみ: Example1..Example5（和訳列なし）
+ * Also accepts a single legacy example column (使用例（例文）等, 和訳なし).
+ */
+function readExamples(header: string[], cells: string[]): Example[] {
+  const out: Example[] = []
+  // Example{n} と対応する 日本語訳{n} / Example{n}_JA を拾う。
+  for (let n = 1; ; n++) {
+    const iEn = firstIndexOf(header, [`Example${n}`, `例文${n}`, `Ex${n}`])
+    if (iEn === -1) break
+    const iJa = firstIndexOf(header, [
+      `日本語訳${n}`,
+      `Example${n}_JA`,
+      `例文${n}日本語`,
+      `Ja${n}`,
+    ])
+    const en = clean(cells[iEn] ?? '')
+    if (!en) continue
+    out.push({ en, ja: iJa >= 0 ? clean(cells[iJa] ?? '') : '' })
+  }
+  if (out.length) return out
+  // 旧フォーマット: 単一の例文列。
+  const iSingle = firstIndexOf(header, COL_EX_SINGLE)
+  if (iSingle >= 0) {
+    const en = clean(cells[iSingle] ?? '')
+    if (en) out.push({ en, ja: '' })
+  }
+  return out
+}
+
+function makePhrase(
+  header: string[],
+  cells: string[],
+  fallbackId: string,
+): Phrase | null {
+  const at = (names: string[]) => {
+    const i = firstIndexOf(header, names)
+    return i >= 0 ? clean(cells[i] ?? '') : ''
+  }
+  const en = at(COL_EN)
+  const ja = at(COL_JA)
+  if (!en || !ja) return null
+  const id = at(COL_ID) || fallbackId || stableId(en)
+  return {
+    id,
+    en,
+    ja,
+    examples: readExamples(header, cells),
+    type: at(COL_TYPE),
+    category: at(COL_CATEGORY),
+    level: at(COL_LEVEL),
+    priority: at(COL_PRIORITY),
+    note: at(COL_NOTE),
+    status: at(COL_STATUS) || '未着手',
+    createdTime: '',
+  }
 }
 
 // ---- CSV ----------------------------------------------------------------
@@ -82,37 +148,26 @@ function fromCsv(text: string): Phrase[] {
   const rows = parseCsvRows(text)
   if (rows.length < 2) return []
   const header = rows[0].map(clean)
-  const idx = (name: string) => header.indexOf(name)
-  const iEn = idx(COL_EN)
-  const iJa = idx(COL_JA)
-  if (iEn === -1 || iJa === -1) return [] // not the phrase table
-  const iEx = firstIndexOf(header, COL_EX_ALIASES)
-  const iStatus = idx(COL_STATUS)
+  if (firstIndexOf(header, COL_EN) === -1 || firstIndexOf(header, COL_JA) === -1) {
+    return [] // not the phrase table
+  }
   const out: Phrase[] = []
   for (let r = 1; r < rows.length; r++) {
-    const cells = rows[r]
-    const en = clean(cells[iEn] ?? '')
-    const ja = clean(cells[iJa] ?? '')
-    if (!en || !ja) continue
-    out.push({
-      id: stableId(en),
-      en,
-      ja,
-      example: iEx >= 0 ? clean(cells[iEx] ?? '') : '',
-      status: iStatus >= 0 ? clean(cells[iStatus] ?? '') || '未着手' : '未着手',
-      createdTime: '',
-    })
+    const p = makePhrase(header, rows[r], '')
+    if (p) out.push(p)
   }
   return out
 }
 
 // ---- Markdown -----------------------------------------------------------
 
-/** A markdown table whose header row contains フレーズ / 日本語訳. */
+/** A markdown table whose header row contains a chunk + 和訳 column. */
 function fromMarkdownTable(text: string): Phrase[] {
   const lines = text.split('\n')
+  const hasEn = (l: string) => COL_EN.some((n) => l.includes(n))
+  const hasJa = (l: string) => COL_JA.some((n) => l.includes(n))
   const headerIdx = lines.findIndex(
-    (l) => l.includes('|') && l.includes(COL_EN) && l.includes(COL_JA),
+    (l) => l.includes('|') && hasEn(l) && hasJa(l),
   )
   if (headerIdx === -1) return []
   const splitRow = (l: string) =>
@@ -123,26 +178,12 @@ function fromMarkdownTable(text: string): Phrase[] {
       .split('|')
       .map((c) => clean(c))
   const header = splitRow(lines[headerIdx])
-  const iEn = header.indexOf(COL_EN)
-  const iJa = header.indexOf(COL_JA)
-  const iEx = firstIndexOf(header, COL_EX_ALIASES)
-  const iStatus = header.indexOf(COL_STATUS)
   const out: Phrase[] = []
   for (let i = headerIdx + 2; i < lines.length; i++) {
     const l = lines[i]
     if (!l.includes('|')) break
-    const cells = splitRow(l)
-    const en = cells[iEn] ?? ''
-    const ja = cells[iJa] ?? ''
-    if (!en || !ja) continue
-    out.push({
-      id: stableId(en),
-      en,
-      ja,
-      example: iEx >= 0 ? cells[iEx] ?? '' : '',
-      status: iStatus >= 0 ? cells[iStatus] || '未着手' : '未着手',
-      createdTime: '',
-    })
+    const p = makePhrase(header, splitRow(l), '')
+    if (p) out.push(p)
   }
   return out
 }
@@ -153,19 +194,27 @@ function fromMarkdownPage(text: string, filename: string): Phrase[] {
   const h1 = lines.find((l) => l.startsWith('# '))
   const en = h1 ? clean(h1.slice(2)) : ''
   if (!en) return []
-  const prop = (name: string) => {
-    const line = lines.find((l) => clean(l).startsWith(name + ':'))
-    return line ? clean(line.slice(line.indexOf(':') + 1)) : ''
+  const prop = (names: string[]) => {
+    for (const name of names) {
+      const line = lines.find((l) => clean(l).startsWith(name + ':'))
+      if (line) return clean(line.slice(line.indexOf(':') + 1))
+    }
+    return ''
   }
   const ja = prop(COL_JA)
   if (!ja) return []
-  const example = COL_EX_ALIASES.map(prop).find((v) => v) ?? ''
+  const example = prop(COL_EX_SINGLE)
   return [
     {
       id: idFromFilename(filename) ?? stableId(en),
       en,
       ja,
-      example,
+      examples: example ? [{ en: example, ja: '' }] : [],
+      type: prop(COL_TYPE),
+      category: prop(COL_CATEGORY),
+      level: prop(COL_LEVEL),
+      priority: prop(COL_PRIORITY),
+      note: prop(COL_NOTE),
       status: prop(COL_STATUS) || '未着手',
       createdTime: '',
     },

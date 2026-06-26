@@ -1,12 +1,13 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSession, type SessionOptions } from '../hooks/useSession'
 import { useDeck } from '../store/useDeck'
 import { useSettings } from '../store/useSettings'
-import { speak } from '../lib/tts'
+import { speak, speakSequence, stopSpeaking, type SeqPart } from '../lib/tts'
+import type { Phrase } from '../types'
 import SessionHeader from './SessionHeader'
 import SessionSummary from './SessionSummary'
-import PlayButton from './PlayButton'
+import MetaChips from './MetaChips'
 
 interface Props {
   title: string
@@ -19,10 +20,18 @@ interface Props {
   practice?: boolean
 }
 
+/** お手本の読み上げ列: チャンク → 例文1 → 例文2 …（英語）。 */
+function modelParts(c: Phrase): SeqPart[] {
+  const parts: SeqPart[] = []
+  if (c.en) parts.push({ text: c.en, lang: 'en-US' })
+  for (const ex of c.examples) if (ex.en) parts.push({ text: ex.en, lang: 'en-US' })
+  return parts
+}
+
 /**
  * Shared "listen to the model and say it aloud" practice flow used by both
- * 発音練習 and モデリング — the model English is shown from the start and the
- * user self-grades whether they could say it.
+ * 発音練習 and モデリング — the model English (chunk + 5 examples) is shown
+ * from the start and the user self-grades whether they could say it.
  */
 export default function ListenPractice({ title, hint, accent, filter, practice }: Props) {
   const [shuffle, setShuffle] = useState(false)
@@ -35,11 +44,26 @@ export default function ListenPractice({ title, hint, accent, filter, practice }
   const setLearned = useDeck((x) => x.setLearned)
   const navigate = useNavigate()
 
-  // Auto-play the model audio when a new card appears.
+  // Token to cancel an in-flight model playback when the card changes / unmounts.
+  const playToken = useRef(0)
+  const playModel = (c: Phrase) => {
+    const token = ++playToken.current
+    speakSequence(modelParts(c), {
+      voiceURI,
+      rate,
+      gapMs: 2000, // チャンク→例文、例文→次の例文の間を2s空ける
+      isCancelled: () => token !== playToken.current,
+    })
+  }
+
+  // Auto-play the model (chunk + examples) when a new card appears.
   useEffect(() => {
-    if (autoPlay && s.current) speak(s.current.en, { voiceURI, rate })
+    if (autoPlay && s.current) playModel(s.current)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s.pos])
+
+  // Stop speech when leaving the screen.
+  useEffect(() => () => stopSpeaking(), [])
 
   const controls = practice ? (
     <div className="mb-2 flex justify-center gap-2">
@@ -79,20 +103,45 @@ export default function ListenPractice({ title, hint, accent, filter, practice }
       <SessionHeader pos={s.pos} total={s.total} title={title} />
       {controls}
 
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 py-6">
-        <div className="w-full rounded-2xl bg-white p-6 text-center shadow-sm dark:bg-slate-900">
-          <p className={`text-2xl font-bold leading-relaxed ${accent.text}`}>
-            {c.en}
-          </p>
-          <p className="mt-3 text-sm text-slate-500">{c.ja}</p>
+      <div className="flex flex-1 flex-col items-center justify-center gap-5 py-6">
+        <div className="w-full rounded-2xl bg-white p-6 shadow-sm dark:bg-slate-900">
+          <div className="text-center">
+            <p className={`text-2xl font-bold leading-relaxed ${accent.text}`}>
+              {c.en}
+            </p>
+            <p className="mt-2 text-sm text-slate-500">{c.ja}</p>
+            <MetaChips phrase={c} />
+          </div>
+          {c.examples.length > 0 && (
+            <ol className="mt-4 space-y-3 border-t border-slate-100 pt-4 dark:border-slate-800">
+              {c.examples.map((ex, i) => (
+                <li key={i} className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-base leading-relaxed text-slate-700 dark:text-slate-200">
+                      {ex.en}
+                    </p>
+                    {ex.ja && <p className="mt-0.5 text-xs text-slate-400">{ex.ja}</p>}
+                  </div>
+                  <button
+                    onClick={() => speak(ex.en, { voiceURI, rate })}
+                    className="shrink-0 text-sky-500 active:scale-95"
+                  >
+                    🔊
+                  </button>
+                </li>
+              ))}
+            </ol>
+          )}
         </div>
 
-        <PlayButton text={c.en} label="🔊 もう一度聞く" className={accent.button} />
+        <button
+          onClick={() => playModel(c)}
+          className={`rounded-full px-5 py-2.5 font-medium text-white active:scale-95 ${accent.button}`}
+        >
+          🔊 お手本を聞く
+        </button>
         {practice && (
-          <LearnedCheck
-            checked={learned}
-            onClick={() => setLearned(c.id, !learned)}
-          />
+          <LearnedCheck checked={learned} onClick={() => setLearned(c.id, !learned)} />
         )}
         <p className="text-center text-sm text-slate-400">{hint}</p>
       </div>

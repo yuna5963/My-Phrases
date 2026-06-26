@@ -183,3 +183,51 @@ export function speak(text: string, opts: SpeakOptions = {}): void {
 export function stopSpeaking(): void {
   if (isTTSAvailable()) window.speechSynthesis.cancel()
 }
+
+export interface SeqPart {
+  text: string
+  /** BCP-47 tag; defaults to 'en-US'. */
+  lang?: string
+  /** Pause (ms) after this part before the next one. Overrides `gapMs`. */
+  gapAfter?: number
+}
+
+/**
+ * Speak `parts` back-to-back (chunk → 例文 → 和訳 …). Bails out as soon as
+ * `isCancelled()` returns true. The pause after each part is `part.gapAfter`
+ * when set, otherwise the shared `gapMs`.
+ */
+export function speakSequence(
+  parts: SeqPart[],
+  opts: {
+    voiceURI?: string | null
+    rate?: number
+    gapMs?: number
+    isCancelled?: () => boolean
+    onDone?: () => void
+  } = {},
+): void {
+  const { gapMs = 0, isCancelled = () => false, onDone } = opts
+  let i = 0
+  const next = () => {
+    if (isCancelled()) return
+    if (i >= parts.length) {
+      onDone?.()
+      return
+    }
+    const part = parts[i++]
+    const gap = part.gapAfter ?? gapMs
+    const after = () => {
+      if (gap > 0) setTimeout(() => !isCancelled() && next(), gap)
+      else next()
+    }
+    speak(part.text, {
+      voiceURI: opts.voiceURI,
+      rate: opts.rate,
+      lang: part.lang ?? 'en-US',
+      onEnd: after,
+      onError: after,
+    })
+  }
+  next()
+}
