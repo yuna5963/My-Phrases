@@ -1,9 +1,20 @@
-export interface Phrase {
-  id: string
+/** 1チャンクに紐づく例文1つ（英語と、その日本語訳）。 */
+export interface Example {
   en: string
   ja: string
-  example: string
-  status: string
+}
+
+export interface Phrase {
+  id: string
+  en: string // Chunk（見出しの語・型）
+  ja: string // チャンクの日本語訳（CSVの「日本語」列）
+  examples: Example[] // 例文（最大5）。各例文に日本語訳を持つ
+  type: string // Nuance / Pattern / Chunk / Connector / Phrase
+  category: string // Daily Status / Health / Work ...
+  level: string // Basic / Core / Advanced
+  priority: string // ★の数（例: ★★★★★）
+  note: string // 補足メモ（任意）
+  status: string // 未着手 / 進行中 / 完了
   createdTime: string
 }
 

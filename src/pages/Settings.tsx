@@ -214,11 +214,22 @@ export default function Settings() {
             {source === 'imported' ? '取り込み済み' : 'サンプル'} / {phraseCount}件
           </span>
         </p>
-        <ol className="ml-4 list-decimal space-y-1 text-sm text-slate-500">
-          <li>Notionでフレーズ集DBを開き「•••」→ エクスポート</li>
-          <li>形式は「Markdown &amp; CSV」を選択してダウンロード</li>
-          <li>下のボタンでその <code className="rounded bg-slate-200 px-1 dark:bg-slate-800">.zip</code> をそのまま選択（解凍不要）</li>
-        </ol>
+        <div className="space-y-2 text-sm text-slate-500">
+          <p className="font-medium text-slate-600 dark:text-slate-300">
+            次のいずれかを取り込めます
+          </p>
+          <p>
+            <span className="font-medium">① CSVを直接</span>（
+            <code className="rounded bg-slate-200 px-1 dark:bg-slate-800">.csv</code>
+            ）— 列: ID, Type, Category, Level, Priority, Chunk, 日本語, Example1, 日本語訳1, … Example5, 日本語訳5, Note
+          </p>
+          <p>
+            <span className="font-medium">② Notionエクスポート</span> — DBの「•••」→
+            エクスポート →「Markdown &amp; CSV」でDLした{' '}
+            <code className="rounded bg-slate-200 px-1 dark:bg-slate-800">.zip</code>{' '}
+            をそのまま選択（解凍不要）
+          </p>
+        </div>
 
         <input
           ref={fileRef}
@@ -233,7 +244,7 @@ export default function Settings() {
           onClick={() => fileRef.current?.click()}
           className="w-full rounded-xl bg-sky-500 px-4 py-3 font-medium text-white disabled:opacity-50"
         >
-          {busy ? '取り込み中…' : '📥 エクスポートファイルを選択'}
+          {busy ? '取り込み中…' : '📥 ファイルを選択（.csv / .zip）'}
         </button>
 
         {importMsg && (

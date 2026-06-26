@@ -4,10 +4,29 @@ import { useDeck } from '../store/useDeck'
 import { speak } from '../lib/tts'
 import { useSettings } from '../store/useSettings'
 import { isMastered } from '../lib/srs'
-import { ALL_STATUSES } from '../store/useSettings'
+import type { Phrase } from '../types'
 
-// 「自信なし」=「覚えた」未チェックを表す特別なフィルタ（Notionのステータスではない）。
-const UNSURE = '自信なし'
+type FacetKey = 'type' | 'category' | 'level' | 'priority'
+const FACETS: { key: FacetKey; label: string }[] = [
+  { key: 'type', label: 'タイプ' },
+  { key: 'category', label: 'カテゴリ' },
+  { key: 'level', label: 'レベル' },
+  { key: 'priority', label: '優先度' },
+]
+
+/** Distinct facet values in deck order (empty values dropped). */
+function distinct(phrases: Phrase[], key: FacetKey): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const p of phrases) {
+    const v = p[key]
+    if (v && !seen.has(v)) {
+      seen.add(v)
+      out.push(v)
+    }
+  }
+  return out
+}
 
 export default function Browse() {
   const navigate = useNavigate()
@@ -18,22 +37,44 @@ export default function Browse() {
   const rate = useSettings((s) => s.rate)
 
   const [q, setQ] = useState('')
-  const [status, setStatus] = useState<string | null>(null)
+  const [unsure, setUnsure] = useState(false)
+  const [sel, setSel] = useState<Record<FacetKey, string | null>>({
+    type: null,
+    category: null,
+    level: null,
+    priority: null,
+  })
+
+  const facetValues = useMemo(
+    () =>
+      Object.fromEntries(
+        FACETS.map((f) => [f.key, distinct(phrases, f.key)]),
+      ) as Record<FacetKey, string[]>,
+    [phrases],
+  )
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase()
     return phrases.filter((p) => {
-      if (status === UNSURE) {
-        if (progress[p.id]?.learned) return false
-      } else if (status && p.status !== status) {
-        return false
+      if (unsure && progress[p.id]?.learned) return false
+      for (const { key } of FACETS) {
+        if (sel[key] && p[key] !== sel[key]) return false
       }
       if (!needle) return true
       return (
-        p.en.toLowerCase().includes(needle) || p.ja.toLowerCase().includes(needle)
+        p.en.toLowerCase().includes(needle) ||
+        p.ja.toLowerCase().includes(needle) ||
+        p.examples.some(
+          (ex) =>
+            ex.en.toLowerCase().includes(needle) ||
+            ex.ja.toLowerCase().includes(needle),
+        )
       )
     })
-  }, [phrases, progress, q, status])
+  }, [phrases, progress, q, unsure, sel])
+
+  const toggleFacet = (key: FacetKey, value: string) =>
+    setSel((cur) => ({ ...cur, [key]: cur[key] === value ? null : value }))
 
   return (
     <div className="space-y-3">
@@ -42,23 +83,34 @@ export default function Browse() {
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="検索（英語 / 日本語）"
+        placeholder="検索（チャンク / 日本語 / 例文）"
         className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-sky-500 dark:border-slate-700 dark:bg-slate-900"
       />
 
       <div className="flex gap-2 overflow-x-auto pb-1">
-        <Chip active={status === null} onClick={() => setStatus(null)}>
-          すべて
+        <Chip active={unsure} onClick={() => setUnsure((v) => !v)}>
+          ⚠️ 自信なし
         </Chip>
-        <Chip active={status === UNSURE} onClick={() => setStatus(UNSURE)}>
-          {UNSURE}
-        </Chip>
-        {ALL_STATUSES.map((st) => (
-          <Chip key={st} active={status === st} onClick={() => setStatus(st)}>
-            {st}
-          </Chip>
-        ))}
       </div>
+
+      {FACETS.map((f) =>
+        facetValues[f.key].length ? (
+          <div key={f.key} className="flex items-center gap-2">
+            <span className="w-12 shrink-0 text-xs text-slate-400">{f.label}</span>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {facetValues[f.key].map((v) => (
+                <Chip
+                  key={v}
+                  active={sel[f.key] === v}
+                  onClick={() => toggleFacet(f.key, v)}
+                >
+                  {v}
+                </Chip>
+              ))}
+            </div>
+          </div>
+        ) : null,
+      )}
 
       <p className="text-xs text-slate-400">{filtered.length} 件</p>
 

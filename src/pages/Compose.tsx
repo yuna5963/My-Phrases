@@ -1,30 +1,29 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { Phrase } from '../types'
 import { useSession } from '../hooks/useSession'
 import { useSettings } from '../store/useSettings'
 import { speak } from '../lib/tts'
-import { isMultiSentence } from '../lib/text'
 import SessionHeader from '../components/SessionHeader'
 import SessionSummary from '../components/SessionSummary'
 import PlayButton from '../components/PlayButton'
 
-// 瞬間英作文 covers single-sentence phrases; multi-sentence ones go to モデリング.
-const isSingle = (p: Phrase) => !isMultiSentence(p.en)
-
+/**
+ * 瞬間英作文: 日本語（チャンクの意味）を見て英語チャンクを即作文し、
+ * 答え合わせでチャンク英語＋5例文（ネットワーク）を確認する。
+ */
 export default function Compose() {
-  const s = useSession({ filter: isSingle })
+  const s = useSession()
   const autoPlay = useSettings((x) => x.autoPlay)
   const voiceURI = useSettings((x) => x.voiceURI)
   const rate = useSettings((x) => x.rate)
   const navigate = useNavigate()
 
   const [revealed, setRevealed] = useState(false)
-  const [showExample, setShowExample] = useState(false)
+  const [showExamples, setShowExamples] = useState(false)
 
   useEffect(() => {
     setRevealed(false)
-    setShowExample(false)
+    setShowExamples(false)
   }, [s.pos])
 
   if (s.empty) {
@@ -65,16 +64,38 @@ export default function Compose() {
               </div>
             </div>
 
-            {c.example && (
+            {c.examples.length > 0 && (
               <div className="text-center">
                 <button
-                  onClick={() => setShowExample((v) => !v)}
+                  onClick={() => setShowExamples((v) => !v)}
                   className="text-sm text-slate-400"
                 >
-                  {showExample ? '例文を隠す' : '例文を見る'}
+                  {showExamples ? '例文を隠す' : `例文を見る（${c.examples.length}）`}
                 </button>
-                {showExample && (
-                  <p className="mt-2 text-sm text-slate-500">{c.example}</p>
+                {showExamples && (
+                  <ol className="mt-3 space-y-3 text-left">
+                    {c.examples.map((ex, i) => (
+                      <li
+                        key={i}
+                        className="rounded-xl bg-white p-3 shadow-sm dark:bg-slate-900"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
+                            {ex.en}
+                          </p>
+                          <button
+                            onClick={() => speak(ex.en, { voiceURI, rate })}
+                            className="shrink-0 text-sky-500 active:scale-95"
+                          >
+                            🔊
+                          </button>
+                        </div>
+                        {ex.ja && (
+                          <p className="mt-1 text-xs text-slate-400">{ex.ja}</p>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
                 )}
               </div>
             )}
