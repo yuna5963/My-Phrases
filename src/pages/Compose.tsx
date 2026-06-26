@@ -6,6 +6,7 @@ import { speak } from '../lib/tts'
 import SessionHeader from '../components/SessionHeader'
 import SessionSummary from '../components/SessionSummary'
 import PlayButton from '../components/PlayButton'
+import ReproCard from '../components/ReproCard'
 
 /**
  * 瞬間英作文: 日本語（チャンクの意味）を見て英語チャンクを即作文し、
@@ -73,29 +74,12 @@ export default function Compose() {
                   {showExamples ? '例文を隠す' : `例文を見る（${c.examples.length}）`}
                 </button>
                 {showExamples && (
-                  <ol className="mt-3 space-y-3 text-left">
-                    {c.examples.map((ex, i) => (
-                      <li
-                        key={i}
-                        className="rounded-xl bg-white p-3 shadow-sm dark:bg-slate-900"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
-                            {ex.en}
-                          </p>
-                          <button
-                            onClick={() => speak(ex.en, { voiceURI, rate })}
-                            className="shrink-0 text-sky-500 active:scale-95"
-                          >
-                            🔊
-                          </button>
-                        </div>
-                        {ex.ja && (
-                          <p className="mt-1 text-xs text-slate-400">{ex.ja}</p>
-                        )}
-                      </li>
-                    ))}
-                  </ol>
+                  <div className="mt-3">
+                    <ReproCard
+                      items={c.examples}
+                      accentClass="text-sky-600 dark:text-sky-400"
+                    />
+                  </div>
                 )}
               </div>
             )}
