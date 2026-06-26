@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-26
+
 ### 追加
 - **チャンク + 例文最大5 + メタ情報**のデータモデルへ刷新（`Phrase.examples:{en,ja}[]` と `type/category/level/priority/note`）
 - 一覧に **Type / Category / Level / Priority のファセット絞り込み**（値はデータから動的生成）。検索は例文（英・和）も対象
