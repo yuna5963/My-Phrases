@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-27
+
 ### 追加
 - 下部メニューに **「例文一覧」タブ**（`Examples.tsx`）。全チャンクの例文1〜5を平坦に展開し、英文＋日本語訳をページング表示（1ページ30件）。行タップで親チャンクのフレーズ再生へ遷移、各例文の単発TTS再生にも対応
 - favicon・ホーム画面アイコン（PWA / apple-touch-icon）を追加
@@ -69,6 +71,9 @@
 - SRS（Leitner ボックス）による学習状態管理
 - Web Speech API による読み上げ、GitHub Pages への自動デプロイ
 
-[Unreleased]: https://github.com/yuna5963/My-Phrases/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/yuna5963/My-Phrases/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/yuna5963/My-Phrases/compare/v0.3.1...v0.4.0
+[0.3.1]: https://github.com/yuna5963/My-Phrases/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/yuna5963/My-Phrases/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/yuna5963/My-Phrases/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/yuna5963/My-Phrases/releases/tag/v0.1.0
