@@ -1,0 +1,157 @@
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useDeck } from '../store/useDeck'
+import { useSettings } from '../store/useSettings'
+import { speak, stopSpeaking } from '../lib/tts'
+import { useWakeLock } from '../lib/wakeLock'
+import { isLongReading } from '../lib/longReading'
+import MetaChips from '../components/MetaChips'
+import StepNav from '../components/StepNav'
+
+/**
+ * 長文音読モード。Type=Long Reading のフレーズだけを対象に、本文（examples[0]）を
+ * お手本として読み上げ、ユーザーが続けて音読する。フレーズ再生と同じ「← 戻る / 進む →」
+ * でカードを送る。長文は本文・和訳が1つずつ（Example2 以降は空欄）。
+ */
+export default function LongReading() {
+  const navigate = useNavigate()
+  const phrases = useDeck((s) => s.phrases)
+  const voiceURI = useSettings((x) => x.voiceURI)
+  const rate = useSettings((x) => x.rate)
+
+  const items = useMemo(() => phrases.filter(isLongReading), [phrases])
+
+  const [pos, setPos] = useState(0)
+  const [showJa, setShowJa] = useState(false)
+  const [playing, setPlaying] = useState(false)
+
+  // 長文の読み上げ中は画面スリープを抑止（消灯で再生が止まらないように）。
+  useWakeLock(playing)
+
+  const current = items[pos]
+  const passage = current?.examples[0]
+
+  // カード切替・離脱時は読み上げを止め、訳の表示もリセットする。
+  useEffect(() => {
+    stopSpeaking()
+    setPlaying(false)
+    setShowJa(false)
+  }, [pos])
+  useEffect(() => () => stopSpeaking(), [])
+
+  if (items.length === 0) {
+    return (
+      <div className="flex h-full flex-col">
+        <Header onBack={() => navigate('/')} pos={0} total={0} />
+        <div className="pt-20 text-center text-slate-500">
+          <p>長文音読のコンテンツがありません。</p>
+          <p className="mt-1 text-xs text-slate-400">
+            Type が「Long Reading」のフレーズを取り込むと表示されます。
+          </p>
+          <button onClick={() => navigate('/')} className="mt-4 text-sky-500">
+            ホームへ戻る
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  const togglePlay = () => {
+    if (playing) {
+      stopSpeaking()
+      setPlaying(false)
+      return
+    }
+    if (!passage?.en) return
+    setPlaying(true)
+    speak(passage.en, {
+      voiceURI,
+      rate,
+      onEnd: () => setPlaying(false),
+      onError: () => setPlaying(false),
+    })
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      <Header onBack={() => navigate('/')} pos={pos + 1} total={items.length} />
+
+      {/* 本文は長いのでこの領域だけスクロール。お手本ボタンは常時見えるよう外に出す。 */}
+      <div className="min-h-0 flex-1 overflow-y-auto py-2">
+        <div className="w-full rounded-2xl bg-white p-6 shadow-sm dark:bg-slate-900">
+          <div className="text-center">
+            <p className="text-lg font-bold leading-relaxed text-amber-600 dark:text-amber-400">
+              {current!.en}
+            </p>
+            <p className="mt-1 text-sm text-slate-500">{current!.ja}</p>
+            <MetaChips phrase={current!} className="mt-2" />
+          </div>
+
+          <div className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800">
+            <p className="text-left text-lg leading-loose text-slate-800 dark:text-slate-100">
+              {passage?.en}
+            </p>
+            {passage?.ja && (
+              <>
+                <button
+                  onClick={() => setShowJa((v) => !v)}
+                  className="mt-4 text-sm text-slate-400"
+                >
+                  {showJa ? '訳を隠す' : '訳を見る'}
+                </button>
+                {showJa && (
+                  <p className="mt-2 text-left text-sm leading-relaxed text-slate-500">
+                    {passage.ja}
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center gap-2 py-3">
+        <button
+          onClick={togglePlay}
+          className={`rounded-full px-6 py-3 font-medium text-white active:scale-95 ${
+            playing ? 'bg-rose-500' : 'bg-amber-500'
+          }`}
+        >
+          {playing ? '⏸ 停止' : '🔊 お手本を聞く'}
+        </button>
+        <p className="text-center text-xs text-slate-400">
+          お手本に続けて、声に出して読んでみよう
+        </p>
+      </div>
+
+      <StepNav
+        onPrev={() => setPos((p) => Math.max(0, p - 1))}
+        onNext={() => setPos((p) => Math.min(items.length - 1, p + 1))}
+        canPrev={pos > 0}
+        canNext={pos < items.length - 1}
+      />
+    </div>
+  )
+}
+
+function Header({
+  onBack,
+  pos,
+  total,
+}: {
+  onBack: () => void
+  pos: number
+  total: number
+}) {
+  return (
+    <div className="mb-2 flex items-center justify-between text-sm">
+      <button onClick={onBack} className="text-slate-400">
+        ✕ やめる
+      </button>
+      <span className="font-medium">長文音読</span>
+      <span className="text-slate-400">
+        {pos} / {total}
+      </span>
+    </div>
+  )
+}

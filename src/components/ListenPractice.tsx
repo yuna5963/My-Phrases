@@ -8,6 +8,7 @@ import type { Phrase } from '../types'
 import SessionHeader from './SessionHeader'
 import SessionSummary from './SessionSummary'
 import MetaChips from './MetaChips'
+import StepNav from './StepNav'
 
 interface Props {
   title: string
@@ -160,6 +161,13 @@ export default function ListenPractice({ title, hint, accent, filter, practice }
           ✅ 言えた
         </button>
       </div>
+
+      <StepNav
+        onPrev={s.goPrev}
+        onNext={s.goNext}
+        canPrev={s.canPrev}
+        canNext={s.canNext}
+      />
     </div>
   )
 }

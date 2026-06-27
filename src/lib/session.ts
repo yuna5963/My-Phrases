@@ -1,5 +1,6 @@
 import type { Phrase, Progress } from '../types'
 import { isDue, isMastered, isNew, todayStr } from './srs'
+import { isLongReading } from './longReading'
 
 export interface DeckStats {
   total: number
@@ -54,7 +55,7 @@ export function computeStats(
   let studiedToday = 0
   let total = 0
   for (const p of phrases) {
-    if (!included(p, statuses)) continue
+    if (isLongReading(p) || !included(p, statuses)) continue
     const pr = progress[p.id]
     if (!pr) continue
     total++
