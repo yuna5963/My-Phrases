@@ -9,6 +9,7 @@ import Compose from './pages/Compose'
 import Modeling from './pages/Modeling'
 import Pronounce from './pages/Pronounce'
 import Browse from './pages/Browse'
+import Examples from './pages/Examples'
 import PhraseDetail from './pages/PhraseDetail'
 import Settings from './pages/Settings'
 
@@ -46,6 +47,7 @@ export default function App() {
             <Route path="/modeling" element={<Modeling />} />
             <Route path="/pronounce" element={<Pronounce />} />
             <Route path="/browse" element={<Browse />} />
+            <Route path="/examples" element={<Examples />} />
             <Route path="/phrase/:id" element={<PhraseDetail />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/" replace />} />

@@ -88,11 +88,13 @@ export default function PhraseDetail() {
   const setSpeakExample = useSettings((x) => x.setSpeakExample)
   const setSpeakJa = useSettings((x) => x.setSpeakJa)
 
-  // Natural id order from the browse list (filtered) or the whole deck.
+  // Natural id order from the list that opened this view (filtered) or the
+  // whole deck. `backTo` remembers which list to return to.
   const baseIds = useMemo(() => {
     const passed = (location.state as { ids?: string[] } | null)?.ids
     return passed && passed.length ? passed : phrases.map((p) => p.id)
   }, [location.state, phrases])
+  const backTo = (location.state as { backTo?: string } | null)?.backTo ?? '/browse'
 
   const [play, setPlay] = useState<{ order: string[]; cursor: number }>(() => {
     const order = shuffle && id ? shuffleKeepingFirst(baseIds, id) : baseIds
@@ -223,7 +225,7 @@ export default function PhraseDetail() {
     return (
       <div className="pt-20 text-center text-slate-500">
         <p>フレーズが見つかりませんでした。</p>
-        <button onClick={() => navigate('/browse')} className="mt-4 text-sky-500">
+        <button onClick={() => navigate(backTo)} className="mt-4 text-sky-500">
           一覧へ戻る
         </button>
       </div>
@@ -275,7 +277,7 @@ export default function PhraseDetail() {
   return (
     <div className="flex h-full flex-col">
       <div className="mb-4 flex items-center justify-between text-sm">
-        <button onClick={() => navigate('/browse')} className="text-slate-400">
+        <button onClick={() => navigate(backTo)} className="text-slate-400">
           ← 一覧へ
         </button>
         <span className="font-medium">フレーズ再生</span>
