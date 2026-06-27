@@ -74,6 +74,13 @@ export default function Home() {
           <div className="text-lg font-bold">🗣️ 発音練習</div>
           <div className="text-sm text-violet-100">お手本を聞いて声に出す</div>
         </button>
+        <button
+          onClick={() => navigate('/long-reading')}
+          className="w-full rounded-2xl bg-amber-500 px-5 py-4 text-left text-white shadow active:scale-[0.99]"
+        >
+          <div className="text-lg font-bold">📖 長文音読</div>
+          <div className="text-sm text-amber-100">長文をお手本に続けて音読</div>
+        </button>
       </section>
 
       {stats.due === 0 && (

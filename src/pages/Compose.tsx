@@ -7,6 +7,7 @@ import SessionHeader from '../components/SessionHeader'
 import SessionSummary from '../components/SessionSummary'
 import PlayButton from '../components/PlayButton'
 import ReproCard from '../components/ReproCard'
+import StepNav from '../components/StepNav'
 
 /**
  * 瞬間英作文: 日本語（チャンクの意味）を見て英語チャンクを即作文し、
@@ -120,6 +121,13 @@ export default function Compose() {
           </button>
         </div>
       )}
+
+      <StepNav
+        onPrev={s.goPrev}
+        onNext={s.goNext}
+        canPrev={s.canPrev}
+        canNext={s.canNext}
+      />
     </div>
   )
 }

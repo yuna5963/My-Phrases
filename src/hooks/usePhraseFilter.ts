@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useDeck } from '../store/useDeck'
+import { isLongReading } from '../lib/longReading'
 import type { Phrase } from '../types'
 
 export type FacetKey = 'type' | 'category' | 'level' | 'priority'
@@ -44,6 +45,9 @@ export interface PhraseFilter {
 export function usePhraseFilter(phrases: Phrase[]): PhraseFilter {
   const progress = useDeck((s) => s.progress)
 
+  // 長文音読は一覧（チャンク一覧・例文一覧）にもタイプ絞り込みにも出さない。
+  const base = useMemo(() => phrases.filter((p) => !isLongReading(p)), [phrases])
+
   const [q, setQ] = useState('')
   const [unsure, setUnsure] = useState(false)
   const [sel, setSel] = useState<Record<FacetKey, string | null>>({
@@ -56,14 +60,14 @@ export function usePhraseFilter(phrases: Phrase[]): PhraseFilter {
   const facetValues = useMemo(
     () =>
       Object.fromEntries(
-        FACETS.map((f) => [f.key, distinct(phrases, f.key)]),
+        FACETS.map((f) => [f.key, distinct(base, f.key)]),
       ) as Record<FacetKey, string[]>,
-    [phrases],
+    [base],
   )
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase()
-    return phrases.filter((p) => {
+    return base.filter((p) => {
       if (unsure && progress[p.id]?.learned) return false
       for (const { key } of FACETS) {
         if (sel[key] && p[key] !== sel[key]) return false
@@ -79,7 +83,7 @@ export function usePhraseFilter(phrases: Phrase[]): PhraseFilter {
         )
       )
     })
-  }, [phrases, progress, q, unsure, sel])
+  }, [base, progress, q, unsure, sel])
 
   const toggleUnsure = () => setUnsure((v) => !v)
   const toggleFacet = (key: FacetKey, value: string) =>

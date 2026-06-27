@@ -8,6 +8,7 @@ import Home from './pages/Home'
 import Compose from './pages/Compose'
 import Modeling from './pages/Modeling'
 import Pronounce from './pages/Pronounce'
+import LongReading from './pages/LongReading'
 import Browse from './pages/Browse'
 import Examples from './pages/Examples'
 import PhraseDetail from './pages/PhraseDetail'
@@ -46,6 +47,7 @@ export default function App() {
             <Route path="/compose" element={<Compose />} />
             <Route path="/modeling" element={<Modeling />} />
             <Route path="/pronounce" element={<Pronounce />} />
+            <Route path="/long-reading" element={<LongReading />} />
             <Route path="/browse" element={<Browse />} />
             <Route path="/examples" element={<Examples />} />
             <Route path="/phrase/:id" element={<PhraseDetail />} />

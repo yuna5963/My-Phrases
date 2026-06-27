@@ -188,5 +188,80 @@
     "note": "サンプル。ビジネスで短く連絡・確認する表現",
     "status": "未着手",
     "createdTime": ""
+  },
+  {
+    "id": "LR001",
+    "en": "Starting the morning calmly",
+    "ja": "穏やかに朝を始める",
+    "examples": [
+      { "en": "Many people say that the way you start your morning shapes the rest of your day. A calm morning does not happen by accident. It usually comes from small habits, such as waking up at the same time, drinking a glass of water, and staying away from your phone for a while. Some people like to stretch or take a short walk, while others prefer to read or write down their plans. The activity itself is not the most important thing. What matters is having a few quiet minutes before the busy day begins. With a steady routine, the morning feels less rushed.", "ja": "一日の始まり方が、その後の一日を形づくるとよく言われます。穏やかな朝は偶然には訪れません。たいていは、毎日同じ時間に起きる、コップ一杯の水を飲む、しばらくスマホから離れる、といった小さな習慣から生まれます。ストレッチや短い散歩を好む人もいれば、読書や予定を書き出すことを好む人もいます。活動そのものが一番大切なのではありません。大事なのは、忙しい一日が始まる前に静かな数分を持つことです。安定したルーティンがあれば、朝の慌ただしさが和らぎます。" }
+    ],
+    "type": "Long Reading",
+    "category": "Daily Life",
+    "level": "Intermediate",
+    "priority": "★★★★☆",
+    "note": "サンプル長文。朝の習慣がテーマ。",
+    "status": "未着手",
+    "createdTime": ""
+  },
+  {
+    "id": "LR002",
+    "en": "The simple power of walking",
+    "ja": "歩くことのシンプルな力",
+    "examples": [
+      { "en": "Walking is one of the simplest forms of exercise, yet it offers many benefits. You do not need special equipment or a gym membership to begin. A short walk after lunch can help your body digest food and clear your mind. Longer walks in a park or near water can reduce stress and lift your mood. Studies suggest that people who walk regularly tend to sleep better and feel more energetic. The key is to make it a habit rather than a rare event. Even ten minutes a day can make a real difference over time.", "ja": "ウォーキングは最も手軽な運動の一つですが、多くの利点があります。始めるのに特別な道具やジムの会員権は必要ありません。昼食後の短い散歩は、消化を助け、頭をすっきりさせてくれます。公園や水辺での長めの散歩は、ストレスを減らし、気分を明るくしてくれます。定期的に歩く人は、睡眠の質が良く、活力を感じやすい傾向があると研究は示しています。大切なのは、たまの出来事ではなく習慣にすることです。一日たった十分でも、続ければ確かな違いを生みます。" }
+    ],
+    "type": "Long Reading",
+    "category": "Health",
+    "level": "Intermediate",
+    "priority": "★★★★☆",
+    "note": "サンプル長文。運動・健康がテーマ。",
+    "status": "未着手",
+    "createdTime": ""
+  },
+  {
+    "id": "LR003",
+    "en": "Learning a new language",
+    "ja": "新しい言語を学ぶ",
+    "examples": [
+      { "en": "Learning a new language takes time and patience, but it can open many doors. At first, even simple sentences may feel difficult. You might forget words or make mistakes when you speak, and that is a normal part of the process. The most important thing is to practice a little every day instead of studying for many hours only once a week. Listening to songs, watching short videos, and talking with others can make learning more enjoyable. Mistakes are not failures; they are signs that you are trying. Step by step, the language slowly becomes a part of you.", "ja": "新しい言語を学ぶには時間と忍耐が必要ですが、それは多くの扉を開いてくれます。最初は、簡単な文でさえ難しく感じるかもしれません。話すときに単語を忘れたり間違えたりすることもありますが、それは学習の過程ではごく普通のことです。一番大切なのは、週に一度何時間も勉強するのではなく、毎日少しずつ練習することです。歌を聞いたり、短い動画を見たり、人と話したりすると、学びがより楽しくなります。間違いは失敗ではなく、挑戦している証拠です。一歩ずつ、その言語は少しずつ自分の一部になっていきます。" }
+    ],
+    "type": "Long Reading",
+    "category": "Learning",
+    "level": "Intermediate",
+    "priority": "★★★★★",
+    "note": "サンプル長文。語学学習がテーマ。",
+    "status": "未着手",
+    "createdTime": ""
+  },
+  {
+    "id": "LR004",
+    "en": "Why sleep matters",
+    "ja": "睡眠が大切な理由",
+    "examples": [
+      { "en": "Sleep is something we all need, but many people do not get enough of it. During sleep, the body repairs itself and the brain organizes the things we learned during the day. When we sleep too little, it becomes harder to focus, to remember details, and to stay in a good mood. Experts often suggest going to bed and waking up at regular times, even on weekends. A dark, quiet room and less screen time before bed can also help. Good sleep is not a luxury. It is a basic part of staying healthy and thinking clearly.", "ja": "睡眠は誰もが必要とするものですが、多くの人は十分に取れていません。眠っている間に、体は自らを修復し、脳は日中に学んだことを整理します。睡眠が足りないと、集中したり、細かいことを覚えたり、良い気分を保ったりするのが難しくなります。専門家はよく、週末でも同じ時間に寝起きすることを勧めます。暗く静かな部屋や、寝る前に画面を見る時間を減らすことも役立ちます。良い睡眠はぜいたくではありません。健康を保ち、はっきりと考えるための基本的な要素です。" }
+    ],
+    "type": "Long Reading",
+    "category": "Health",
+    "level": "Intermediate",
+    "priority": "★★★★☆",
+    "note": "サンプル長文。睡眠がテーマ。",
+    "status": "未着手",
+    "createdTime": ""
+  },
+  {
+    "id": "LR005",
+    "en": "Exploring a local market",
+    "ja": "地元の市場を歩く",
+    "examples": [
+      { "en": "One of the best ways to understand a new place is to visit a local market. Unlike large shopping malls, markets show the everyday life of a community. You can see fresh fruit, colorful vegetables, and dishes you have never tried before. The smell of street food fills the air, and sellers call out to passing customers. Even if you do not buy anything, walking through a market is a kind of adventure. You can watch how people talk, bargain, and share small jokes. These little moments often become the memories you keep long after the trip is over.", "ja": "新しい土地を知る最良の方法の一つは、地元の市場を訪れることです。大きなショッピングモールとは違い、市場はその地域の日常の暮らしを見せてくれます。新鮮な果物、色とりどりの野菜、これまで食べたことのない料理を目にすることができます。屋台料理の香りが漂い、売り手は通りかかる客に声をかけます。たとえ何も買わなくても、市場を歩くこと自体が一種の冒険です。人々がどう話し、値段を交渉し、ちょっとした冗談を交わすのかを眺められます。こうした小さな瞬間が、旅が終わったずっと後まで残る思い出になることがよくあります。" }
+    ],
+    "type": "Long Reading",
+    "category": "Travel",
+    "level": "Intermediate",
+    "priority": "★★★★☆",
+    "note": "サンプル長文。旅・市場がテーマ。",
+    "status": "未着手",
+    "createdTime": ""
   }
 ]
