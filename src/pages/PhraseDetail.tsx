@@ -5,6 +5,7 @@ import { useSettings } from '../store/useSettings'
 import { hasVoiceForLang, loadVoices, speakSequence, stopSpeaking } from '../lib/tts'
 import type { SeqPart } from '../lib/tts'
 import { useWakeLock } from '../lib/wakeLock'
+import { isLongReading } from '../lib/longReading'
 import MetaChips from '../components/MetaChips'
 import ReproCard from '../components/ReproCard'
 import type { Phrase } from '../types'
@@ -92,7 +93,9 @@ export default function PhraseDetail() {
   // whole deck. `backTo` remembers which list to return to.
   const baseIds = useMemo(() => {
     const passed = (location.state as { ids?: string[] } | null)?.ids
-    return passed && passed.length ? passed : phrases.map((p) => p.id)
+    if (passed && passed.length) return passed
+    // 一覧から渡されない（直接URL等）場合のフォールバック。長文音読は除外する。
+    return phrases.filter((p) => !isLongReading(p)).map((p) => p.id)
   }, [location.state, phrases])
   const backTo = (location.state as { backTo?: string } | null)?.backTo ?? '/browse'
 

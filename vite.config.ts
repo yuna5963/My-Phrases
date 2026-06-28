@@ -27,7 +27,9 @@ export default defineConfig({
         description: 'Notionの英語フレーズで瞬間英作文と発音練習',
         theme_color: '#0f172a',
         background_color: '#0f172a',
-        display: 'standalone',
+        display: 'fullscreen',
+        // Androidでステータスバーまで隠す全画面を狙う。非対応環境ではstandaloneにフォールバック。
+        display_override: ['fullscreen', 'standalone'],
         orientation: 'portrait',
         lang: 'ja',
         icons: [

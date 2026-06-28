@@ -3,6 +3,7 @@ import type { Grade, Phrase } from '../types'
 import { useDeck } from '../store/useDeck'
 import { useSettings } from '../store/useSettings'
 import { buildSession } from '../lib/session'
+import { isLongReading } from '../lib/longReading'
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr]
@@ -41,10 +42,11 @@ export function useSession(options: SessionOptions = {}) {
   const includeStatuses = useSettings((s) => s.includeStatuses)
   const sessionSize = useSettings((s) => s.sessionSize)
 
-  const pool = useMemo(
-    () => (filter ? phrases.filter(filter) : phrases),
-    [phrases, filter],
-  )
+  // 長文音読は専用モードでのみ扱うので、通常の練習プールからは常に除外する。
+  const pool = useMemo(() => {
+    const base = phrases.filter((p) => !isLongReading(p))
+    return filter ? base.filter(filter) : base
+  }, [phrases, filter])
 
   const phraseById = useMemo(
     () => Object.fromEntries(pool.map((p) => [p.id, p])) as Record<string, Phrase>,
@@ -91,6 +93,13 @@ export function useSession(options: SessionOptions = {}) {
   const empty = queue.length === 0
   const done = !empty && pos >= queue.length
 
+  // 採点せずにカードを前後に送る（フレーズ再生と同じ「← 戻る / 進む →」用）。
+  // 末尾を越えて done には進めない（採点でのみセッションを終える）。
+  const canPrev = pos > 0
+  const canNext = pos < queue.length - 1
+  const goPrev = () => setPos((p) => Math.max(0, p - 1))
+  const goNext = () => setPos((p) => Math.min(queue.length - 1, p + 1))
+
   async function answer(g: Grade) {
     const id = queue[pos]
     if (!id) return
@@ -115,5 +124,9 @@ export function useSession(options: SessionOptions = {}) {
     empty,
     answer,
     restart,
+    canPrev,
+    canNext,
+    goPrev,
+    goNext,
   }
 }
