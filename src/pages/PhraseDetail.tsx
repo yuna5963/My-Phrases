@@ -277,9 +277,6 @@ export default function PhraseDetail() {
   return (
     <div className="flex h-full flex-col">
       <div className="mb-4 flex items-center justify-between text-sm">
-        <button onClick={() => navigate(backTo)} className="text-slate-400">
-          ← 一覧へ
-        </button>
         <span className="font-medium">フレーズ再生</span>
         <span className="text-slate-400">
           {play.cursor + 1} / {play.order.length}
@@ -382,6 +379,14 @@ export default function PhraseDetail() {
           進む →
         </button>
       </div>
+
+      {/* 片手で押せるよう、一覧へ戻る導線は画面下部に置く。 */}
+      <button
+        onClick={() => navigate(backTo)}
+        className="mt-2 w-full py-2 text-center text-sm text-slate-400 active:scale-95"
+      >
+        ← 一覧へ
+      </button>
 
       {dark && <DarkOverlay onExit={() => setDark(false)} />}
     </div>

@@ -7,13 +7,11 @@ export interface ReproItem {
   ja: string
 }
 
-// 英文を読み終えてから次の項目（日本語訳）へ進むまでの間。
-const GAP_NEXT = 2000
-
 /**
  * 再現練習カード（フレーズ再生・瞬間英作文で共有）。
- * 日本語訳を表示・再生 → タッチ → その項目の英文を表示・再生 → 2秒後に
- * 自動で次の項目の日本語訳へ。英文はタッチするまで非表示。
+ * 日本語訳を表示・再生 → タッチ → その項目の英文を表示・再生 → タッチ →
+ * 次の項目の日本語訳へ。各ステップはタッチで進み、自動では遷移しない。
+ * 英文はタッチするまで非表示。
  * `items` の identity が変わると先頭の項目から再開する。
  */
 export default function ReproCard({
@@ -36,29 +34,18 @@ export default function ReproCard({
     setSt({ idx: 0, revealed: false })
   }, [items])
 
-  // 音声ドライバ: 未公開→和訳を読み上げ、公開後→英文を読み上げて
-  // 2秒空けてから次の項目（和訳）へ自動で進む。タッチは onTap が担う。
+  // 音声ドライバ: 未公開→和訳を読み上げ、公開後→英文を読み上げる。
+  // 次の項目への遷移は自動では行わず、タッチ（onTap）でのみ進む。
   useEffect(() => {
     const it = items[st.idx]
     if (!it) return
-    let cancelled = false
-    let timer: ReturnType<typeof setTimeout> | undefined
-    const toNext = () => {
-      timer = setTimeout(() => {
-        if (!cancelled) {
-          setSt((s) => (s.idx + 1 < items.length ? { idx: s.idx + 1, revealed: false } : s))
-        }
-      }, GAP_NEXT)
-    }
     stopSpeaking()
     if (!st.revealed) {
       if (it.ja) speak(it.ja, { voiceURI, rate, lang: 'ja-JP' })
     } else {
-      speak(it.en, { voiceURI, rate, lang: 'en-US', onEnd: toNext, onError: toNext })
+      if (it.en) speak(it.en, { voiceURI, rate, lang: 'en-US' })
     }
     return () => {
-      cancelled = true
-      if (timer) clearTimeout(timer)
       stopSpeaking()
     }
   }, [st.idx, st.revealed, items, voiceURI, rate])

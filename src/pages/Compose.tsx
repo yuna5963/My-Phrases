@@ -120,6 +120,14 @@ export default function Compose() {
           </button>
         </div>
       )}
+
+      {/* 片手で押せるよう、終了は画面下部に置く。 */}
+      <button
+        onClick={() => navigate('/')}
+        className="mt-2 w-full py-2 text-center text-sm text-slate-400 active:scale-95"
+      >
+        ✕ やめる
+      </button>
     </div>
   )
 }
