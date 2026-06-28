@@ -42,7 +42,7 @@ export default function LongReading() {
   if (items.length === 0) {
     return (
       <div className="flex h-full flex-col">
-        <Header onBack={() => navigate('/')} pos={0} total={0} />
+        <Header pos={0} total={0} />
         <div className="pt-20 text-center text-slate-500">
           <p>長文音読のコンテンツがありません。</p>
           <p className="mt-1 text-xs text-slate-400">
@@ -74,7 +74,7 @@ export default function LongReading() {
 
   return (
     <div className="flex h-full flex-col">
-      <Header onBack={() => navigate('/')} pos={pos + 1} total={items.length} />
+      <Header pos={pos + 1} total={items.length} />
 
       {/* 本文は長いのでこの領域だけスクロール。お手本ボタンは常時見えるよう外に出す。 */}
       <div className="min-h-0 flex-1 overflow-y-auto py-2">
@@ -130,24 +130,21 @@ export default function LongReading() {
         canPrev={pos > 0}
         canNext={pos < items.length - 1}
       />
+
+      {/* 片手で押せるよう、終了は画面下部に置く。 */}
+      <button
+        onClick={() => navigate('/')}
+        className="mt-2 w-full py-2 text-center text-sm text-slate-400 active:scale-95"
+      >
+        ✕ やめる
+      </button>
     </div>
   )
 }
 
-function Header({
-  onBack,
-  pos,
-  total,
-}: {
-  onBack: () => void
-  pos: number
-  total: number
-}) {
+function Header({ pos, total }: { pos: number; total: number }) {
   return (
     <div className="mb-2 flex items-center justify-between text-sm">
-      <button onClick={onBack} className="text-slate-400">
-        ✕ やめる
-      </button>
       <span className="font-medium">長文音読</span>
       <span className="text-slate-400">
         {pos} / {total}
