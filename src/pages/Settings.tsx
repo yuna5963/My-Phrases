@@ -111,6 +111,9 @@ export default function Settings() {
         <Row label="解答時に自動で読み上げ">
           <Toggle checked={s.autoPlay} onChange={s.setAutoPlay} />
         </Row>
+        <Row label="カナ（音節）を表示">
+          <Toggle checked={s.showKana} onChange={s.setShowKana} />
+        </Row>
         <button
           onClick={runTest}
           className="w-full rounded-xl bg-sky-500 px-4 py-2.5 font-medium text-white"
@@ -221,7 +224,7 @@ export default function Settings() {
           <p>
             <span className="font-medium">① CSVを直接</span>（
             <code className="rounded bg-slate-200 px-1 dark:bg-slate-800">.csv</code>
-            ）— 列: ID, Type, Category, Level, Priority, Chunk, 日本語, Example1, 日本語訳1, … Example5, 日本語訳5, Note
+            ）— 列: ID, Type, Category, Level, Priority, Chunk, 日本語, Example1, 日本語訳1, … Example5, 日本語訳5, Note。任意で <strong>音節</strong>（チャンクのカナ）/ <strong>音節1〜音節5</strong>（各例文のカナ）列を追加できます。強勢の音節は <code className="rounded bg-slate-200 px-1 dark:bg-slate-800">*</code> で囲むと太字表示されます（例: ス・*ティ*‿ラ）
           </p>
           <p>
             <span className="font-medium">② Notionエクスポート</span> — DBの「•••」→

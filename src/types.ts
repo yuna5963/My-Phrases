@@ -2,12 +2,14 @@
 export interface Example {
   en: string
   ja: string
+  kana?: string // シラブル音節のカタカナ表記（任意・CSVの「音節{n}」列）
 }
 
 export interface Phrase {
   id: string
   en: string // Chunk（見出しの語・型）
   ja: string // チャンクの日本語訳（CSVの「日本語」列）
+  kana?: string // チャンク英語のシラブル音節カタカナ表記（任意・CSVの「音節」列）
   examples: Example[] // 例文（最大5）。各例文に日本語訳を持つ
   type: string // Nuance / Pattern / Chunk / Connector / Phrase
   category: string // Daily Status / Health / Work ...

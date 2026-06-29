@@ -8,6 +8,7 @@ import SessionSummary from '../components/SessionSummary'
 import PlayButton from '../components/PlayButton'
 import ReproCard from '../components/ReproCard'
 import StepNav from '../components/StepNav'
+import KanaLine from '../components/KanaLine'
 
 /**
  * 瞬間英作文: 日本語（チャンクの意味）を見て英語チャンクを即作文し、
@@ -61,6 +62,7 @@ export default function Compose() {
               <p className="text-xl font-semibold text-sky-600 dark:text-sky-400">
                 {c.en}
               </p>
+              <KanaLine kana={c.kana} className="text-center" />
               <div className="mt-4 flex justify-center">
                 <PlayButton text={c.en} />
               </div>

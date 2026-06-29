@@ -13,6 +13,7 @@ export interface SettingsState {
   speakPhrase: boolean // フレーズ（英語）を読み上げる
   speakExample: boolean // 例文（英語）を読み上げる
   speakJa: boolean // 日本語訳も読み上げる
+  showKana: boolean // 英文の下にシラブル音節カナを表示する
   setVoiceURI: (v: string | null) => void
   setRate: (r: number) => void
   setAutoPlay: (b: boolean) => void
@@ -23,6 +24,7 @@ export interface SettingsState {
   setSpeakPhrase: (b: boolean) => void
   setSpeakExample: (b: boolean) => void
   setSpeakJa: (b: boolean) => void
+  setShowKana: (b: boolean) => void
 }
 
 export const ALL_STATUSES = ['未着手', '進行中', '完了']
@@ -40,6 +42,7 @@ export const useSettings = create<SettingsState>()(
       speakPhrase: true,
       speakExample: true,
       speakJa: false,
+      showKana: true,
       setVoiceURI: (voiceURI) => set({ voiceURI }),
       setRate: (rate) => set({ rate }),
       setAutoPlay: (autoPlay) => set({ autoPlay }),
@@ -55,6 +58,7 @@ export const useSettings = create<SettingsState>()(
       setSpeakPhrase: (speakPhrase) => set({ speakPhrase }),
       setSpeakExample: (speakExample) => set({ speakExample }),
       setSpeakJa: (speakJa) => set({ speakJa }),
+      setShowKana: (showKana) => set({ showKana }),
     }),
     { name: 'my-phrases-settings' },
   ),

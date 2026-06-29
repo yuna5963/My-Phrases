@@ -7,6 +7,7 @@ import { useWakeLock } from '../lib/wakeLock'
 import { isLongReading } from '../lib/longReading'
 import MetaChips from '../components/MetaChips'
 import StepNav from '../components/StepNav'
+import KanaLine from '../components/KanaLine'
 
 /**
  * 長文音読モード。Type=Long Reading のフレーズだけを対象に、本文（examples[0]）を
@@ -83,6 +84,7 @@ export default function LongReading() {
             <p className="text-lg font-bold leading-relaxed text-amber-600 dark:text-amber-400">
               {current!.en}
             </p>
+            <KanaLine kana={current!.kana} className="text-center" />
             <p className="mt-1 text-sm text-slate-500">{current!.ja}</p>
             <MetaChips phrase={current!} className="mt-2" />
           </div>
@@ -91,6 +93,7 @@ export default function LongReading() {
             <p className="text-left text-lg leading-loose text-slate-800 dark:text-slate-100">
               {passage?.en}
             </p>
+            <KanaLine kana={passage?.kana} className="text-left leading-relaxed" />
             {passage?.ja && (
               <>
                 <button
