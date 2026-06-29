@@ -8,6 +8,7 @@ import { useWakeLock } from '../lib/wakeLock'
 import { isLongReading } from '../lib/longReading'
 import MetaChips from '../components/MetaChips'
 import ReproCard from '../components/ReproCard'
+import KanaLine from '../components/KanaLine'
 import type { Phrase } from '../types'
 
 /** Fisher–Yates shuffle that keeps `firstId` at the front so playback can
@@ -31,17 +32,19 @@ interface SpeakFlags {
 const GAP_EN_JA = 1500
 const GAP_NEXT = 2000
 
-/** 1項目（チャンク or 例文）の英文と和訳。 */
+/** 1項目（チャンク or 例文）の英文と和訳・カナ。 */
 interface Item {
   en: string
   ja: string
+  kana?: string
 }
 
 /** トグルに従って読み上げ・再現の対象となる項目列を作る（チャンク→例文）。 */
 function buildItems(p: Phrase, opts: { phrase: boolean; example: boolean }): Item[] {
   const items: Item[] = []
-  if (opts.phrase && p.en) items.push({ en: p.en, ja: p.ja })
-  if (opts.example) for (const ex of p.examples) if (ex.en) items.push({ en: ex.en, ja: ex.ja })
+  if (opts.phrase && p.en) items.push({ en: p.en, ja: p.ja, kana: p.kana })
+  if (opts.example)
+    for (const ex of p.examples) if (ex.en) items.push({ en: ex.en, ja: ex.ja, kana: ex.kana })
   return items
 }
 
@@ -295,6 +298,7 @@ export default function PhraseDetail() {
               <p className="text-2xl font-bold leading-relaxed text-violet-600 dark:text-violet-400">
                 {phrase.en}
               </p>
+              <KanaLine kana={phrase.kana} className="text-center" />
               <p className="mt-2 text-sm text-slate-500">{phrase.ja}</p>
               <MetaChips phrase={phrase} />
             </div>
@@ -305,6 +309,7 @@ export default function PhraseDetail() {
                     <p className="text-base leading-relaxed text-slate-700 dark:text-slate-200">
                       {ex.en}
                     </p>
+                    <KanaLine kana={ex.kana} />
                     {ex.ja && (
                       <p className="mt-0.5 text-xs text-slate-400">{ex.ja}</p>
                     )}

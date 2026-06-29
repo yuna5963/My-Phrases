@@ -11,6 +11,7 @@ const COL_LEVEL = ['Level', 'Difficulty', '難易度']
 const COL_PRIORITY = ['Priority', '優先度']
 const COL_NOTE = ['Note', 'メモ', '備考']
 const COL_STATUS = ['ステータス', 'Status']
+const COL_KANA = ['音節', 'Chunkカナ', 'Chunk_Kana', 'Syllable', 'カナ'] // チャンクのシラブル音節カナ
 // 旧フォーマットの単一例文列。
 const COL_EX_SINGLE = ['使用例（例文）', '例文', '使用例', '例']
 
@@ -66,9 +67,16 @@ function readExamples(header: string[], cells: string[]): Example[] {
       `例文${n}日本語`,
       `Ja${n}`,
     ])
+    const iKana = firstIndexOf(header, [
+      `音節${n}`,
+      `Example${n}カナ`,
+      `Example${n}_Kana`,
+      `カナ${n}`,
+    ])
     const en = clean(cells[iEn] ?? '')
     if (!en) continue
-    out.push({ en, ja: iJa >= 0 ? clean(cells[iJa] ?? '') : '' })
+    const kana = iKana >= 0 ? clean(cells[iKana] ?? '') : ''
+    out.push({ en, ja: iJa >= 0 ? clean(cells[iJa] ?? '') : '', ...(kana ? { kana } : {}) })
   }
   if (out.length) return out
   // 旧フォーマット: 単一の例文列。
@@ -93,10 +101,12 @@ function makePhrase(
   const ja = at(COL_JA)
   if (!en || !ja) return null
   const id = at(COL_ID) || fallbackId || stableId(en)
+  const kana = at(COL_KANA)
   return {
     id,
     en,
     ja,
+    ...(kana ? { kana } : {}),
     examples: readExamples(header, cells),
     type: at(COL_TYPE),
     category: at(COL_CATEGORY),

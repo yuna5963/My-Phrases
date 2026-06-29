@@ -1,10 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { speak, stopSpeaking } from '../lib/tts'
 import { useSettings } from '../store/useSettings'
+import KanaLine from './KanaLine'
 
 export interface ReproItem {
   en: string
   ja: string
+  kana?: string // シラブル音節カナ（任意）
 }
 
 /**
@@ -72,11 +74,12 @@ export default function ReproCard({
         {it.ja}
       </p>
       {st.revealed ? (
-        <p
-          className={`mt-4 border-t border-slate-100 pt-4 text-xl font-bold leading-relaxed dark:border-slate-800 ${accentClass}`}
-        >
-          {it.en}
-        </p>
+        <div className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800">
+          <p className={`text-xl font-bold leading-relaxed ${accentClass}`}>
+            {it.en}
+          </p>
+          <KanaLine kana={it.kana} />
+        </div>
       ) : (
         <p className="mt-4 border-t border-slate-100 pt-4 text-sm text-slate-400 dark:border-slate-800">
           タッチして英文を表示 👆

@@ -3,12 +3,13 @@
     "id": "MP001",
     "en": "still",
     "ja": "まだ・依然として",
+    "kana": "*ス・ティル*",
     "examples": [
-      { "en": "I still have a headache.", "ja": "まだ頭痛があります。" },
-      { "en": "I still need more practice.", "ja": "まだもっと練習が必要です。" },
-      { "en": "I still think this is the best option.", "ja": "今でもこれが最善の選択肢だと思っています。" },
-      { "en": "Things could still go either way.", "ja": "状況はまだどちらにも転び得ます。" },
-      { "en": "I still have a long way to go.", "ja": "まだ先は長いです。" }
+      { "en": "I still have a headache.", "ja": "まだ頭痛があります。", "kana": "アイ ス・*ティ*‿ラ ヴァ *ヘッ*・デイク" },
+      { "en": "I still need more practice.", "ja": "まだもっと練習が必要です。", "kana": "アイ ス・*ティル* *ニー*(d) モア *プラク*・ティス" },
+      { "en": "I still think this is the best option.", "ja": "今でもこれが最善の選択肢だと思っています。", "kana": "アイ ス・*ティル* *シンク* ジ‿シ‿ザ *ベス*・ト‿*プ*・ション" },
+      { "en": "Things could still go either way.", "ja": "状況はまだどちらにも転び得ます。", "kana": "*シングズ* クッ(d) ス・*ティル* *ゴウ* *イー*・ザー *ウェイ*" },
+      { "en": "I still have a long way to go.", "ja": "まだ先は長いです。", "kana": "アイ ス・*ティ*‿ラ ヴァ *ロング* *ウェイ* タ *ゴウ*" }
     ],
     "type": "Nuance",
     "category": "Daily Status",

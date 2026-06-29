@@ -9,6 +9,7 @@ import SessionHeader from './SessionHeader'
 import SessionSummary from './SessionSummary'
 import MetaChips from './MetaChips'
 import StepNav from './StepNav'
+import KanaLine from './KanaLine'
 
 interface Props {
   title: string
@@ -110,6 +111,7 @@ export default function ListenPractice({ title, hint, accent, filter, practice }
             <p className={`text-2xl font-bold leading-relaxed ${accent.text}`}>
               {c.en}
             </p>
+            <KanaLine kana={c.kana} className="text-center" />
             <p className="mt-2 text-sm text-slate-500">{c.ja}</p>
             <MetaChips phrase={c} />
           </div>
@@ -121,6 +123,7 @@ export default function ListenPractice({ title, hint, accent, filter, practice }
                     <p className="text-base leading-relaxed text-slate-700 dark:text-slate-200">
                       {ex.en}
                     </p>
+                    <KanaLine kana={ex.kana} />
                     {ex.ja && <p className="mt-0.5 text-xs text-slate-400">{ex.ja}</p>}
                   </div>
                   <button
