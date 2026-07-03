@@ -81,7 +81,7 @@ export default function Examples() {
           >
             <button
               onClick={() =>
-                navigate(`/phrase/${r.phraseId}`, {
+                navigate(`/chunk/${r.phraseId}`, {
                   state: { ids, backTo: '/examples' },
                 })
               }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Grade, Phrase } from '../types'
 import { useDeck } from '../store/useDeck'
 import { useSettings } from '../store/useSettings'
-import { buildSession } from '../lib/session'
+import { buildSession, clusterByTypeCategory } from '../lib/session'
 import { isLongReading } from '../lib/longReading'
 
 function shuffle<T>(arr: T[]): T[] {
@@ -27,6 +27,16 @@ export interface SessionOptions {
   shuffle?: boolean
   /** 「自信なし」=「覚えた」未チェックのみを対象にする。 */
   onlyUnsure?: boolean
+  /**
+   * 期日到来カードが0件のときのランダム出題（fallback）を行わない。
+   * 「今日の練習」用: 0件なら空のまま返し、画面側で完了表示を出す。
+   */
+  noFallback?: boolean
+  /**
+   * 出題列を Type → Category でまとめ直す（瞬間英作文用）。
+   * 同じタイプ・同じカテゴリのチャンクへ優先的に遷移する。
+   */
+  clusterByFacet?: boolean
 }
 
 /**
@@ -36,7 +46,13 @@ export interface SessionOptions {
  * doesn't reshuffle the cards under the user.
  */
 export function useSession(options: SessionOptions = {}) {
-  const { filter, shuffle: shuffleOpt = false, onlyUnsure = false } = options
+  const {
+    filter,
+    shuffle: shuffleOpt = false,
+    onlyUnsure = false,
+    noFallback = false,
+    clusterByFacet = false,
+  } = options
   const phrases = useDeck((s) => s.phrases)
   const grade = useDeck((s) => s.grade)
   const includeStatuses = useSettings((s) => s.includeStatuses)
@@ -55,19 +71,19 @@ export function useSession(options: SessionOptions = {}) {
 
   const buildQueue = () => {
     const progress = useDeck.getState().progress
-    let ids = buildSession(pool, progress, includeStatuses, sessionSize, {
+    let picked = buildSession(pool, progress, includeStatuses, sessionSize, {
       onlyUnsure,
-    }).map((p) => p.id)
-    if (ids.length === 0) {
+    })
+    if (picked.length === 0 && !noFallback) {
       const fallback = pool.filter(
         (p) =>
           (includeStatuses.length === 0 || includeStatuses.includes(p.status)) &&
           (!onlyUnsure || !progress[p.id]?.learned),
       )
-      ids = shuffle(fallback)
-        .slice(0, sessionSize)
-        .map((p) => p.id)
+      picked = shuffle(fallback).slice(0, sessionSize)
     }
+    if (clusterByFacet) picked = clusterByTypeCategory(picked)
+    let ids = picked.map((p) => p.id)
     if (shuffleOpt) ids = shuffle(ids)
     return ids
   }
