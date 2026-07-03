@@ -37,7 +37,7 @@ export default function Browse() {
             >
               <button
                 onClick={() =>
-                  navigate(`/phrase/${p.id}`, {
+                  navigate(`/chunk/${p.id}`, {
                     state: { ids: filtered.map((x) => x.id), backTo: '/browse' },
                   })
                 }
@@ -63,6 +63,17 @@ export default function Browse() {
                 className="shrink-0 rounded-full bg-sky-100 px-3 py-2 text-sky-600 active:scale-95 dark:bg-sky-900/40 dark:text-sky-400"
               >
                 🔊
+              </button>
+              <button
+                onClick={() =>
+                  navigate(`/phrase/${p.id}`, {
+                    state: { ids: filtered.map((x) => x.id), backTo: '/browse' },
+                  })
+                }
+                title="連続再生"
+                className="shrink-0 rounded-full bg-violet-100 px-3 py-2 text-violet-600 active:scale-95 dark:bg-violet-900/40 dark:text-violet-400"
+              >
+                ▶
               </button>
             </li>
           )

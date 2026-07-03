@@ -52,7 +52,21 @@ export default function Home() {
         <Stat value={stats.total} label="登録フレーズ" />
       </section>
 
-      <section className="space-y-3 pt-2">
+      <section className="pt-2">
+        <button
+          onClick={() => navigate('/daily')}
+          className="w-full rounded-2xl bg-emerald-600 px-5 py-5 text-left text-white shadow active:scale-[0.99]"
+        >
+          <div className="text-lg font-bold">▶ 今日の練習</div>
+          <div className="text-sm text-emerald-100">
+            {stats.due > 0
+              ? `期日到来 ${stats.due} 件を習熟度に合わせて出題`
+              : '今日の分は完了。下のモードで追加練習もできます'}
+          </div>
+        </button>
+      </section>
+
+      <section className="space-y-3">
         <button
           onClick={() => navigate('/compose')}
           className="w-full rounded-2xl bg-sky-500 px-5 py-4 text-left text-white shadow active:scale-[0.99]"
@@ -61,18 +75,18 @@ export default function Home() {
           <div className="text-sm text-sky-100">日本語を見てチャンクを即作文＋例文確認</div>
         </button>
         <button
-          onClick={() => navigate('/modeling')}
-          className="w-full rounded-2xl bg-teal-500 px-5 py-4 text-left text-white shadow active:scale-[0.99]"
-        >
-          <div className="text-lg font-bold">📝 モデリング</div>
-          <div className="text-sm text-teal-100">チャンク＋5例文をお手本に音読</div>
-        </button>
-        <button
           onClick={() => navigate('/pronounce')}
           className="w-full rounded-2xl bg-violet-500 px-5 py-4 text-left text-white shadow active:scale-[0.99]"
         >
           <div className="text-lg font-bold">🗣️ 発音練習</div>
-          <div className="text-sm text-violet-100">お手本を聞いて声に出す</div>
+          <div className="text-sm text-violet-100">チャンク＋5例文をお手本に音読</div>
+        </button>
+        <button
+          onClick={() => navigate('/cloze')}
+          className="w-full rounded-2xl bg-rose-500 px-5 py-4 text-left text-white shadow active:scale-[0.99]"
+        >
+          <div className="text-lg font-bold">🧩 文脈穴埋め</div>
+          <div className="text-sm text-rose-100">例文の穴からチャンクを思い出す</div>
         </button>
         <button
           onClick={() => navigate('/long-reading')}

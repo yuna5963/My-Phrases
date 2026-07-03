@@ -5,12 +5,14 @@ import { isTTSAvailable, loadVoices, primeTTS } from './lib/tts'
 import BottomNav from './components/BottomNav'
 import SupportBanner from './components/SupportBanner'
 import Home from './pages/Home'
+import Daily from './pages/Daily'
 import Compose from './pages/Compose'
-import Modeling from './pages/Modeling'
 import Pronounce from './pages/Pronounce'
 import LongReading from './pages/LongReading'
+import Cloze from './pages/Cloze'
 import Browse from './pages/Browse'
 import Examples from './pages/Examples'
+import ChunkDetail from './pages/ChunkDetail'
 import PhraseDetail from './pages/PhraseDetail'
 import Settings from './pages/Settings'
 
@@ -44,12 +46,14 @@ export default function App() {
         ) : (
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/daily" element={<Daily />} />
             <Route path="/compose" element={<Compose />} />
-            <Route path="/modeling" element={<Modeling />} />
             <Route path="/pronounce" element={<Pronounce />} />
             <Route path="/long-reading" element={<LongReading />} />
+            <Route path="/cloze" element={<Cloze />} />
             <Route path="/browse" element={<Browse />} />
             <Route path="/examples" element={<Examples />} />
+            <Route path="/chunk/:id" element={<ChunkDetail />} />
             <Route path="/phrase/:id" element={<PhraseDetail />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/" replace />} />

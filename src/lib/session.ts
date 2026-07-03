@@ -43,6 +43,26 @@ export function buildSession(
   return due.slice(0, size)
 }
 
+/**
+ * 出題列を Type → Category でまとめ直す（瞬間英作文用）。
+ * 同じタイプ・同じカテゴリのチャンクが続けて出るので、表現のまとまりで練習できる。
+ * グループの順序は元の並び（弱い順）での初出順、グループ内も元の並びを保つ。
+ */
+export function clusterByTypeCategory(list: Phrase[]): Phrase[] {
+  // Map は挿入順を保持するので、初出順のグループ化にそのまま使える。
+  const byType = new Map<string, Map<string, Phrase[]>>()
+  for (const p of list) {
+    const catMap = byType.get(p.type) ?? new Map<string, Phrase[]>()
+    if (!byType.has(p.type)) byType.set(p.type, catMap)
+    const arr = catMap.get(p.category) ?? []
+    if (!catMap.has(p.category)) catMap.set(p.category, arr)
+    arr.push(p)
+  }
+  const out: Phrase[] = []
+  for (const catMap of byType.values()) for (const arr of catMap.values()) out.push(...arr)
+  return out
+}
+
 export function computeStats(
   phrases: Phrase[],
   progress: Record<string, Progress>,
