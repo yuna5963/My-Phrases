@@ -9,6 +9,9 @@
 
 ## [Unreleased]
 
+### 修正
+- **CI: GitHub Pages デプロイの `npm ci` 失敗を修正**。vitest 4.x が vite 5 プロジェクトに別系統の vite/esbuild を持ち込み、`package-lock.json` に一部プラットフォームの `@esbuild/*` が記録されず `npm ci` が lock 不整合で失敗していた。vitest を vite 5 と依存を共有する `^2.1.9` に固定し、lock を再生成して解消（アプリの挙動・バージョンに変更なし）
+
 ## [0.6.0] - 2026-07-04
 
 ### 追加
