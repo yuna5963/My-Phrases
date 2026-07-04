@@ -5,9 +5,11 @@ import { useSettings } from '../store/useSettings'
 import { speak, stopSpeaking } from '../lib/tts'
 import { useWakeLock } from '../lib/wakeLock'
 import { isLongReading } from '../lib/longReading'
+import { useSpokenWordTracker } from '../hooks/useSpokenWordTracker'
 import MetaChips from '../components/MetaChips'
 import StepNav from '../components/StepNav'
 import KanaLine from '../components/KanaLine'
+import SpokenText from '../components/SpokenText'
 
 /**
  * 長文音読モード。Type=Long Reading のフレーズだけを対象に、本文（examples[0]）を
@@ -26,6 +28,9 @@ export default function LongReading() {
   const [showJa, setShowJa] = useState(false)
   const [playing, setPlaying] = useState(false)
 
+  // 読み上げ中の単語をカラオケ式にハイライトする。
+  const tracker = useSpokenWordTracker()
+
   // 長文の読み上げ中は画面スリープを抑止（消灯で再生が止まらないように）。
   useWakeLock(playing)
 
@@ -35,8 +40,10 @@ export default function LongReading() {
   // カード切替・離脱時は読み上げを止め、訳の表示もリセットする。
   useEffect(() => {
     stopSpeaking()
+    tracker.stop()
     setPlaying(false)
     setShowJa(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pos])
   useEffect(() => () => stopSpeaking(), [])
 
@@ -57,19 +64,32 @@ export default function LongReading() {
     )
   }
 
+  const stopPlayback = () => {
+    stopSpeaking()
+    tracker.stop()
+    setPlaying(false)
+  }
+
   const togglePlay = () => {
     if (playing) {
-      stopSpeaking()
-      setPlaying(false)
+      stopPlayback()
       return
     }
     if (!passage?.en) return
     setPlaying(true)
+    tracker.start(passage.en, rate)
     speak(passage.en, {
       voiceURI,
       rate,
-      onEnd: () => setPlaying(false),
-      onError: () => setPlaying(false),
+      onBoundary: tracker.onBoundary,
+      onEnd: () => {
+        tracker.stop()
+        setPlaying(false)
+      },
+      onError: () => {
+        tracker.stop()
+        setPlaying(false)
+      },
     })
   }
 
@@ -91,7 +111,9 @@ export default function LongReading() {
 
           <div className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800">
             <p className="text-left text-lg leading-loose text-slate-800 dark:text-slate-100">
-              {passage?.en}
+              {passage?.en && (
+                <SpokenText text={passage.en} current={tracker.current} />
+              )}
             </p>
             <KanaLine kana={passage?.kana} className="text-left leading-relaxed" />
             {passage?.ja && (

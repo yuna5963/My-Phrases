@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { speak, stopSpeaking } from '../lib/tts'
 import { useSettings } from '../store/useSettings'
+import { useSpokenWordTracker } from '../hooks/useSpokenWordTracker'
 import type { Phrase } from '../types'
 import KanaLine from './KanaLine'
+import SpokenText from './SpokenText'
 
 export interface ReproItem {
   en: string
@@ -60,20 +62,39 @@ export default function ReproCard({
     setSt({ idx: 0, revealed: false })
   }, [items])
 
+  // 開示した英文の読み上げ位置をカラオケ式にハイライトする。
+  const tracker = useSpokenWordTracker()
+
+  // 英文を読み上げつつ単語ハイライトを追跡する（🔊もう一度でも使う）。
+  const speakEn = (en: string) => {
+    tracker.start(en, rate)
+    speak(en, {
+      voiceURI,
+      rate,
+      lang: 'en-US',
+      onBoundary: tracker.onBoundary,
+      onEnd: tracker.stop,
+      onError: tracker.stop,
+    })
+  }
+
   // 音声ドライバ: 未公開→和訳を読み上げ、公開後→英文を読み上げる。
   // 次の項目への遷移は自動では行わず、タッチ（onTap）でのみ進む。
   useEffect(() => {
     const it = items[st.idx]
     if (!it) return
     stopSpeaking()
+    tracker.stop()
     if (!st.revealed) {
       if (it.ja) speak(it.ja, { voiceURI, rate, lang: 'ja-JP' })
     } else {
-      if (it.en) speak(it.en, { voiceURI, rate, lang: 'en-US' })
+      if (it.en) speakEn(it.en)
     }
     return () => {
       stopSpeaking()
+      tracker.stop()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [st.idx, st.revealed, items, voiceURI, rate])
 
   if (!items.length) return null
@@ -102,14 +123,14 @@ export default function ReproCard({
       {st.revealed ? (
         <div className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800">
           <p className={`text-xl font-bold leading-relaxed ${accentClass}`}>
-            {it.en}
+            <SpokenText text={it.en} current={tracker.current} />
           </p>
           <KanaLine kana={it.kana} />
           <button
             onClick={(e) => {
               e.stopPropagation()
               stopSpeaking()
-              if (it.en) speak(it.en, { voiceURI, rate, lang: 'en-US' })
+              if (it.en) speakEn(it.en)
             }}
             className="mt-3 rounded-full bg-sky-100 px-4 py-2 text-sm font-medium text-sky-600 active:scale-95 dark:bg-sky-900/40 dark:text-sky-400"
           >

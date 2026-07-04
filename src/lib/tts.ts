@@ -124,6 +124,12 @@ export interface SpeakOptions {
   onStart?: () => void
   onEnd?: () => void
   onError?: (message: string) => void
+  /**
+   * 単語境界ごとに文字位置（charIndex）を通知する（カラオケ式ハイライト用）。
+   * 対応エンジンのみ発火し、Android Chrome の Google TTS 等では発火しないことがある。
+   * 発火しない環境は呼び出し側で推定タイミングにフォールバックする。
+   */
+  onBoundary?: (charIndex: number) => void
 }
 
 export function speak(text: string, opts: SpeakOptions = {}): void {
@@ -155,6 +161,13 @@ export function speak(text: string, opts: SpeakOptions = {}): void {
   if (opts.onStart) u.onstart = () => opts.onStart!()
   if (opts.onEnd) u.onend = () => opts.onEnd!()
   u.onerror = (e) => opts.onError?.(e.error || '再生に失敗しました')
+  if (opts.onBoundary) {
+    u.onboundary = (e) => {
+      // 文境界は無視し、単語境界（エンジンにより name='word' または空）だけ通知する。
+      if (e.name === 'sentence') return
+      opts.onBoundary!(e.charIndex)
+    }
+  }
 
   const start = () => {
     unlocked = true
