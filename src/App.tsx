@@ -7,7 +7,6 @@ import SupportBanner from './components/SupportBanner'
 import Home from './pages/Home'
 import Daily from './pages/Daily'
 import Compose from './pages/Compose'
-import Pronounce from './pages/Pronounce'
 import LongReading from './pages/LongReading'
 import Cloze from './pages/Cloze'
 import Browse from './pages/Browse'
@@ -48,7 +47,6 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/daily" element={<Daily />} />
             <Route path="/compose" element={<Compose />} />
-            <Route path="/pronounce" element={<Pronounce />} />
             <Route path="/long-reading" element={<LongReading />} />
             <Route path="/cloze" element={<Cloze />} />
             <Route path="/browse" element={<Browse />} />

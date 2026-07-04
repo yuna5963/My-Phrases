@@ -75,13 +75,6 @@ export default function Home() {
           <div className="text-sm text-sky-100">日本語を見てチャンクを即作文＋例文確認</div>
         </button>
         <button
-          onClick={() => navigate('/pronounce')}
-          className="w-full rounded-2xl bg-violet-500 px-5 py-4 text-left text-white shadow active:scale-[0.99]"
-        >
-          <div className="text-lg font-bold">🗣️ 発音練習</div>
-          <div className="text-sm text-violet-100">チャンク＋5例文をお手本に音読</div>
-        </button>
-        <button
           onClick={() => navigate('/cloze')}
           className="w-full rounded-2xl bg-rose-500 px-5 py-4 text-left text-white shadow active:scale-[0.99]"
         >

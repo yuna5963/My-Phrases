@@ -5,17 +5,20 @@ import { speak } from '../lib/tts'
 import { useSettings } from '../store/useSettings'
 import { usePhraseFilter } from '../hooks/usePhraseFilter'
 import FacetFilters from '../components/FacetFilters'
+import Pager from '../components/Pager'
+import KanaLine from '../components/KanaLine'
 import type { Phrase } from '../types'
 
-const PAGE_SIZE = 30
+const PAGE_SIZE = 100
 
-/** 一覧に並べる1行＝あるチャンクの1例文（英文＋和訳＋親チャンク情報）。 */
+/** 一覧に並べる1行＝あるチャンクの1例文（英文＋カナ＋和訳＋親チャンク情報）。 */
 interface ExampleRow {
   key: string
   phraseId: string
   index: number // 例文1..5 の番号（表示用）
   en: string
   ja: string
+  kana?: string // シラブル音節カナ（任意）
   chunkEn: string
 }
 
@@ -31,6 +34,7 @@ function flattenExamples(phrases: Phrase[]): ExampleRow[] {
         index: i + 1,
         en: ex.en,
         ja: ex.ja,
+        kana: ex.kana,
         chunkEn: p.en,
       })
     })
@@ -88,6 +92,7 @@ export default function Examples() {
               className="min-w-0 flex-1 text-left active:opacity-70"
             >
               <p className="font-medium leading-relaxed">{r.en}</p>
+              <KanaLine kana={r.kana} />
               {r.ja && <p className="mt-0.5 text-sm text-slate-500">{r.ja}</p>}
               <p className="mt-1 truncate text-xs text-slate-400">
                 例文{r.index}・{r.chunkEn}
@@ -109,27 +114,12 @@ export default function Examples() {
         </p>
       )}
 
-      {pageCount > 1 && (
-        <div className="flex items-center justify-center gap-4 pt-2">
-          <button
-            onClick={() => setPage((n) => Math.max(0, n - 1))}
-            disabled={page === 0}
-            className="rounded-full bg-slate-200 px-5 py-2 text-sm font-medium text-slate-600 active:scale-95 disabled:opacity-40 disabled:active:scale-100 dark:bg-slate-800 dark:text-slate-300"
-          >
-            ← 前
-          </button>
-          <span className="text-sm text-slate-400">
-            {page + 1} / {pageCount}
-          </span>
-          <button
-            onClick={() => setPage((n) => Math.min(pageCount - 1, n + 1))}
-            disabled={page >= pageCount - 1}
-            className="rounded-full bg-slate-200 px-5 py-2 text-sm font-medium text-slate-600 active:scale-95 disabled:opacity-40 disabled:active:scale-100 dark:bg-slate-800 dark:text-slate-300"
-          >
-            次 →
-          </button>
-        </div>
-      )}
+      <Pager
+        page={page}
+        pageCount={pageCount}
+        onPrev={() => setPage((n) => Math.max(0, n - 1))}
+        onNext={() => setPage((n) => Math.min(pageCount - 1, n + 1))}
+      />
     </div>
   )
 }
