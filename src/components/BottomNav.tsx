@@ -9,7 +9,7 @@ const tabs = [
 
 // Full-screen practice routes hide the nav so its fixed bar can't overlap
 // the on-screen action buttons.
-const HIDDEN_PREFIXES = ['/daily', '/compose', '/pronounce', '/long-reading', '/cloze', '/phrase']
+const HIDDEN_PREFIXES = ['/daily', '/compose', '/long-reading', '/cloze', '/phrase']
 
 export default function BottomNav() {
   const { pathname } = useLocation()
