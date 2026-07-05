@@ -64,17 +64,24 @@ export default function ReproCard({
 
   // 開示した英文の読み上げ位置をカラオケ式にハイライトする。
   const tracker = useSpokenWordTracker()
+  // 再生し直し時、キャンセルされた旧発話の onEnd/onError が
+  // 新しいハイライトを消さないよう、世代トークンで判別する。
+  const playSeq = useRef(0)
 
   // 英文を読み上げつつ単語ハイライトを追跡する（🔊もう一度でも使う）。
   const speakEn = (en: string) => {
+    const id = ++playSeq.current
     tracker.start(en, rate)
+    const done = () => {
+      if (playSeq.current === id) tracker.stop()
+    }
     speak(en, {
       voiceURI,
       rate,
       lang: 'en-US',
       onBoundary: tracker.onBoundary,
-      onEnd: tracker.stop,
-      onError: tracker.stop,
+      onEnd: done,
+      onError: done,
     })
   }
 

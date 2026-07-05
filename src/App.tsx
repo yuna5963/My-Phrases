@@ -11,6 +11,7 @@ import LongReading from './pages/LongReading'
 import Cloze from './pages/Cloze'
 import Browse from './pages/Browse'
 import Examples from './pages/Examples'
+import ExampleDetail from './pages/ExampleDetail'
 import ChunkDetail from './pages/ChunkDetail'
 import PhraseDetail from './pages/PhraseDetail'
 import Settings from './pages/Settings'
@@ -51,6 +52,7 @@ export default function App() {
             <Route path="/cloze" element={<Cloze />} />
             <Route path="/browse" element={<Browse />} />
             <Route path="/examples" element={<Examples />} />
+            <Route path="/example/:phraseId/:index" element={<ExampleDetail />} />
             <Route path="/chunk/:id" element={<ChunkDetail />} />
             <Route path="/phrase/:id" element={<PhraseDetail />} />
             <Route path="/settings" element={<Settings />} />

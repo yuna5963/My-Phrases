@@ -44,8 +44,8 @@ function flattenExamples(phrases: Phrase[]): ExampleRow[] {
 
 /**
  * 例文一覧。チャンク一覧と同じ上部フィルタを流用し、各チャンクの例文1〜5を
- * すべて平坦に並べる。件数が多いのでページング表示。行をタッチすると親チャンクの
- * フレーズ再生（PhraseDetail）へ遷移する。
+ * すべて平坦に並べる。件数が多いのでページング表示。行をタッチすると
+ * その例文の**例文カード**（ExampleDetail: 日本語→タッチ→英文＋カラオケ）へ遷移する。
  */
 export default function Examples() {
   const navigate = useNavigate()
@@ -66,8 +66,11 @@ export default function Examples() {
   }, [rows])
 
   const pageRows = rows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE)
-  // 親チャンクのフレーズ再生で前後送りできるよう、絞り込み後の id 列を渡す。
-  const ids = useMemo(() => filtered.map((p) => p.id), [filtered])
+  // 例文カードで前後送りできるよう、絞り込み後の例文参照列（全ページ分）を渡す。
+  const itemRefs = useMemo(
+    () => rows.map((r) => ({ phraseId: r.phraseId, index: r.index - 1 })),
+    [rows],
+  )
 
   return (
     <div className="space-y-3">
@@ -85,8 +88,8 @@ export default function Examples() {
           >
             <button
               onClick={() =>
-                navigate(`/chunk/${r.phraseId}`, {
-                  state: { ids, backTo: '/examples' },
+                navigate(`/example/${r.phraseId}/${r.index - 1}`, {
+                  state: { items: itemRefs, backTo: '/examples' },
                 })
               }
               className="min-w-0 flex-1 text-left active:opacity-70"
