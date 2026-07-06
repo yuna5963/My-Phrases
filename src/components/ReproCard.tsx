@@ -62,7 +62,7 @@ export default function ReproCard({
     setSt({ idx: 0, revealed: false })
   }, [items])
 
-  // 開示した英文の読み上げ位置をカラオケ式にハイライトする。
+  // 開示した英文の読み上げ位置を Word Spark ハイライトする。
   const tracker = useSpokenWordTracker()
   // 再生し直し時、キャンセルされた旧発話の onEnd/onError が
   // 新しいハイライトを消さないよう、世代トークンで判別する。
@@ -80,7 +80,11 @@ export default function ReproCard({
       rate,
       lang: 'en-US',
       onBoundary: tracker.onBoundary,
-      onEnd: done,
+      onStart: tracker.onStart,
+      onEnd: () => {
+        tracker.onEnd()
+        done()
+      },
       onError: done,
     })
   }

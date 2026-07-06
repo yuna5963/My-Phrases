@@ -8,7 +8,7 @@ import SpokenText from './SpokenText'
 
 /**
  * 例文一覧（英＋カナ＋和、個別再生🔊つき）。音声はボタンを押した例文だけ再生し、
- * その行の英文を読み上げに合わせてカラオケ式にハイライトする（他の例文は表示のまま）。
+ * その行の英文を読み上げに合わせて Word Spark ハイライトする（他の例文は表示のまま）。
  * ModelCard（チャンク詳細・今日の練習）で共有。
  */
 export default function ExampleList({
@@ -21,7 +21,7 @@ export default function ExampleList({
   const voiceURI = useSettings((x) => x.voiceURI)
   const rate = useSettings((x) => x.rate)
 
-  // カラオケ式ハイライト: 再生中の例文番号と単語位置。
+  // Word Spark ハイライト: 再生中の例文番号と単語位置。
   const tracker = useSpokenWordTracker()
   const [active, setActive] = useState(-1)
   // 再生連打時、キャンセルされた旧発話の onEnd/onError が
@@ -38,7 +38,17 @@ export default function ExampleList({
       tracker.stop()
       setActive(-1)
     }
-    speak(en, { voiceURI, rate, onBoundary: tracker.onBoundary, onEnd: done, onError: done })
+    speak(en, {
+      voiceURI,
+      rate,
+      onBoundary: tracker.onBoundary,
+      onStart: tracker.onStart,
+      onEnd: () => {
+        tracker.onEnd()
+        done()
+      },
+      onError: done,
+    })
   }
 
   if (!examples.length) return null

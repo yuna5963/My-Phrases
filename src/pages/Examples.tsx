@@ -45,7 +45,7 @@ function flattenExamples(phrases: Phrase[]): ExampleRow[] {
 /**
  * 例文一覧。チャンク一覧と同じ上部フィルタを流用し、各チャンクの例文1〜5を
  * すべて平坦に並べる。件数が多いのでページング表示。行をタッチすると
- * その例文の**例文カード**（ExampleDetail: 日本語→タッチ→英文＋カラオケ）へ遷移する。
+ * その例文の**例文カード**（ExampleDetail: 日本語→タッチ→英文＋Word Spark）へ遷移する。
  */
 export default function Examples() {
   const navigate = useNavigate()
