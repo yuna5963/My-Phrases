@@ -28,7 +28,7 @@ export default function LongReading() {
   const [showJa, setShowJa] = useState(false)
   const [playing, setPlaying] = useState(false)
 
-  // 読み上げ中の単語をカラオケ式にハイライトする。
+  // 読み上げ中の単語を Word Spark ハイライトする。
   const tracker = useSpokenWordTracker()
 
   // 長文の読み上げ中は画面スリープを抑止（消灯で再生が止まらないように）。
@@ -82,7 +82,9 @@ export default function LongReading() {
       voiceURI,
       rate,
       onBoundary: tracker.onBoundary,
+      onStart: tracker.onStart,
       onEnd: () => {
+        tracker.onEnd()
         tracker.stop()
         setPlaying(false)
       },

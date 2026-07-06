@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { wordSpans } from '../lib/spokenWords'
 
 /**
- * カラオケ式ハイライト表示: 読み上げ中の単語（current 番目）をマーカー風に強調する。
+ * Word Spark ハイライト表示: 読み上げ中の単語（current 番目）をマーカー風に強調する。
  * 文字サイズは変えず（行の高さ・折り返しが揺れないよう）背景色＋文字色で示す。
  * current が -1 のときは通常のテキスト表示。
  */

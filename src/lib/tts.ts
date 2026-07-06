@@ -125,7 +125,7 @@ export interface SpeakOptions {
   onEnd?: () => void
   onError?: (message: string) => void
   /**
-   * 単語境界ごとに文字位置（charIndex）を通知する（カラオケ式ハイライト用）。
+   * 単語境界ごとに文字位置（charIndex）を通知する（Word Spark ハイライト用）。
    * 対応エンジンのみ発火し、Android Chrome の Google TTS 等では発火しないことがある。
    * 発火しない環境は呼び出し側で推定タイミングにフォールバックする。
    */
