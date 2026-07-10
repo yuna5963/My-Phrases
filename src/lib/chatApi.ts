@@ -56,6 +56,18 @@ export function parseSseChunk(buffer: string): { events: string[]; rest: string 
   return { events, rest }
 }
 
+/**
+ * Gemma 4 は応答の先頭に <thought>…</thought> の内部思考を出力することがある。
+ * 表示・履歴送信の前にこれを取り除く。ストリーミング途中で閉じタグが
+ * まだ届いていない場合は、開きタグ以降をすべて隠す（届き次第、本文が現れる）。
+ */
+export function stripThoughts(text: string): string {
+  let t = text.replace(/<(thought|thinking|think)>[\s\S]*?<\/\1>/gi, '')
+  const open = t.match(/<(thought|thinking|think)>/i)
+  if (open) t = t.slice(0, open.index)
+  return t.replace(/^\s+/, '')
+}
+
 /** SSE の data ペイロード1件から差分テキストを取り出す（無ければ ''）。 */
 function extractDelta(payload: string): string {
   try {

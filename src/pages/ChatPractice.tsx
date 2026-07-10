@@ -6,6 +6,7 @@ import { useSettings } from '../store/useSettings'
 import { useChat } from '../store/useChat'
 import { buildSession } from '../lib/session'
 import { isLongReading } from '../lib/longReading'
+import { stripThoughts } from '../lib/chatApi'
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr]
@@ -103,8 +104,8 @@ export default function ChatPractice() {
 
   // 終了後のまとめ画面（ストリーミング中は書きかけのまとめを表示）
   if (ending) {
-    const streamingSummary =
-      chat.summary ?? [...chat.messages].reverse().find((m) => m.role === 'assistant')?.content
+    const lastAssistant = [...chat.messages].reverse().find((m) => m.role === 'assistant')?.content
+    const streamingSummary = chat.summary ?? (lastAssistant ? stripThoughts(lastAssistant) : undefined)
     const usedCount = chat.usedChunkIds.length
     return (
       <div className="flex h-full flex-col gap-4">
@@ -165,19 +166,23 @@ export default function ChatPractice() {
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto py-3">
-        {visible.map((m, i) => (
-          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div
-              className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                m.role === 'user'
-                  ? 'rounded-br-md bg-sky-500 text-white'
-                  : 'rounded-bl-md bg-white shadow-sm dark:bg-slate-900'
-              }`}
-            >
-              {m.content || <span className="animate-pulse text-slate-400">…</span>}
+        {visible.map((m, i) => {
+          // Gemma 4 の内部思考（<thought>…</thought>）は表示しない。
+          const text = m.role === 'assistant' ? stripThoughts(m.content) : m.content
+          return (
+            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div
+                className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                  m.role === 'user'
+                    ? 'rounded-br-md bg-sky-500 text-white'
+                    : 'rounded-bl-md bg-white shadow-sm dark:bg-slate-900'
+                }`}
+              >
+                {text || <span className="animate-pulse text-slate-400">…</span>}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
         {chat.status === 'error' && (
           <div className="rounded-xl border border-rose-300 bg-rose-50 p-3 text-sm text-rose-600 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
             <p>⚠ {chat.error}</p>

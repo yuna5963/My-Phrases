@@ -4,6 +4,7 @@ import {
   foldSystemIntoUser,
   parseSseChunk,
   streamChat,
+  stripThoughts,
   type ChatMessage,
 } from './chatApi'
 
@@ -32,6 +33,29 @@ describe('parseSseChunk', () => {
   it('[DONE] も data として返す', () => {
     const { events } = parseSseChunk('data: [DONE]\n\n')
     expect(events).toEqual(['[DONE]'])
+  })
+})
+
+describe('stripThoughts', () => {
+  it('<thought>…</thought> を取り除いて本文だけ残す', () => {
+    expect(stripThoughts('<thought>* plan\n* steps</thought>Hi there! How are you?')).toBe(
+      'Hi there! How are you?',
+    )
+  })
+
+  it('タグが無ければそのまま', () => {
+    expect(stripThoughts('Good morning!')).toBe('Good morning!')
+  })
+
+  it('ストリーミング途中（閉じタグ未着）は開きタグ以降を隠す', () => {
+    expect(stripThoughts('<thought>thinking abou')).toBe('')
+    expect(stripThoughts('Sure! <thought>partial')).toBe('Sure! ')
+  })
+
+  it('<thinking> / <think> や複数ブロック、大文字小文字も扱う', () => {
+    expect(stripThoughts('<THINKING>a</THINKING>Hello <think>b</think>world')).toBe(
+      'Hello world',
+    )
   })
 })
 

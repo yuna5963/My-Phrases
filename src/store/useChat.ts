@@ -2,7 +2,7 @@
 // ストリーミング更新や中断はレンダリング外で扱いたいので、コンポーネント state ではなくストアに置く。
 import { create } from 'zustand'
 import type { Phrase } from '../types'
-import { ChatApiError, streamChat, type ChatMessage } from '../lib/chatApi'
+import { ChatApiError, streamChat, stripThoughts, type ChatMessage } from '../lib/chatApi'
 import { findUsedChunks } from '../lib/chunkMatch'
 import { buildKickoffPrompt, buildSummaryPrompt, buildSystemPrompt } from '../lib/coachPrompt'
 import { useSettings } from './useSettings'
@@ -42,7 +42,13 @@ function toApiMessages(messages: UiMessage[]): ChatMessage[] {
   const recent = messages.slice(-HISTORY_LIMIT)
   return [
     { role: 'system', content: systemPrompt },
-    ...recent.map((m): ChatMessage => ({ role: m.role, content: m.content })),
+    // 過去のアシスタント発話から <thought> を除いて送る（トークン節約＋思考癖の再誘発防止）。
+    ...recent.map(
+      (m): ChatMessage => ({
+        role: m.role,
+        content: m.role === 'assistant' ? stripThoughts(m.content) : m.content,
+      }),
+    ),
   ]
 }
 
@@ -146,7 +152,7 @@ export const useChat = create<ChatState>()((set, get) => {
         ],
       }))
       const full = await runAssistantTurn()
-      if (full !== null) set({ summary: full, status: 'done' })
+      if (full !== null) set({ summary: stripThoughts(full), status: 'done' })
     },
 
     endSession: () => {
