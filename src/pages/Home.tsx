@@ -88,6 +88,13 @@ export default function Home() {
           <div className="text-lg font-bold">📖 長文音読</div>
           <div className="text-sm text-amber-100">長文をお手本に続けて音読</div>
         </button>
+        <button
+          onClick={() => navigate('/chat')}
+          className="w-full rounded-2xl bg-violet-500 px-5 py-4 text-left text-white shadow active:scale-[0.99]"
+        >
+          <div className="text-lg font-bold">💬 チャット練習</div>
+          <div className="text-sm text-violet-100">AIコーチと会話して覚えたチャンクを使う</div>
+        </button>
       </section>
 
       {stats.due === 0 && (
