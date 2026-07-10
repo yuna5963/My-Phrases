@@ -210,6 +210,58 @@ export default function Settings() {
         </div>
       </Section>
 
+      <Section title="チャット練習（AI）">
+        <p className="text-sm text-slate-500">
+          AIコーチとの英会話練習に使う設定です。Google AI Studio で無料の APIキーを取得して貼り付けてください。
+        </p>
+        <Row label="APIキー">
+          <input
+            type="password"
+            value={s.chatApiKey}
+            onChange={(e) => s.setChatApiKey(e.target.value.trim())}
+            placeholder="AIza..."
+            autoComplete="off"
+            className="max-w-[60%] rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
+          />
+        </Row>
+        <Row label="モデル">
+          <input
+            type="text"
+            value={s.chatModel}
+            onChange={(e) => s.setChatModel(e.target.value.trim())}
+            placeholder="gemma-4-31b-it"
+            autoComplete="off"
+            className="max-w-[60%] rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
+          />
+        </Row>
+        <Row label="解説を日本語にする">
+          <Toggle checked={s.chatFeedbackJa} onChange={s.setChatFeedbackJa} />
+        </Row>
+        <Row label={`1回の対象チャンク数 ${s.chatTargetCount}個`}>
+          <input
+            type="range"
+            min={2}
+            max={6}
+            step={1}
+            value={s.chatTargetCount}
+            onChange={(e) => s.setChatTargetCount(Number(e.target.value))}
+          />
+        </Row>
+        <p className="text-xs text-slate-400">
+          キーはこの端末内（ブラウザ）にのみ保存され、Google 以外へは送信されません。モデルは{' '}
+          <code className="rounded bg-slate-200 px-1 dark:bg-slate-800">gemini-flash-latest</code>{' '}
+          などにも変更できます。
+        </p>
+        <a
+          href="https://aistudio.google.com/apikey"
+          target="_blank"
+          rel="noreferrer"
+          className="inline-block text-sm font-medium text-sky-500 underline"
+        >
+          ▶ Google AI Studio でAPIキーを取得
+        </a>
+      </Section>
+
       <Section title="フレーズの取り込み">
         <p className="text-sm text-slate-500">
           現在のデータ:{' '}

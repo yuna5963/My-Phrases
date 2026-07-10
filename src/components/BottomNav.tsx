@@ -10,7 +10,7 @@ const tabs = [
 // Full-screen practice routes hide the nav so its fixed bar can't overlap
 // the on-screen action buttons.
 // '/example/'（例文カード）は末尾スラッシュ付きで判定する（'/examples' と前方一致で衝突するため）。
-const HIDDEN_PREFIXES = ['/daily', '/compose', '/long-reading', '/cloze', '/phrase', '/example/']
+const HIDDEN_PREFIXES = ['/daily', '/compose', '/long-reading', '/cloze', '/chat', '/phrase', '/example/']
 
 export default function BottomNav() {
   const { pathname } = useLocation()
