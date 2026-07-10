@@ -8,6 +8,7 @@ import { buildSession } from '../lib/session'
 import { isLongReading } from '../lib/longReading'
 import { stripThoughts } from '../lib/chatApi'
 import type { ChatFocus } from '../lib/coachPrompt'
+import { stockKey, useStock } from '../store/useStock'
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr]
@@ -187,24 +188,7 @@ export default function ChatPractice() {
               <p className="text-slate-400">まとめを作成中…</p>
             )}
           </div>
-          {chat.suggestions.length > 0 && (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/40">
-              <h2 className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-                ➕ 追加すると良さそうな表現
-              </h2>
-              <p className="mt-0.5 text-xs text-emerald-600/80 dark:text-emerald-400/80">
-                会話に出てきた、まだフレーズ集にない基本表現です。Notionに追加してみましょう
-              </p>
-              <ul className="mt-2 space-y-1.5 text-sm">
-                {chat.suggestions.map((s) => (
-                  <li key={s.en}>
-                    <span className="font-medium">{s.en}</span>
-                    {s.ja && <span className="text-slate-500"> — {s.ja}</span>}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {chat.suggestions.length > 0 && <SuggestionsCard suggestions={chat.suggestions} />}
         </div>
         <div className="space-y-2 pb-2">
           {chat.status === 'done' && (
@@ -311,6 +295,55 @@ export default function ChatPractice() {
           送信
         </button>
       </div>
+    </div>
+  )
+}
+
+/**
+ * まとめの「追加すると良さそうな表現」。チェックすると表現ストック（端末内）に
+ * 保存され、数日分ためて PC でまとめて例文作成 → Notion 追加できる。
+ */
+function SuggestionsCard({ suggestions }: { suggestions: { en: string; ja: string }[] }) {
+  const items = useStock((s) => s.items)
+  const add = useStock((s) => s.add)
+  const remove = useStock((s) => s.remove)
+  const stocked = (en: string) => items.some((i) => stockKey(i.en) === stockKey(en))
+
+  return (
+    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/40">
+      <h2 className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+        ➕ 追加すると良さそうな表現
+      </h2>
+      <p className="mt-0.5 text-xs text-emerald-600/80 dark:text-emerald-400/80">
+        チェックすると端末の「表現ストック」にたまります（あとで PC からまとめて Notion へ）
+      </p>
+      <ul className="mt-2 space-y-1.5 text-sm">
+        {suggestions.map((s) => {
+          const checked = stocked(s.en)
+          return (
+            <li key={s.en}>
+              <label className="flex cursor-pointer items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => (checked ? remove(s.en) : add(s))}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-emerald-500"
+                />
+                <span>
+                  <span className="font-medium">{s.en}</span>
+                  {s.ja && <span className="text-slate-500"> — {s.ja}</span>}
+                </span>
+              </label>
+            </li>
+          )
+        })}
+      </ul>
+      <Link
+        to="/stock"
+        className="mt-3 inline-block text-sm font-medium text-emerald-700 underline dark:text-emerald-300"
+      >
+        📥 表現ストックを見る（{items.length}件）
+      </Link>
     </div>
   )
 }

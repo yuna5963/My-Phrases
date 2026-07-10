@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { ALL_STATUSES, useSettings } from '../store/useSettings'
 import { useDeck } from '../store/useDeck'
+import { useStock } from '../store/useStock'
 import {
   getEnglishVoices,
   getVoiceStatus,
@@ -19,6 +21,7 @@ export default function Settings() {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
   const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const [busy, setBusy] = useState(false)
+  const stockCount = useStock((st) => st.items.length)
   const [voiceStatus, setVoiceStatus] = useState(getVoiceStatus())
   const [testMsg, setTestMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -260,6 +263,12 @@ export default function Settings() {
         >
           ▶ Google AI Studio でAPIキーを取得
         </a>
+        <Link
+          to="/stock"
+          className="block text-sm font-medium text-sky-500 underline"
+        >
+          📥 表現ストックを開く（{stockCount}件）
+        </Link>
       </Section>
 
       <Section title="フレーズの取り込み">

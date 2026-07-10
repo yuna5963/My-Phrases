@@ -10,6 +10,7 @@ import Compose from './pages/Compose'
 import LongReading from './pages/LongReading'
 import Cloze from './pages/Cloze'
 import ChatPractice from './pages/ChatPractice'
+import ExpressionStock from './pages/ExpressionStock'
 import Browse from './pages/Browse'
 import Examples from './pages/Examples'
 import ExampleDetail from './pages/ExampleDetail'
@@ -52,6 +53,7 @@ export default function App() {
             <Route path="/long-reading" element={<LongReading />} />
             <Route path="/cloze" element={<Cloze />} />
             <Route path="/chat" element={<ChatPractice />} />
+            <Route path="/stock" element={<ExpressionStock />} />
             <Route path="/browse" element={<Browse />} />
             <Route path="/examples" element={<Examples />} />
             <Route path="/example/:phraseId/:index" element={<ExampleDetail />} />
