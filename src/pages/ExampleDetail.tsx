@@ -86,6 +86,12 @@ export default function ExampleDetail() {
         >
           📚 チャンク詳細（{phrase.en}）を見る →
         </button>
+        <button
+          onClick={() => navigate(`/chat?focus=${phrase.id}&example=${ref.index}`)}
+          className="rounded-full bg-sky-500 px-5 py-2.5 text-sm font-medium text-white active:scale-95"
+        >
+          💬 この例文で会話練習
+        </button>
       </div>
 
       <StepNav

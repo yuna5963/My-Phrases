@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import type { Phrase } from '../types'
 import { useDeck } from '../store/useDeck'
 import { useSettings } from '../store/useSettings'
@@ -7,6 +7,7 @@ import { useChat } from '../store/useChat'
 import { buildSession } from '../lib/session'
 import { isLongReading } from '../lib/longReading'
 import { stripThoughts } from '../lib/chatApi'
+import type { ChatFocus } from '../lib/coachPrompt'
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr]
@@ -23,6 +24,7 @@ function shuffle<T>(arr: T[]): T[] {
  */
 export default function ChatPractice() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const phrases = useDeck((s) => s.phrases)
   const includeStatuses = useSettings((s) => s.includeStatuses)
   const chatTargetCount = useSettings((s) => s.chatTargetCount)
@@ -30,11 +32,26 @@ export default function ChatPractice() {
   const chat = useChat()
 
   const [input, setInput] = useState('')
-  const [ending, setEnding] = useState(false)
+  // タブ切替から戻ったとき、まとめ済みセッションはまとめ画面のまま見せる。
+  const [ending, setEnding] = useState(() => useChat.getState().status === 'done')
+  const [copied, setCopied] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
-  // 対象チャンク: SRSの期日到来（弱い順）を優先し、足りなければランダムで補充。
-  const pickTargets = (): Phrase[] => {
+  // チャンク詳細・例文カードから ?focus=<id>&example=<n> で飛んでくると、
+  // そのチャンク（と例文の場面）を中心に会話が組まれる。
+  const resolveFocus = (): ChatFocus | undefined => {
+    const focusId = searchParams.get('focus')
+    if (!focusId) return undefined
+    const phrase = phrases.find((p) => p.id === focusId)
+    if (!phrase) return undefined
+    const exIdx = Number(searchParams.get('example'))
+    const example =
+      Number.isInteger(exIdx) && exIdx >= 0 ? phrase.examples[exIdx] : undefined
+    return { phrase, example }
+  }
+
+  // 対象チャンク: フォーカス指定を先頭に、SRSの期日到来（弱い順）→ランダム補充。
+  const pickTargets = (focus?: ChatFocus): Phrase[] => {
     const pool = phrases.filter(
       (p) =>
         !isLongReading(p) &&
@@ -42,16 +59,25 @@ export default function ChatPractice() {
     )
     const progress = useDeck.getState().progress
     const due = buildSession(pool, progress, includeStatuses, chatTargetCount)
-    if (due.length >= chatTargetCount) return due
     const rest = shuffle(pool.filter((p) => !due.some((d) => d.id === p.id)))
-    return [...due, ...rest].slice(0, chatTargetCount)
+    const picked = [...due, ...rest]
+    if (!focus) return picked.slice(0, chatTargetCount)
+    return [
+      focus.phrase,
+      ...picked.filter((p) => p.id !== focus.phrase.id),
+    ].slice(0, Math.max(chatTargetCount, 1))
   }
 
   useEffect(() => {
     if (!chatApiKey || phrases.length === 0) return
-    chat.startSession(pickTargets())
-    return () => useChat.getState().endSession()
-    // マウント時に1回だけセッションを組む（途中で設定が変わっても組み直さない）。
+    const focus = resolveFocus()
+    const existing = useChat.getState()
+    // 下部タブで行き来しても会話が消えないよう、進行中のセッションは再開する。
+    // フォーカス指定（チャンク詳細・例文カード発）か、まとめ済みなら新しく始める。
+    if (!focus && existing.messages.length > 0 && existing.status !== 'done') return
+    setEnding(false)
+    chat.startSession(pickTargets(focus), focus)
+    // マウント時に1回だけ判断する（途中で設定が変わっても組み直さない）。
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -75,7 +101,39 @@ export default function ChatPractice() {
   const restart = () => {
     setEnding(false)
     setInput('')
+    setCopied(false)
+    // 「もう一度」は新しいチャンクで（フォーカス指定は引き継がない）。
+    setSearchParams({}, { replace: true })
     chat.startSession(pickTargets())
+  }
+
+  /** まとめの共有用テキスト（メール本文・コピー共通）。 */
+  const buildShareText = (summaryText: string): string => {
+    const lines = [
+      'チャット練習のまとめ',
+      '',
+      `使えたチャンク: ${chat.usedChunkIds.length} / ${chat.targets.length}`,
+      ...chat.targets.map(
+        (p) => `${chat.usedChunkIds.includes(p.id) ? '✓' : '・'} ${p.en}（${p.ja}）`,
+      ),
+      '',
+      summaryText,
+    ]
+    if (chat.suggestions.length > 0) {
+      lines.push('', '追加すると良さそうな表現:')
+      for (const s of chat.suggestions) lines.push(`＋ ${s.en}${s.ja ? ` — ${s.ja}` : ''}`)
+    }
+    return lines.join('\n')
+  }
+
+  const copyShareText = async (summaryText: string) => {
+    try {
+      await navigator.clipboard.writeText(buildShareText(summaryText))
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setCopied(false)
+    }
   }
 
   if (!chatApiKey) {
@@ -119,16 +177,52 @@ export default function ChatPractice() {
             <ChunkChip key={p.id} phrase={p} used={chat.usedChunkIds.includes(p.id)} />
           ))}
         </div>
-        <div className="flex-1 overflow-y-auto rounded-2xl bg-white p-4 text-sm leading-relaxed shadow-sm dark:bg-slate-900">
-          {streamingSummary ? (
-            <p className="whitespace-pre-wrap">{streamingSummary}</p>
-          ) : chat.status === 'error' ? (
-            <p className="text-rose-500">{chat.error}</p>
-          ) : (
-            <p className="text-slate-400">まとめを作成中…</p>
+        <div className="flex-1 space-y-3 overflow-y-auto">
+          <div className="rounded-2xl bg-white p-4 text-sm leading-relaxed shadow-sm dark:bg-slate-900">
+            {streamingSummary ? (
+              <p className="whitespace-pre-wrap">{streamingSummary}</p>
+            ) : chat.status === 'error' ? (
+              <p className="text-rose-500">{chat.error}</p>
+            ) : (
+              <p className="text-slate-400">まとめを作成中…</p>
+            )}
+          </div>
+          {chat.suggestions.length > 0 && (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/40">
+              <h2 className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                ➕ 追加すると良さそうな表現
+              </h2>
+              <p className="mt-0.5 text-xs text-emerald-600/80 dark:text-emerald-400/80">
+                会話に出てきた、まだフレーズ集にない基本表現です。Notionに追加してみましょう
+              </p>
+              <ul className="mt-2 space-y-1.5 text-sm">
+                {chat.suggestions.map((s) => (
+                  <li key={s.en}>
+                    <span className="font-medium">{s.en}</span>
+                    {s.ja && <span className="text-slate-500"> — {s.ja}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
         <div className="space-y-2 pb-2">
+          {chat.status === 'done' && (
+            <div className="grid grid-cols-2 gap-2">
+              <a
+                href={`mailto:?subject=${encodeURIComponent('チャット練習のまとめ')}&body=${encodeURIComponent(buildShareText(chat.summary ?? ''))}`}
+                className="rounded-xl border border-slate-300 px-4 py-2.5 text-center text-sm font-medium text-slate-600 dark:border-slate-700 dark:text-slate-300 active:scale-[0.99]"
+              >
+                ✉️ メールで共有
+              </a>
+              <button
+                onClick={() => copyShareText(chat.summary ?? '')}
+                className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-600 dark:border-slate-700 dark:text-slate-300 active:scale-[0.99]"
+              >
+                {copied ? '✓ コピーしました' : '📋 内容をコピー'}
+              </button>
+            </div>
+          )}
           <button
             onClick={restart}
             className="w-full rounded-xl bg-sky-500 px-4 py-3 font-medium text-white active:scale-[0.99]"

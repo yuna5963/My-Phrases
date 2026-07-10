@@ -4,7 +4,14 @@ import { create } from 'zustand'
 import type { Phrase } from '../types'
 import { ChatApiError, streamChat, stripThoughts, type ChatMessage } from '../lib/chatApi'
 import { findUsedChunks } from '../lib/chunkMatch'
-import { buildKickoffPrompt, buildSummaryPrompt, buildSystemPrompt } from '../lib/coachPrompt'
+import {
+  buildKickoffPrompt,
+  buildSummaryPrompt,
+  buildSystemPrompt,
+  type ChatFocus,
+} from '../lib/coachPrompt'
+import { extractSuggestions, filterNewSuggestions, type Suggestion } from '../lib/suggestions'
+import { useDeck } from './useDeck'
 import { useSettings } from './useSettings'
 
 export interface UiMessage {
@@ -27,7 +34,9 @@ interface ChatState {
   error: string | null
   /** 終了時のまとめ（サマリー画面用） */
   summary: string | null
-  startSession: (targets: Phrase[]) => Promise<void>
+  /** まとめから抽出した、デッキ未収載の追加候補チャンク */
+  suggestions: Suggestion[]
+  startSession: (targets: Phrase[], focus?: ChatFocus) => Promise<void>
   sendUserMessage: (text: string) => Promise<void>
   /** エラー後、履歴を消さずに直前のリクエストをやり直す。 */
   retryLast: () => Promise<void>
@@ -110,11 +119,12 @@ export const useChat = create<ChatState>()((set, get) => {
     status: 'idle',
     error: null,
     summary: null,
+    suggestions: [],
 
-    startSession: async (targets) => {
+    startSession: async (targets, focus) => {
       const { chatFeedbackJa } = useSettings.getState()
       controller?.abort()
-      systemPrompt = buildSystemPrompt(targets, chatFeedbackJa)
+      systemPrompt = buildSystemPrompt(targets, chatFeedbackJa, focus)
       set({
         targets,
         usedChunkIds: [],
@@ -122,6 +132,7 @@ export const useChat = create<ChatState>()((set, get) => {
         status: 'idle',
         error: null,
         summary: null,
+        suggestions: [],
       })
       await runAssistantTurn()
     },
@@ -152,7 +163,15 @@ export const useChat = create<ChatState>()((set, get) => {
         ],
       }))
       const full = await runAssistantTurn()
-      if (full !== null) set({ summary: stripThoughts(full), status: 'done' })
+      if (full !== null) {
+        // ➕ 行（追加候補）を本文から分離し、デッキに既にある表現は除外する。
+        const { body, suggestions } = extractSuggestions(stripThoughts(full))
+        set({
+          summary: body,
+          suggestions: filterNewSuggestions(suggestions, useDeck.getState().phrases),
+          status: 'done',
+        })
+      }
     },
 
     endSession: () => {
@@ -166,6 +185,7 @@ export const useChat = create<ChatState>()((set, get) => {
         status: 'idle',
         error: null,
         summary: null,
+        suggestions: [],
       })
     },
   }

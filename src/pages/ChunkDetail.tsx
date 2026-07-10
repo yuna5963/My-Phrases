@@ -88,6 +88,12 @@ export default function ChunkDetail() {
       </section>
 
       {/* 片手で押せるよう、アクションは画面下部にまとめる。 */}
+      <button
+        onClick={() => navigate(`/chat?focus=${phrase.id}`)}
+        className="w-full rounded-2xl bg-sky-500 py-4 font-medium text-white active:scale-95"
+      >
+        💬 このチャンクで会話練習
+      </button>
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={() => navigate(backTo)}
