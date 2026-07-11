@@ -12,6 +12,7 @@ const COL_PRIORITY = ['Priority', '優先度']
 const COL_NOTE = ['Note', 'メモ', '備考']
 const COL_STATUS = ['ステータス', 'Status']
 const COL_KANA = ['音節', 'Chunkカナ', 'Chunk_Kana', 'Syllable', 'カナ'] // チャンクのシラブル音節カナ
+const COL_KANA_WARN = ['カナ要確認'] // kanaLint の要確認フィールド（;区切り、エクスポート往復用）
 // 旧フォーマットの単一例文列。
 const COL_EX_SINGLE = ['使用例（例文）', '例文', '使用例', '例']
 
@@ -28,7 +29,7 @@ const TEXT_EXT = /\.(md|markdown|txt|csv)$/i
 
 /** Deterministic id from the English text so re-imports keep the same key
  *  (and therefore preserve SRS progress) when no explicit id is available. */
-function stableId(en: string): string {
+export function stableId(en: string): string {
   let h = 0x811c9dc5
   for (let i = 0; i < en.length; i++) {
     h ^= en.charCodeAt(i)
@@ -102,11 +103,16 @@ function makePhrase(
   if (!en || !ja) return null
   const id = at(COL_ID) || fallbackId || stableId(en)
   const kana = at(COL_KANA)
+  const kanaWarnings = at(COL_KANA_WARN)
+    .split(';')
+    .map((s) => s.trim())
+    .filter(Boolean)
   return {
     id,
     en,
     ja,
     ...(kana ? { kana } : {}),
+    ...(kanaWarnings.length ? { kanaWarnings } : {}),
     examples: readExamples(header, cells),
     type: at(COL_TYPE),
     category: at(COL_CATEGORY),
@@ -121,7 +127,7 @@ function makePhrase(
 // ---- CSV ----------------------------------------------------------------
 
 /** Minimal RFC-4180 CSV parser (handles quoted fields, commas & newlines). */
-function parseCsvRows(text: string): string[][] {
+export function parseCsvRows(text: string): string[][] {
   const rows: string[][] = []
   let row: string[] = []
   let field = ''
@@ -154,7 +160,7 @@ function parseCsvRows(text: string): string[][] {
   return rows.filter((r) => r.some((cell) => cell.trim() !== ''))
 }
 
-function fromCsv(text: string): Phrase[] {
+export function fromCsv(text: string): Phrase[] {
   const rows = parseCsvRows(text)
   if (rows.length < 2) return []
   const header = rows[0].map(clean)
@@ -237,6 +243,51 @@ function fromText(text: string, filename: string): Phrase[] {
   const table = fromMarkdownTable(text)
   if (table.length) return table
   return fromMarkdownPage(text, filename)
+}
+
+// ---- Merge ----------------------------------------------------------------
+
+export interface MergeResult {
+  merged: Phrase[]
+  added: number // incoming にだけあった件数
+  updated: number // ID一致で上書きした件数
+  kept: number // existing にだけあり、そのまま保持した件数
+}
+
+/**
+ * マージ取り込み: incoming は ID 一致で existing を上書きし、existing にしか
+ * ない行（アプリ内で追加した教材など）は保持する。削除は伝播しない
+ * （Notion 側の削除を反映したいときは全置換を使う）。
+ */
+export function mergePhrases(existing: Phrase[], incoming: Phrase[]): MergeResult {
+  const byId = new Map(existing.map((p) => [p.id, p]))
+  let added = 0
+  let updated = 0
+  for (const inc of incoming) {
+    const prev = byId.get(inc.id)
+    if (!prev) {
+      byId.set(inc.id, inc)
+      added++
+      continue
+    }
+    const next: Phrase = { ...inc }
+    // CSV は createdTime を持たないため、アプリ内追加時刻を消さない。
+    if (!inc.createdTime) next.createdTime = prev.createdTime
+    // incoming がカナを持ち込んだ場合は人手修正済みとみなし既存の要確認フラグを破棄。
+    // カナ列も要確認列も無い incoming なら既存フラグを維持する。
+    const incHasKana = !!inc.kana || inc.examples.some((e) => e.kana)
+    if (!inc.kanaWarnings && !incHasKana && prev.kanaWarnings) {
+      next.kanaWarnings = prev.kanaWarnings
+    }
+    byId.set(inc.id, next)
+    updated++
+  }
+  return {
+    merged: [...byId.values()],
+    added,
+    updated,
+    kept: existing.length - updated,
+  }
 }
 
 // ---- Entry point --------------------------------------------------------

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStock } from '../store/useStock'
+import { csvFilename, stockToCsv } from '../lib/export'
+import { shareOrDownloadCsv } from '../lib/share'
 
 /**
  * 表現ストック: チャット練習のまとめでチェックした「追加候補の表現」の一覧。
@@ -13,6 +15,7 @@ export default function ExpressionStock() {
   const remove = useStock((s) => s.remove)
   const clear = useStock((s) => s.clear)
   const [copied, setCopied] = useState(false)
+  const [shareMsg, setShareMsg] = useState<string | null>(null)
 
   const tsv = items.map((i) => `${i.en}\t${i.ja}`).join('\n')
   const mailBody = items.map((i) => `${i.en}${i.ja ? ` — ${i.ja}` : ''}`).join('\n')
@@ -27,6 +30,13 @@ export default function ExpressionStock() {
     }
   }
 
+  const shareCsv = async () => {
+    setShareMsg(null)
+    const outcome = await shareOrDownloadCsv(csvFilename('stock'), stockToCsv(items))
+    if (outcome === 'shared') setShareMsg('✓ 共有しました。')
+    else if (outcome === 'downloaded') setShareMsg('✓ CSVをダウンロードしました。')
+  }
+
   return (
     <div className="space-y-4">
       <header className="flex items-baseline justify-between">
@@ -37,6 +47,15 @@ export default function ExpressionStock() {
         チャット練習のまとめでチェックした表現の置き場です。数日分たまったら PC
         でコピーして、例文を作って Notion に追加しましょう。
       </p>
+
+      {items.length > 0 && (
+        <button
+          onClick={() => navigate('/stock/enrich')}
+          className="w-full rounded-2xl bg-violet-500 py-4 font-medium text-white active:scale-95"
+        >
+          ✨ 教材化する（AIが訳・例文・カナを補完）
+        </button>
+      )}
 
       {items.length === 0 ? (
         <div className="rounded-2xl bg-white p-6 text-center text-sm text-slate-400 shadow-sm dark:bg-slate-900">
@@ -64,8 +83,15 @@ export default function ExpressionStock() {
               ✉️ メールで送る
             </a>
           </div>
+          <button
+            onClick={shareCsv}
+            className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-600 dark:border-slate-700 dark:text-slate-300 active:scale-[0.99]"
+          >
+            📤 CSVで共有 / 保存
+          </button>
+          {shareMsg && <p className="text-sm text-emerald-500">{shareMsg}</p>}
           <p className="text-xs text-slate-400">
-            コピーはタブ区切りなので、表計算や Notion のテーブルにそのまま貼り付けられます。
+            コピーはタブ区切りなので、表計算や Notion のテーブルにそのまま貼り付けられます。CSVは共有シートからメールや Drive に送れます。
           </p>
 
           <ul className="space-y-2">

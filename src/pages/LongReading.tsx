@@ -56,6 +56,12 @@ export default function LongReading() {
           <p className="mt-1 text-xs text-slate-400">
             Type が「Long Reading」のフレーズを取り込むと表示されます。
           </p>
+          <button
+            onClick={() => navigate('/long-reading/new')}
+            className="mt-6 w-full rounded-2xl bg-amber-500 py-4 font-medium text-white active:scale-95"
+          >
+            ＋ AIで長文を作る
+          </button>
           <button onClick={() => navigate('/')} className="mt-4 text-sky-500">
             ホームへ戻る
           </button>
@@ -170,11 +176,20 @@ export default function LongReading() {
 }
 
 function Header({ pos, total }: { pos: number; total: number }) {
+  const navigate = useNavigate()
   return (
     <div className="mb-2 flex items-center justify-between text-sm">
       <span className="font-medium">長文音読</span>
-      <span className="text-slate-400">
-        {pos} / {total}
+      <span className="flex items-center gap-3">
+        <button
+          onClick={() => navigate('/long-reading/new')}
+          className="font-medium text-amber-500"
+        >
+          ＋ AIで作る
+        </button>
+        <span className="text-slate-400">
+          {pos} / {total}
+        </span>
       </span>
     </div>
   )

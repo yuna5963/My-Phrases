@@ -7,13 +7,23 @@ import {
   getAllPhrases,
   getAllProgress,
   getMeta,
+  putPhrases,
   replacePhrases,
   saveProgress,
   setMeta,
 } from '../lib/db'
-import { parsePhrasesFromFiles } from '../lib/import'
+import { mergePhrases, parsePhrasesFromFiles } from '../lib/import'
 
 export type DeckSource = 'imported' | 'sample'
+export type ImportMode = 'merge' | 'replace'
+
+export interface ImportSummary {
+  mode: ImportMode
+  added: number
+  updated: number
+  kept: number
+  total: number // 取り込みファイルに含まれていた件数
+}
 
 interface DeckState {
   phrases: Phrase[]
@@ -26,7 +36,9 @@ interface DeckState {
   grade: (id: string, g: Grade) => Promise<void>
   setLearned: (id: string, learned: boolean) => Promise<void>
   reset: () => Promise<void>
-  importFiles: (files: File[]) => Promise<number>
+  importFiles: (files: File[], mode?: ImportMode) => Promise<ImportSummary>
+  /** アプリ内で作った教材（教材化・AI長文）をデッキへ追記する。 */
+  addPhrases: (newPhrases: Phrase[]) => Promise<number>
   clearImported: () => Promise<void>
 }
 
@@ -96,16 +108,45 @@ export const useDeck = create<DeckState>((set, get) => ({
     }
   },
 
-  importFiles: async (files) => {
+  importFiles: async (files, mode = 'merge') => {
     const parsed = await parsePhrasesFromFiles(files)
     if (!parsed.length) {
       throw new Error(
         'フレーズが見つかりませんでした。Notionの「Markdown & CSV」エクスポート（.zip / .csv / .md）を選んでください。',
       )
     }
-    await replacePhrases(parsed)
+    let summary: ImportSummary
+    if (mode === 'replace') {
+      await replacePhrases(parsed)
+      summary = { mode, added: parsed.length, updated: 0, kept: 0, total: parsed.length }
+    } else {
+      // マージ: ID一致は上書き、アプリ内で追加した教材は保持（削除は伝播しない）。
+      const existing = await getAllPhrases()
+      const result = mergePhrases(existing, parsed)
+      await putPhrases(result.merged)
+      summary = {
+        mode,
+        added: result.added,
+        updated: result.updated,
+        kept: result.kept,
+        total: parsed.length,
+      }
+    }
     await get().load()
-    return parsed.length
+    return summary
+  },
+
+  addPhrases: async (newPhrases) => {
+    if (!newPhrases.length) return 0
+    const existing = await getAllPhrases()
+    if (!existing.length) {
+      // サンプル使用中に追加分だけ保存すると、次の load() でサンプルが
+      // 「消えた」ように見えるため、先に現在のサンプルを実体化しておく。
+      await putPhrases(get().phrases)
+    }
+    await putPhrases(newPhrases)
+    await get().load()
+    return newPhrases.length
   },
 
   clearImported: async () => {

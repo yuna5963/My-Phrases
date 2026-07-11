@@ -18,6 +18,9 @@ export interface Phrase {
   note: string // 補足メモ（任意）
   status: string // 未着手 / 進行中 / 完了
   createdTime: string
+  /** カナ検証（kanaLint）で要確認となったフィールドのラベル（例: ['音節', '音節1']）。
+   *  AI生成カナの下書き品質フラグ。無ければ検証済みか未検証。CSVの「カナ要確認」列と往復する。 */
+  kanaWarnings?: string[]
 }
 
 export interface Progress {
