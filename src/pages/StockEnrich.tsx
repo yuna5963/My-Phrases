@@ -45,6 +45,10 @@ export default function StockEnrich() {
   const [drafts, setDrafts] = useState<EnrichDraft[]>([])
   const [excluded, setExcluded] = useState<Set<number>>(new Set())
   const [apiError, setApiError] = useState<string | null>(null)
+  // APIエラーで生成できなかった残り（targets）と、その結果を差し込む drafts 上の位置（at）。
+  const [retryPlan, setRetryPlan] = useState<{ targets: EnrichInput[]; at: number[] } | null>(
+    null,
+  )
   const [addedCount, setAddedCount] = useState(0)
   const [saving, setSaving] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
@@ -74,6 +78,7 @@ export default function StockEnrich() {
   /** indexes を省略すると選択項目の一括生成、指定すると該当ドラフトの再生成。 */
   const generate = async (targets: EnrichInput[], replaceAt?: number[]) => {
     setApiError(null)
+    setRetryPlan(null)
     setPhase('running')
     setProgress({ done: 0, total: targets.length })
     const ac = new AbortController()
@@ -98,7 +103,16 @@ export default function StockEnrich() {
         setDrafts(result.drafts)
         setExcluded(new Set())
       }
-      if (result.error) setApiError(result.error.message)
+      if (result.error) {
+        setApiError(result.error.message)
+        // 未生成の残りを覚えておき、成功分を保持したまま続きから再試行できるようにする。
+        // キー無効（auth）は設定を直すまで再試行しても無駄なので対象外。
+        const doneCount = result.drafts.length
+        const at = replaceAt ?? targets.map((_, idx) => idx)
+        if (result.error.kind !== 'auth' && doneCount < targets.length) {
+          setRetryPlan({ targets: targets.slice(doneCount), at: at.slice(doneCount) })
+        }
+      }
       setPhase('review')
     } catch (e) {
       if ((e as Error).name === 'AbortError') {
@@ -225,9 +239,17 @@ export default function StockEnrich() {
           AIが作った下書きです。訳・例文・カナを確認して、必要なら修正してから追加してください。
         </p>
         {apiError && (
-          <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-950/40 dark:text-rose-300">
-            ⚠ {apiError}
-          </p>
+          <div className="space-y-2 rounded-xl bg-rose-50 px-3 py-2 dark:bg-rose-950/40">
+            <p className="text-sm text-rose-600 dark:text-rose-300">⚠ {apiError}</p>
+            {retryPlan && (
+              <button
+                onClick={() => generate(retryPlan.targets, retryPlan.at)}
+                className="w-full rounded-lg bg-rose-500 py-2 text-sm font-medium text-white active:scale-95"
+              >
+                ↻ 残り{retryPlan.targets.length}件をもう一度生成する
+              </button>
+            )}
+          </div>
         )}
         {hasErrors && (
           <button onClick={regenerateErrors} className="text-sm font-medium text-sky-500 underline">

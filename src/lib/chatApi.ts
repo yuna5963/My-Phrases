@@ -83,7 +83,41 @@ function mapHttpError(status: number, body: string): ChatApiError {
     return new ChatApiError('auth', `APIキーが無効です (${status})`, status)
   if (status === 429)
     return new ChatApiError('rate', '利用上限に達しました。少し待ってからもう一度お試しください', status)
+  if (status >= 500)
+    return new ChatApiError(
+      'server',
+      `AIサーバーで一時的なエラーが発生しました (${status})。混雑している可能性があります。少し待ってからもう一度お試しください`,
+      status,
+    )
   return new ChatApiError('server', `サーバーエラー (${status}): ${body.slice(0, 200)}`, status)
+}
+
+// 無料枠の混雑などで散発する 5xx は、少し待って自動で再試行する。
+// 429（レート上限）は再試行が上限消費を悪化させうるので対象外。
+const TRANSIENT_RETRIES = 2
+const RETRY_BASE_MS = 800
+
+function isTransientStatus(status: number): boolean {
+  return status >= 500
+}
+
+/** AbortSignal で中断できる待機。中断時は AbortError で reject する。 */
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const abort = () => {
+      clearTimeout(timer)
+      reject(new DOMException('Aborted', 'AbortError'))
+    }
+    if (signal?.aborted) {
+      abort()
+      return
+    }
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', abort)
+      resolve()
+    }, ms)
+    signal?.addEventListener('abort', abort, { once: true })
+  })
 }
 
 /**
@@ -133,15 +167,29 @@ async function requestStream(
   return res
 }
 
+/** リクエスト1回分。system ロールが 400 で拒否された場合は user へ前置してリトライする。 */
+async function requestWithSystemFold(opts: StreamChatOptions): Promise<Response> {
+  const res = await requestStream(opts, opts.messages)
+  if (res.status === 400 && opts.messages[0]?.role === 'system') {
+    return requestStream(opts, foldSystemIntoUser(opts.messages))
+  }
+  return res
+}
+
 /**
  * チャット補完をストリーミング取得する。完了時に全文を返す。
- * system ロールが 400 で拒否された場合は user へ前置してリトライする。
+ * 一時的な 5xx はバックオフを挟んで自動再試行する（本文受信前なので安全）。
  */
 export async function streamChat(opts: StreamChatOptions): Promise<string> {
-  let res = await requestStream(opts, opts.messages)
+  let res = await requestWithSystemFold(opts)
 
-  if (res.status === 400 && opts.messages[0]?.role === 'system') {
-    res = await requestStream(opts, foldSystemIntoUser(opts.messages))
+  for (
+    let attempt = 0;
+    !res.ok && isTransientStatus(res.status) && attempt < TRANSIENT_RETRIES;
+    attempt++
+  ) {
+    await sleep(RETRY_BASE_MS * 2 ** attempt, opts.signal)
+    res = await requestWithSystemFold(opts)
   }
 
   if (!res.ok) {
