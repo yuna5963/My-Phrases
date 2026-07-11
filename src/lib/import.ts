@@ -245,6 +245,51 @@ function fromText(text: string, filename: string): Phrase[] {
   return fromMarkdownPage(text, filename)
 }
 
+// ---- Merge ----------------------------------------------------------------
+
+export interface MergeResult {
+  merged: Phrase[]
+  added: number // incoming にだけあった件数
+  updated: number // ID一致で上書きした件数
+  kept: number // existing にだけあり、そのまま保持した件数
+}
+
+/**
+ * マージ取り込み: incoming は ID 一致で existing を上書きし、existing にしか
+ * ない行（アプリ内で追加した教材など）は保持する。削除は伝播しない
+ * （Notion 側の削除を反映したいときは全置換を使う）。
+ */
+export function mergePhrases(existing: Phrase[], incoming: Phrase[]): MergeResult {
+  const byId = new Map(existing.map((p) => [p.id, p]))
+  let added = 0
+  let updated = 0
+  for (const inc of incoming) {
+    const prev = byId.get(inc.id)
+    if (!prev) {
+      byId.set(inc.id, inc)
+      added++
+      continue
+    }
+    const next: Phrase = { ...inc }
+    // CSV は createdTime を持たないため、アプリ内追加時刻を消さない。
+    if (!inc.createdTime) next.createdTime = prev.createdTime
+    // incoming がカナを持ち込んだ場合は人手修正済みとみなし既存の要確認フラグを破棄。
+    // カナ列も要確認列も無い incoming なら既存フラグを維持する。
+    const incHasKana = !!inc.kana || inc.examples.some((e) => e.kana)
+    if (!inc.kanaWarnings && !incHasKana && prev.kanaWarnings) {
+      next.kanaWarnings = prev.kanaWarnings
+    }
+    byId.set(inc.id, next)
+    updated++
+  }
+  return {
+    merged: [...byId.values()],
+    added,
+    updated,
+    kept: existing.length - updated,
+  }
+}
+
 // ---- Entry point --------------------------------------------------------
 
 /** Parse phrases out of the dropped files (Notion .zip export, .csv, or .md). */

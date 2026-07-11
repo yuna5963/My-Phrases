@@ -43,6 +43,14 @@ export async function getAllPhrases(): Promise<Phrase[]> {
   return db.getAll('phrases')
 }
 
+/** Upsert phrases in one transaction without clearing (merge import / in-app add). */
+export async function putPhrases(phrases: Phrase[]): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction('phrases', 'readwrite')
+  for (const p of phrases) await tx.store.put(p)
+  await tx.done
+}
+
 /** Replace the whole imported set in one transaction (deletions reflected). */
 export async function replacePhrases(phrases: Phrase[]): Promise<void> {
   const db = await getDB()

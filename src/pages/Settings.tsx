@@ -24,6 +24,7 @@ export default function Settings() {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
   const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const [exportMsg, setExportMsg] = useState<string | null>(null)
+  const [replaceMode, setReplaceMode] = useState(false)
   const [busy, setBusy] = useState(false)
   const stockCount = useStock((st) => st.items.length)
   const [voiceStatus, setVoiceStatus] = useState(getVoiceStatus())
@@ -75,8 +76,14 @@ export default function Settings() {
     setBusy(true)
     setImportMsg(null)
     try {
-      const n = await importFiles(Array.from(files))
-      setImportMsg({ ok: true, text: `${n}件のフレーズを取り込みました。` })
+      const r = await importFiles(Array.from(files), replaceMode ? 'replace' : 'merge')
+      setImportMsg({
+        ok: true,
+        text:
+          r.mode === 'replace'
+            ? `${r.total}件のフレーズを取り込みました（全置換）。`
+            : `追加 ${r.added}件・更新 ${r.updated}件（既存 ${r.kept}件は保持）。`,
+      })
     } catch (e) {
       setImportMsg({ ok: false, text: (e as Error).message })
     } finally {
@@ -321,6 +328,20 @@ export default function Settings() {
         >
           {busy ? '取り込み中…' : '📥 ファイルを選択（.csv / .zip）'}
         </button>
+        <label className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
+          <input
+            type="checkbox"
+            checked={replaceMode}
+            onChange={(e) => setReplaceMode(e.target.checked)}
+            className="mt-0.5"
+          />
+          <span>
+            取り込み前に既存データを全て削除（全置換）
+            <span className="block text-xs text-slate-400">
+              通常はマージ（ID一致は上書き・アプリで追加した教材は保持）。Notion側で削除した行を反映したいときだけチェック。
+            </span>
+          </span>
+        </label>
 
         {importMsg && (
           <p className={`text-sm ${importMsg.ok ? 'text-emerald-500' : 'text-rose-500'}`}>
@@ -342,7 +363,7 @@ export default function Settings() {
         {source === 'imported' && (
           <button
             onClick={() => {
-              if (confirm('取り込んだフレーズを消去してサンプルに戻します。よろしいですか？（学習進捗は残ります）')) {
+              if (confirm('取り込んだフレーズと、アプリで追加した教材を消去してサンプルに戻します。よろしいですか？（学習進捗は残ります。必要なら先に「CSVでバックアップ」を）')) {
                 clearImported()
               }
             }}
