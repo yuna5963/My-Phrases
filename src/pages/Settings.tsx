@@ -13,6 +13,12 @@ import {
 import { csvFilename, phrasesToCsv } from '../lib/export'
 import { shareOrDownloadCsv } from '../lib/share'
 
+/** モデル選択の候補。これ以外は「その他（手入力）」で自由に指定できる。 */
+const MODEL_PRESETS = [
+  { id: 'gemma-4-31b-it', label: 'Gemma 4（既定・無料枠が広め）' },
+  { id: 'gemini-flash-latest', label: 'Gemini Flash（応答が速め）' },
+] as const
+
 export default function Settings() {
   const s = useSettings()
   const reset = useDeck((d) => d.reset)
@@ -27,6 +33,10 @@ export default function Settings() {
   const [replaceMode, setReplaceMode] = useState(false)
   const [busy, setBusy] = useState(false)
   const stockCount = useStock((st) => st.items.length)
+  // プリセット外のモデル名が保存されている場合は「その他（手入力）」から始める。
+  const [customModel, setCustomModel] = useState(
+    () => !MODEL_PRESETS.some((m) => m.id === useSettings.getState().chatModel),
+  )
   const [voiceStatus, setVoiceStatus] = useState(getVoiceStatus())
   const [testMsg, setTestMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -246,15 +256,38 @@ export default function Settings() {
           />
         </Row>
         <Row label="モデル">
-          <input
-            type="text"
-            value={s.chatModel}
-            onChange={(e) => s.setChatModel(e.target.value.trim())}
-            placeholder="gemma-4-31b-it"
-            autoComplete="off"
+          <select
+            value={customModel ? '__custom__' : s.chatModel}
+            onChange={(e) => {
+              if (e.target.value === '__custom__') {
+                setCustomModel(true)
+              } else {
+                setCustomModel(false)
+                s.setChatModel(e.target.value)
+              }
+            }}
             className="max-w-[60%] rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
-          />
+          >
+            {MODEL_PRESETS.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.label}
+              </option>
+            ))}
+            <option value="__custom__">その他（手入力）</option>
+          </select>
         </Row>
+        {customModel && (
+          <Row label="モデル名">
+            <input
+              type="text"
+              value={s.chatModel}
+              onChange={(e) => s.setChatModel(e.target.value.trim())}
+              placeholder="gemma-4-31b-it"
+              autoComplete="off"
+              className="max-w-[60%] rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
+            />
+          </Row>
+        )}
         <Row label="解説を日本語にする">
           <Toggle checked={s.chatFeedbackJa} onChange={s.setChatFeedbackJa} />
         </Row>
@@ -269,9 +302,9 @@ export default function Settings() {
           />
         </Row>
         <p className="text-xs text-slate-400">
-          キーはこの端末内（ブラウザ）にのみ保存され、Google 以外へは送信されません。モデルは{' '}
-          <code className="rounded bg-slate-200 px-1 dark:bg-slate-800">gemini-flash-latest</code>{' '}
-          などにも変更できます。
+          キーはこの端末内（ブラウザ）にのみ保存され、Google 以外へは送信されません。
+          モデルはチャット練習・教材化・AI長文で共通です。混雑エラー（500）が続くときは
+          モデルを切り替えると回避できることがあります。
         </p>
         <a
           href="https://aistudio.google.com/apikey"

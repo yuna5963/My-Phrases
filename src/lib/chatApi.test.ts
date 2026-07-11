@@ -10,6 +10,7 @@ import {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.useRealTimers()
 })
 
 describe('parseSseChunk', () => {
@@ -134,6 +135,59 @@ describe('streamChat', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('failed')))
     await expect(streamChat(baseOpts)).rejects.toMatchObject({ kind: 'network' })
     await expect(streamChat(baseOpts)).rejects.toBeInstanceOf(ChatApiError)
+  })
+
+  it('一時的な 5xx はバックオフを挟んで自動再試行する', async () => {
+    vi.useFakeTimers()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('boom', { status: 500 }))
+      .mockResolvedValueOnce(new Response('busy', { status: 503 }))
+      .mockResolvedValueOnce(sseResponse([sseEvent('ok'), 'data: [DONE]\n\n']))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const promise = streamChat(baseOpts)
+    await vi.advanceTimersByTimeAsync(10_000)
+    await expect(promise).resolves.toBe('ok')
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
+
+  it('5xx が続いたら再試行を打ち切って server エラーを投げる', async () => {
+    vi.useFakeTimers()
+    const fetchMock = vi.fn().mockResolvedValue(new Response('boom', { status: 500 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const promise = streamChat(baseOpts)
+    const assertion = expect(promise).rejects.toMatchObject({
+      kind: 'server',
+      status: 500,
+      message: expect.stringContaining('一時的なエラー'),
+    })
+    await vi.advanceTimersByTimeAsync(10_000)
+    await assertion
+    // 初回 + 再試行2回で打ち切り
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
+
+  it('再試行の待機中に abort されたら AbortError で中断する', async () => {
+    vi.useFakeTimers()
+    const fetchMock = vi.fn().mockResolvedValue(new Response('boom', { status: 500 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const ac = new AbortController()
+    const promise = streamChat({ ...baseOpts, signal: ac.signal })
+    const assertion = expect(promise).rejects.toMatchObject({ name: 'AbortError' })
+    await vi.advanceTimersByTimeAsync(100) // 1回目の失敗後、待機中
+    ac.abort()
+    await assertion
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('429 は自動再試行しない', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('quota', { status: 429 }))
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(streamChat(baseOpts)).rejects.toMatchObject({ kind: 'rate' })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
   it('system ロールが 400 で拒否されたら user へ前置してリトライする', async () => {
