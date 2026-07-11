@@ -8,6 +8,7 @@ import Home from './pages/Home'
 import Daily from './pages/Daily'
 import Compose from './pages/Compose'
 import LongReading from './pages/LongReading'
+import LongReadingCreate from './pages/LongReadingCreate'
 import Cloze from './pages/Cloze'
 import ChatPractice from './pages/ChatPractice'
 import ExpressionStock from './pages/ExpressionStock'
@@ -52,6 +53,7 @@ export default function App() {
             <Route path="/daily" element={<Daily />} />
             <Route path="/compose" element={<Compose />} />
             <Route path="/long-reading" element={<LongReading />} />
+            <Route path="/long-reading/new" element={<LongReadingCreate />} />
             <Route path="/cloze" element={<Cloze />} />
             <Route path="/chat" element={<ChatPractice />} />
             <Route path="/stock" element={<ExpressionStock />} />
