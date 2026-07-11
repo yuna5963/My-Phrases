@@ -48,6 +48,15 @@ export default function ExpressionStock() {
         でコピーして、例文を作って Notion に追加しましょう。
       </p>
 
+      {items.length > 0 && (
+        <button
+          onClick={() => navigate('/stock/enrich')}
+          className="w-full rounded-2xl bg-violet-500 py-4 font-medium text-white active:scale-95"
+        >
+          ✨ 教材化する（AIが訳・例文・カナを補完）
+        </button>
+      )}
+
       {items.length === 0 ? (
         <div className="rounded-2xl bg-white p-6 text-center text-sm text-slate-400 shadow-sm dark:bg-slate-900">
           <p>まだ何もありません。</p>
