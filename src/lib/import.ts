@@ -12,6 +12,7 @@ const COL_PRIORITY = ['Priority', '優先度']
 const COL_NOTE = ['Note', 'メモ', '備考']
 const COL_STATUS = ['ステータス', 'Status']
 const COL_KANA = ['音節', 'Chunkカナ', 'Chunk_Kana', 'Syllable', 'カナ'] // チャンクのシラブル音節カナ
+const COL_KANA_WARN = ['カナ要確認'] // kanaLint の要確認フィールド（;区切り、エクスポート往復用）
 // 旧フォーマットの単一例文列。
 const COL_EX_SINGLE = ['使用例（例文）', '例文', '使用例', '例']
 
@@ -28,7 +29,7 @@ const TEXT_EXT = /\.(md|markdown|txt|csv)$/i
 
 /** Deterministic id from the English text so re-imports keep the same key
  *  (and therefore preserve SRS progress) when no explicit id is available. */
-function stableId(en: string): string {
+export function stableId(en: string): string {
   let h = 0x811c9dc5
   for (let i = 0; i < en.length; i++) {
     h ^= en.charCodeAt(i)
@@ -102,11 +103,16 @@ function makePhrase(
   if (!en || !ja) return null
   const id = at(COL_ID) || fallbackId || stableId(en)
   const kana = at(COL_KANA)
+  const kanaWarnings = at(COL_KANA_WARN)
+    .split(';')
+    .map((s) => s.trim())
+    .filter(Boolean)
   return {
     id,
     en,
     ja,
     ...(kana ? { kana } : {}),
+    ...(kanaWarnings.length ? { kanaWarnings } : {}),
     examples: readExamples(header, cells),
     type: at(COL_TYPE),
     category: at(COL_CATEGORY),
@@ -121,7 +127,7 @@ function makePhrase(
 // ---- CSV ----------------------------------------------------------------
 
 /** Minimal RFC-4180 CSV parser (handles quoted fields, commas & newlines). */
-function parseCsvRows(text: string): string[][] {
+export function parseCsvRows(text: string): string[][] {
   const rows: string[][] = []
   let row: string[] = []
   let field = ''
@@ -154,7 +160,7 @@ function parseCsvRows(text: string): string[][] {
   return rows.filter((r) => r.some((cell) => cell.trim() !== ''))
 }
 
-function fromCsv(text: string): Phrase[] {
+export function fromCsv(text: string): Phrase[] {
   const rows = parseCsvRows(text)
   if (rows.length < 2) return []
   const header = rows[0].map(clean)

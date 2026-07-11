@@ -10,6 +10,8 @@ import {
   resolveVoice,
   speak,
 } from '../lib/tts'
+import { csvFilename, phrasesToCsv } from '../lib/export'
+import { shareOrDownloadCsv } from '../lib/share'
 
 export default function Settings() {
   const s = useSettings()
@@ -17,9 +19,11 @@ export default function Settings() {
   const importFiles = useDeck((d) => d.importFiles)
   const clearImported = useDeck((d) => d.clearImported)
   const source = useDeck((d) => d.source)
-  const phraseCount = useDeck((d) => d.phrases.length)
+  const phrases = useDeck((d) => d.phrases)
+  const phraseCount = phrases.length
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
   const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [exportMsg, setExportMsg] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const stockCount = useStock((st) => st.items.length)
   const [voiceStatus, setVoiceStatus] = useState(getVoiceStatus())
@@ -79,6 +83,13 @@ export default function Settings() {
       setBusy(false)
       if (fileRef.current) fileRef.current.value = ''
     }
+  }
+
+  const exportDeck = async () => {
+    setExportMsg(null)
+    const outcome = await shareOrDownloadCsv(csvFilename('deck'), phrasesToCsv(phrases))
+    if (outcome === 'shared') setExportMsg('✓ 共有しました。')
+    else if (outcome === 'downloaded') setExportMsg('✓ CSVをダウンロードしました。')
   }
 
   return (
@@ -316,6 +327,17 @@ export default function Settings() {
             {importMsg.text}
           </p>
         )}
+
+        <button
+          onClick={exportDeck}
+          className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-600 dark:border-slate-700 dark:text-slate-300 active:scale-[0.99]"
+        >
+          📤 デッキをCSVでバックアップ（{phraseCount}件）
+        </button>
+        <p className="text-xs text-slate-400">
+          ステータスやカナも含めた全列を出力します。このCSVはそのまま再取り込みできます。
+        </p>
+        {exportMsg && <p className="text-sm text-emerald-500">{exportMsg}</p>}
 
         {source === 'imported' && (
           <button

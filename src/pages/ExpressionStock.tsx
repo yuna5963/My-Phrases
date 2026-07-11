@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStock } from '../store/useStock'
+import { csvFilename, stockToCsv } from '../lib/export'
+import { shareOrDownloadCsv } from '../lib/share'
 
 /**
  * 表現ストック: チャット練習のまとめでチェックした「追加候補の表現」の一覧。
@@ -13,6 +15,7 @@ export default function ExpressionStock() {
   const remove = useStock((s) => s.remove)
   const clear = useStock((s) => s.clear)
   const [copied, setCopied] = useState(false)
+  const [shareMsg, setShareMsg] = useState<string | null>(null)
 
   const tsv = items.map((i) => `${i.en}\t${i.ja}`).join('\n')
   const mailBody = items.map((i) => `${i.en}${i.ja ? ` — ${i.ja}` : ''}`).join('\n')
@@ -25,6 +28,13 @@ export default function ExpressionStock() {
     } catch {
       setCopied(false)
     }
+  }
+
+  const shareCsv = async () => {
+    setShareMsg(null)
+    const outcome = await shareOrDownloadCsv(csvFilename('stock'), stockToCsv(items))
+    if (outcome === 'shared') setShareMsg('✓ 共有しました。')
+    else if (outcome === 'downloaded') setShareMsg('✓ CSVをダウンロードしました。')
   }
 
   return (
@@ -64,8 +74,15 @@ export default function ExpressionStock() {
               ✉️ メールで送る
             </a>
           </div>
+          <button
+            onClick={shareCsv}
+            className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-600 dark:border-slate-700 dark:text-slate-300 active:scale-[0.99]"
+          >
+            📤 CSVで共有 / 保存
+          </button>
+          {shareMsg && <p className="text-sm text-emerald-500">{shareMsg}</p>}
           <p className="text-xs text-slate-400">
-            コピーはタブ区切りなので、表計算や Notion のテーブルにそのまま貼り付けられます。
+            コピーはタブ区切りなので、表計算や Notion のテーブルにそのまま貼り付けられます。CSVは共有シートからメールや Drive に送れます。
           </p>
 
           <ul className="space-y-2">
