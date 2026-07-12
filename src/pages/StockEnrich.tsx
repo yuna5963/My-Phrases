@@ -5,6 +5,7 @@ import { useSettings } from '../store/useSettings'
 import { useStock } from '../store/useStock'
 import { normalize } from '../lib/chunkMatch'
 import { lintKana } from '../lib/kanaLint'
+import Field from '../components/FormField'
 import {
   draftToPhrase,
   enrichAll,
@@ -464,23 +465,3 @@ function DraftCard({
   )
 }
 
-function Field({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-}) {
-  return (
-    <label className="block">
-      <span className="text-xs text-slate-400">{label}</span>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
-      />
-    </label>
-  )
-}

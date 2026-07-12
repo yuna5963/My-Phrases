@@ -34,7 +34,15 @@ export default function Browse() {
 
   return (
     <div className="space-y-3">
-      <h1 className="text-xl font-bold">チャンク一覧</h1>
+      <div className="flex items-baseline justify-between">
+        <h1 className="text-xl font-bold">チャンク一覧</h1>
+        <button
+          onClick={() => navigate('/chunk/new')}
+          className="text-sm font-medium text-sky-500"
+        >
+          ＋ 追加
+        </button>
+      </div>
 
       <FacetFilters filter={filter} />
 

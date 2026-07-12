@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDeck } from '../store/useDeck'
 import { useSettings } from '../store/useSettings'
+import { useStock } from '../store/useStock'
 import { computeStats } from '../lib/session'
 
 function Stat({ value, label, accent }: { value: number; label: string; accent?: string }) {
@@ -20,6 +21,7 @@ export default function Home() {
   const streak = useDeck((s) => s.streak)
   const source = useDeck((s) => s.source)
   const includeStatuses = useSettings((s) => s.includeStatuses)
+  const stockCount = useStock((s) => s.items.length)
 
   const stats = useMemo(
     () => computeStats(phrases, progress, includeStatuses),
@@ -94,6 +96,24 @@ export default function Home() {
         >
           <div className="text-lg font-bold">💬 チャット練習</div>
           <div className="text-sm text-violet-100">AIコーチと会話して覚えたチャンクを使う</div>
+        </button>
+        <button
+          onClick={() => navigate('/stock')}
+          className="w-full rounded-2xl bg-teal-500 px-5 py-4 text-left text-white shadow active:scale-[0.99]"
+        >
+          <div className="flex items-baseline justify-between">
+            <div className="text-lg font-bold">🗂 表現ストック</div>
+            {stockCount > 0 && (
+              <span className="rounded-full bg-white/25 px-2 py-0.5 text-xs font-medium">
+                {stockCount}件
+              </span>
+            )}
+          </div>
+          <div className="text-sm text-teal-100">
+            {stockCount > 0
+              ? 'ためた表現をAIで教材化してデッキに追加'
+              : 'チャットで出会った表現をためて教材にする'}
+          </div>
         </button>
       </section>
 
