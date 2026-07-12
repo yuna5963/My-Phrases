@@ -25,6 +25,8 @@ export default function ChunkDetail() {
   const progress = useDeck((s) => s.progress)
   const setLearned = useDeck((s) => s.setLearned)
 
+  const removePhrase = useDeck((s) => s.removePhrase)
+
   const state = (location.state ?? {}) as { ids?: string[]; backTo?: string }
   const backTo = state.backTo ?? '/browse'
 
@@ -46,13 +48,16 @@ export default function ChunkDetail() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">チャンク詳細</h1>
+      <div className="flex items-baseline justify-between">
+        <h1 className="text-xl font-bold">チャンク詳細</h1>
+        <span className="text-xs text-slate-400">ステータス: {phrase.status || '—'}</span>
+      </div>
 
       <ModelCard phrase={phrase} accentText="text-sky-600 dark:text-sky-400" />
 
       {!!phrase.kanaWarnings?.length && (
         <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-          ⚠ カナ要確認: {phrase.kanaWarnings.join(' / ')} — AI生成の下書きです。カナを修正して取り込み直すと解除されます。
+          ⚠ カナ要確認: {phrase.kanaWarnings.join(' / ')} — AI生成の下書きです。「✏️ 編集」でカナを修正すると解除されます。
         </p>
       )}
 
@@ -100,6 +105,29 @@ export default function ChunkDetail() {
       >
         💬 このチャンクで会話練習
       </button>
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={() =>
+            navigate(`/chunk/${phrase.id}/edit`, { state: { ids, backTo } })
+          }
+          className="rounded-2xl bg-slate-200 py-4 font-medium text-slate-600 active:scale-95 dark:bg-slate-800 dark:text-slate-300"
+        >
+          ✏️ 編集
+        </button>
+        <button
+          onClick={async () => {
+            if (
+              !confirm(`「${phrase.en}」を削除します。学習の記録も消えます。よろしいですか？`)
+            )
+              return
+            await removePhrase(phrase.id)
+            navigate(backTo, { replace: true })
+          }}
+          className="rounded-2xl bg-rose-50 py-4 font-medium text-rose-600 active:scale-95 dark:bg-rose-950/40 dark:text-rose-300"
+        >
+          🗑 削除
+        </button>
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={() => navigate(backTo)}

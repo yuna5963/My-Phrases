@@ -65,6 +65,18 @@ export async function clearPhrases(): Promise<void> {
   await db.clear('phrases')
 }
 
+/** Delete a single phrase (in-app edit/delete flow). */
+export async function deletePhrase(id: string): Promise<void> {
+  const db = await getDB()
+  await db.delete('phrases', id)
+}
+
+/** Delete the SRS progress of a single phrase (cleanup when the phrase is removed). */
+export async function deleteProgress(id: string): Promise<void> {
+  const db = await getDB()
+  await db.delete('progress', id)
+}
+
 export async function getAllProgress(): Promise<Record<string, Progress>> {
   const db = await getDB()
   const all = await db.getAll('progress')

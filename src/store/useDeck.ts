@@ -4,6 +4,8 @@ import { applyGrade, newProgress, todayStr } from '../lib/srs'
 import {
   clearPhrases,
   clearProgress,
+  deletePhrase,
+  deleteProgress,
   getAllPhrases,
   getAllProgress,
   getMeta,
@@ -37,8 +39,12 @@ interface DeckState {
   setLearned: (id: string, learned: boolean) => Promise<void>
   reset: () => Promise<void>
   importFiles: (files: File[], mode?: ImportMode) => Promise<ImportSummary>
-  /** アプリ内で作った教材（教材化・AI長文）をデッキへ追記する。 */
+  /** アプリ内で作った教材（教材化・AI長文・手動追加）をデッキへ追記する。 */
   addPhrases: (newPhrases: Phrase[]) => Promise<number>
+  /** 教材1件を上書き保存する（チャンク編集）。 */
+  updatePhrase: (phrase: Phrase) => Promise<void>
+  /** 教材1件を削除する（SRS進捗も一緒に消す）。 */
+  removePhrase: (id: string) => Promise<void>
   clearImported: () => Promise<void>
 }
 
@@ -64,6 +70,16 @@ async function loadSample(): Promise<Phrase[]> {
   const res = await fetch(dataUrl(), { cache: 'no-cache' })
   if (!res.ok) throw new Error(`phrases.json ${res.status}`)
   return (await res.json()) as Phrase[]
+}
+
+/**
+ * IndexedDB への最初の書き込み前に呼ぶ。サンプル使用中（DBが空）に差分だけ
+ * 保存すると、次の load() でサンプルが「消えた」ように見えるため、
+ * 先に現在のデッキ全件を実体化しておく（以後 source は 'imported' になる）。
+ */
+async function ensurePersisted(get: () => DeckState): Promise<void> {
+  const existing = await getAllPhrases()
+  if (!existing.length) await putPhrases(get().phrases)
 }
 
 export const useDeck = create<DeckState>((set, get) => ({
@@ -138,15 +154,23 @@ export const useDeck = create<DeckState>((set, get) => ({
 
   addPhrases: async (newPhrases) => {
     if (!newPhrases.length) return 0
-    const existing = await getAllPhrases()
-    if (!existing.length) {
-      // サンプル使用中に追加分だけ保存すると、次の load() でサンプルが
-      // 「消えた」ように見えるため、先に現在のサンプルを実体化しておく。
-      await putPhrases(get().phrases)
-    }
+    await ensurePersisted(get)
     await putPhrases(newPhrases)
     await get().load()
     return newPhrases.length
+  },
+
+  updatePhrase: async (phrase) => {
+    await ensurePersisted(get)
+    await putPhrases([phrase])
+    await get().load()
+  },
+
+  removePhrase: async (id) => {
+    await ensurePersisted(get)
+    await deletePhrase(id)
+    await deleteProgress(id)
+    await get().load()
   },
 
   clearImported: async () => {
