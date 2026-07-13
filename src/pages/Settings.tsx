@@ -12,6 +12,7 @@ import {
 } from '../lib/tts'
 import { csvFilename, phrasesToCsv } from '../lib/export'
 import { shareOrDownloadCsv } from '../lib/share'
+import UsageBadge from '../components/UsageBadge'
 
 /** モデル選択の候補。これ以外は「その他（手入力）」で自由に指定できる。 */
 const MODEL_PRESETS = [
@@ -301,6 +302,12 @@ export default function Settings() {
             onChange={(e) => s.setChatTargetCount(Number(e.target.value))}
           />
         </Row>
+        <UsageBadge />
+        <p className="text-xs text-slate-400">
+          残り回数は「この端末のこのアプリから送った回数」で数えた目安です（AI Studio
+          や他端末での利用は含まれません）。無料枠は毎日太平洋時間の深夜
+          （日本時間の夕方16〜17時ごろ）にリセットされます。
+        </p>
         <p className="text-xs text-slate-400">
           キーはこの端末内（ブラウザ）にのみ保存され、Google 以外へは送信されません。
           モデルはチャット練習・教材化・AI長文で共通です。混雑エラー（500）が続くときは

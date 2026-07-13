@@ -5,6 +5,7 @@ import { useSettings } from '../store/useSettings'
 import { excludeLongReading } from '../lib/longReading'
 import { matchesChunk } from '../lib/chunkMatch'
 import { isDue } from '../lib/srs'
+import UsageBadge from '../components/UsageBadge'
 import {
   draftToLongPhrase,
   generateLongReading,
@@ -204,6 +205,7 @@ export default function LongReadingCreate() {
       <p className="text-sm text-slate-500">
         デッキのチャンクを織り込んだ音読用の長文を生成します。テーマとチャンク（{MIN_CHUNKS}〜{MAX_CHUNKS}個）を選んでください。
       </p>
+      <UsageBadge />
 
       <section className="space-y-3 rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-900">
         <label className="block">

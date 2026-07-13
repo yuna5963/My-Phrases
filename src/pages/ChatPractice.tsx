@@ -9,6 +9,7 @@ import { isLongReading } from '../lib/longReading'
 import { stripThoughts } from '../lib/chatApi'
 import type { ChatFocus } from '../lib/coachPrompt'
 import { stockKey, useStock } from '../store/useStock'
+import UsageBadge from '../components/UsageBadge'
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr]
@@ -73,9 +74,10 @@ export default function ChatPractice() {
     if (!chatApiKey || phrases.length === 0) return
     const focus = resolveFocus()
     const existing = useChat.getState()
-    // 下部タブで行き来しても会話が消えないよう、進行中のセッションは再開する。
-    // フォーカス指定（チャンク詳細・例文カード発）か、まとめ済みなら新しく始める。
-    if (!focus && existing.messages.length > 0 && existing.status !== 'done') return
+    // 他ページと行き来しても会話・まとめが消えないよう、既存セッションは
+    // （進行中でもまとめ済みでも）そのまま再開する。新しく始まるのは
+    // フォーカス指定（チャンク詳細・例文カード発）と「もう一度」ボタンのみ。
+    if (!focus && existing.messages.length > 0) return
     setEnding(false)
     chat.startSession(pickTargets(focus), focus)
     // マウント時に1回だけ判断する（途中で設定が変わっても組み直さない）。
@@ -87,6 +89,16 @@ export default function ChatPractice() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [visible.length, visible[visible.length - 1]?.content])
+
+  // ソフトウェアキーボードの開閉（=ビューポートの高さ変化）で会話が隠れないよう、
+  // 高さが変わったら最新メッセージまでスクロールし直す（LINE風の入力感）。
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const onResize = () => bottomRef.current?.scrollIntoView({ block: 'end' })
+    vv.addEventListener('resize', onResize)
+    return () => vv.removeEventListener('resize', onResize)
+  }, [])
 
   const send = () => {
     if (!input.trim() || chat.status === 'streaming') return
@@ -224,10 +236,23 @@ export default function ChatPractice() {
     )
   }
 
+  // 会話画面は下部ナビを出さない全画面レイアウト（fixed）。viewport の
+  // interactive-widget=resizes-content と合わせて、キーボードが出ると画面全体が
+  // 縮んで入力バーがキーボード直上に来る（LINE風）。セッションはストアに残るので、
+  // ← でホームへ戻っても会話は消えない。
   return (
-    <div className="flex h-full flex-col">
+    <div className="safe-top fixed inset-0 z-30 mx-auto flex max-w-md flex-col bg-slate-100 px-4 pt-4 dark:bg-slate-950">
       <header className="flex items-center justify-between pb-2">
-        <h1 className="font-bold">💬 チャット練習</h1>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => navigate('/')}
+            aria-label="ホームへ戻る（会話は保持されます）"
+            className="-ml-2 rounded-full px-2 py-1 text-xl leading-none text-slate-400 active:scale-95"
+          >
+            ‹
+          </button>
+          <h1 className="font-bold">💬 チャット練習</h1>
+        </div>
         <button
           onClick={onEnd}
           className="rounded-full border border-slate-300 px-3 py-1 text-sm text-slate-500 dark:border-slate-700 active:scale-95"
@@ -237,11 +262,12 @@ export default function ChatPractice() {
       </header>
 
       {/* 対象チャンク。使えたら点灯する */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <div className="flex gap-2 overflow-x-auto pb-1">
         {chat.targets.map((p) => (
           <ChunkChip key={p.id} phrase={p} used={chat.usedChunkIds.includes(p.id)} />
         ))}
       </div>
+      <UsageBadge className="pb-1 text-right" />
 
       <div className="flex-1 space-y-3 overflow-y-auto py-3">
         {visible.map((m, i) => {
@@ -272,7 +298,7 @@ export default function ChatPractice() {
         <div ref={bottomRef} />
       </div>
 
-      <div className="flex items-end gap-2 border-t border-slate-200 pt-2 dark:border-slate-800">
+      <div className="safe-bottom flex items-end gap-2 border-t border-slate-200 pb-2 pt-2 dark:border-slate-800">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}

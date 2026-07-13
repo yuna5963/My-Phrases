@@ -6,6 +6,7 @@ import { useStock } from '../store/useStock'
 import { normalize } from '../lib/chunkMatch'
 import { lintKana } from '../lib/kanaLint'
 import Field from '../components/FormField'
+import UsageBadge from '../components/UsageBadge'
 import {
   draftToPhrase,
   enrichAll,
@@ -239,6 +240,7 @@ export default function StockEnrich() {
         <p className="text-sm text-slate-500">
           AIが作った下書きです。訳・例文・カナを確認して、必要なら修正してから追加してください。
         </p>
+        <UsageBadge />
         {apiError && (
           <div className="space-y-2 rounded-xl bg-rose-50 px-3 py-2 dark:bg-rose-950/40">
             <p className="text-sm text-rose-600 dark:text-rose-300">⚠ {apiError}</p>

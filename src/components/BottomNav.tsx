@@ -11,8 +11,16 @@ const tabs = [
 // Full-screen practice routes hide the nav so its fixed bar can't overlap
 // the on-screen action buttons.
 // '/example/'（例文カード）は末尾スラッシュ付きで判定する（'/examples' と前方一致で衝突するため）。
-// チャット練習はタブから開くのでナビは出したまま（入力バーは pb-24 の上に収まる）。
-const HIDDEN_PREFIXES = ['/daily', '/compose', '/long-reading', '/cloze', '/phrase', '/example/']
+// チャット練習も全画面（LINE風に入力バーを最下部へ置き、キーボードの直上に来るように）。
+const HIDDEN_PREFIXES = [
+  '/daily',
+  '/compose',
+  '/long-reading',
+  '/cloze',
+  '/phrase',
+  '/example/',
+  '/chat',
+]
 
 export default function BottomNav() {
   const { pathname } = useLocation()
