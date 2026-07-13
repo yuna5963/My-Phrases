@@ -1,6 +1,7 @@
 // OpenAI 形式（chat/completions）の最小クライアント。
 // Gemini API の OpenAI 互換エンドポイントをブラウザから直接呼ぶ。
 // SDK は使わず fetch + ReadableStream で SSE をパースする（バンドル肥大回避）。
+import { useUsage } from './usage'
 
 export type ChatRole = 'system' | 'user' | 'assistant'
 
@@ -140,6 +141,9 @@ async function requestStream(
   opts: StreamChatOptions,
   messages: ChatMessage[],
 ): Promise<Response> {
+  // 無料枠の残り目安のため、実際に送るHTTPリクエストを1回ずつ数える
+  // （自動再試行も上限を消費するので、この関数が唯一の計上点）。
+  useUsage.getState().record(opts.model)
   let res: Response
   try {
     res = await fetch(ENDPOINT, {

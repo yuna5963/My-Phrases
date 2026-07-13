@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useStock } from '../store/useStock'
+import { Link, useNavigate } from 'react-router-dom'
+import { stockKey, useStock } from '../store/useStock'
 import { csvFilename, stockToCsv } from '../lib/export'
 import { shareOrDownloadCsv } from '../lib/share'
+import FormField from '../components/FormField'
 
 /**
  * 表現ストック: チャット練習のまとめでチェックした「追加候補の表現」の一覧。
@@ -44,9 +45,11 @@ export default function ExpressionStock() {
         <span className="text-sm text-slate-500">{items.length}件</span>
       </header>
       <p className="text-sm text-slate-500">
-        チャット練習のまとめでチェックした表現の置き場です。数日分たまったら PC
-        でコピーして、例文を作って Notion に追加しましょう。
+        チャット練習のまとめでチェックした表現や、自分で思いついた表現の置き場です。
+        たまったら「教材化」でそのままデッキに追加できます。
       </p>
+
+      <ManualAdd />
 
       {items.length > 0 && (
         <button
@@ -126,6 +129,96 @@ export default function ExpressionStock() {
           </button>
         </>
       )}
+    </div>
+  )
+}
+
+/**
+ * 自分で思いついた表現の手動追加。英語だけでもよく（訳は教材化のAIが補完）、
+ * 例文まで自分で書きたいときのためにチャンク追加フォームへの導線も置く。
+ */
+function ManualAdd() {
+  const items = useStock((s) => s.items)
+  const add = useStock((s) => s.add)
+  const [open, setOpen] = useState(false)
+  const [en, setEn] = useState('')
+  const [ja, setJa] = useState('')
+  const [msg, setMsg] = useState<string | null>(null)
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="w-full rounded-2xl border border-dashed border-slate-300 py-3 text-sm font-medium text-slate-500 active:scale-[0.99] dark:border-slate-700 dark:text-slate-400"
+      >
+        ✍️ 自分で追加（思いついた表現をメモ）
+      </button>
+    )
+  }
+
+  const submit = () => {
+    const trimmedEn = en.trim()
+    if (!trimmedEn) return
+    if (items.some((i) => stockKey(i.en) === stockKey(trimmedEn))) {
+      setMsg('⚠ その表現は既にストックにあります')
+      return
+    }
+    add({ en: trimmedEn, ja: ja.trim() })
+    setEn('')
+    setJa('')
+    setMsg('✓ ストックに追加しました。続けて入力できます')
+  }
+
+  return (
+    <div className="space-y-2 rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-900">
+      <div className="flex items-baseline justify-between">
+        <h2 className="text-sm font-semibold">✍️ 自分で追加</h2>
+        <button
+          onClick={() => {
+            setOpen(false)
+            setMsg(null)
+          }}
+          className="text-xs text-slate-400 underline"
+        >
+          閉じる
+        </button>
+      </div>
+      <FormField
+        label="英語（必須）"
+        value={en}
+        onChange={(v) => {
+          setMsg(null)
+          setEn(v)
+        }}
+        placeholder="I'll get back to you."
+      />
+      <FormField
+        label="日本語（空欄なら教材化のAIが補完）"
+        value={ja}
+        onChange={(v) => {
+          setMsg(null)
+          setJa(v)
+        }}
+        placeholder="あとで折り返すね"
+      />
+      <button
+        onClick={submit}
+        disabled={!en.trim()}
+        className="w-full rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-40 active:scale-[0.99]"
+      >
+        📥 ストックに追加
+      </button>
+      {msg && (
+        <p className={`text-sm ${msg.startsWith('✓') ? 'text-emerald-500' : 'text-amber-600 dark:text-amber-400'}`}>
+          {msg}
+        </p>
+      )}
+      <p className="text-xs text-slate-400">
+        例文やカナまで自分で書きたいときは{' '}
+        <Link to="/chunk/new" className="font-medium text-sky-500 underline">
+          チャンクを直接追加 →
+        </Link>
+      </p>
     </div>
   )
 }
