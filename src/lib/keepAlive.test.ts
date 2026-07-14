@@ -15,7 +15,7 @@ const ascii = (wav: Uint8Array, start: number, len: number) =>
   String.fromCharCode(...wav.slice(start, start + len))
 
 describe('generateKeepAliveWav', () => {
-  it('正しい RIFF/WAVE ヘッダを持つ（PCM・モノラル・8kHz・16bit・1秒）', () => {
+  it('正しい RIFF/WAVE ヘッダを持つ（PCM・モノラル・8kHz・16bit・30秒）', () => {
     const wav = generateKeepAliveWav()
     const view = new DataView(wav.buffer)
     expect(ascii(wav, 0, 4)).toBe('RIFF')
@@ -26,8 +26,14 @@ describe('generateKeepAliveWav', () => {
     expect(view.getUint16(22, true)).toBe(1) // モノラル
     expect(view.getUint32(24, true)).toBe(8000)
     expect(view.getUint16(34, true)).toBe(16)
-    expect(view.getUint32(40, true)).toBe(16000) // 8000サンプル×2バイト
-    expect(wav.length).toBe(44 + 16000)
+    expect(view.getUint32(40, true)).toBe(480000) // 8000サンプル×30秒×2バイト
+    expect(wav.length).toBe(44 + 480000)
+  })
+
+  it('メディア通知の条件（Android Chrome: 5秒以上）を満たす長さがある', () => {
+    const view = new DataView(generateKeepAliveWav().buffer)
+    const seconds = view.getUint32(40, true) / 2 / view.getUint32(24, true)
+    expect(seconds).toBeGreaterThanOrEqual(5)
   })
 
   it('デジタル無音ではない（0でないサンプルがある）', () => {
@@ -42,7 +48,7 @@ describe('generateKeepAliveWav', () => {
       expect(max).toBeLessThanOrEqual(amplitude * 32767 + 1) // 丸め分の余裕
       expect(max).toBeGreaterThan(0)
     }
-    check(undefined, 0.01)
+    check(undefined, 0.02)
     check({ amplitude: 0.05 }, 0.05)
   })
 
@@ -50,7 +56,7 @@ describe('generateKeepAliveWav', () => {
     // 末尾サンプルは周期終端の 1 サンプル手前なので、0 ちょうどではなく
     // |peak × sin(2πf/sr)|（位相1ステップ分）以下であれば連続にループする。
     const check = (spec: Parameters<typeof generateKeepAliveWav>[0]) => {
-      const { sampleRate = 8000, freqHz = 40, amplitude = 0.01 } = spec ?? {}
+      const { sampleRate = 8000, freqHz = 40, amplitude = 0.02 } = spec ?? {}
       const s = samplesOf(generateKeepAliveWav(spec))
       const stepBound = amplitude * 32767 * Math.sin((2 * Math.PI * freqHz) / sampleRate) + 1
       expect(s[0]).toBe(0)

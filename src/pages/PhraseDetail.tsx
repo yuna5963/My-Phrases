@@ -113,6 +113,9 @@ export default function PhraseDetail() {
   // 「画面を暗くして再生」モード：全画面を黒く覆い、誤タッチを無効化する。
   // バックライト自体は消せない（Web に明るさ API が無い）ので“黒く塗る”だけ。
   const [dark, setDark] = useState(false)
+  // 【実験的】キープアライブの作動状態。実機で「効いているか」を切り分けられる
+  // よう、▶の下に小さく表示する（'on'=再生開始成功 / 'failed'=autoplay拒否など）。
+  const [keepAliveState, setKeepAliveState] = useState<'idle' | 'on' | 'failed'>('idle')
 
   // 連続再生中は画面スリープを抑止（消灯で再生が止まらないように）。
   // 暗転モード中も同様に点けたままにして Web Speech を止めない。
@@ -124,6 +127,7 @@ export default function PhraseDetail() {
   useEffect(() => {
     if (!playing) {
       stopKeepAlive()
+      setKeepAliveState('idle')
       if (dark) setDark(false)
     }
   }, [playing, dark])
@@ -265,7 +269,7 @@ export default function PhraseDetail() {
         stopSpeaking()
         setPlaying(false)
       },
-    })
+    }).then((ok) => setKeepAliveState(ok ? 'on' : 'failed'))
   }
 
   const togglePlay = () => {
@@ -368,6 +372,14 @@ export default function PhraseDetail() {
             🌙 暗くして再生
           </button>
         </div>
+
+        {bgPlayback && playing && keepAliveState !== 'idle' && (
+          <p className="text-center text-xs text-slate-400">
+            {keepAliveState === 'on'
+              ? '🔋 画面オフ再生の実験モード作動中（通知に再生中メディアが出ます）'
+              : '⚠ 実験モードを開始できませんでした（⏸ で止めて ▶ を押し直してください）'}
+          </p>
+        )}
 
         <div className="flex flex-wrap justify-center gap-2">
           <ToggleChip active={repeat} onClick={() => setRepeat(!repeat)}>
