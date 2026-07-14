@@ -146,6 +146,20 @@ export default function Settings() {
         <Row label="カナ（音節）を表示">
           <Toggle checked={s.showKana} onChange={s.setShowKana} />
         </Row>
+        <Row label="🔋 画面オフでも再生を試す（実験的）">
+          <Toggle checked={s.bgPlayback} onChange={s.setBgPlayback} />
+        </Row>
+        {s.bgPlayback && (
+          <p className="text-xs text-slate-400">
+            連続再生・長文音読の間、ほぼ無音の音声を流し続けてブラウザに「音を再生中のタブ」と
+            認識させ、画面を消しても読み上げが続くことを狙う実験的な機能です。効果は端末や
+            Chrome のバージョンに依存し、うまくいかない場合があります。効かないときは Android の
+            設定 → アプリ → Chrome → バッテリーを「制限なし」にすると安定することがあります。
+            確実に聞き流したいときは従来どおり「🌙 暗くして再生」を使ってください
+            （ONの間は通知に再生中のメディアが表示され、電池消費がやや増えます。
+            通知の⏸やイヤホンを抜くと再生ごと停止します）。
+          </p>
+        )}
         <button
           onClick={runTest}
           className="w-full rounded-xl bg-sky-500 px-4 py-2.5 font-medium text-white"

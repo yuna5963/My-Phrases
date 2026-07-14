@@ -4,6 +4,7 @@ import { useDeck } from '../store/useDeck'
 import { useSettings } from '../store/useSettings'
 import { speak, stopSpeaking } from '../lib/tts'
 import { useWakeLock } from '../lib/wakeLock'
+import { startKeepAlive, stopKeepAlive } from '../lib/keepAlive'
 import { isLongReading } from '../lib/longReading'
 import { useSpokenWordTracker } from '../hooks/useSpokenWordTracker'
 import MetaChips from '../components/MetaChips'
@@ -21,6 +22,7 @@ export default function LongReading() {
   const phrases = useDeck((s) => s.phrases)
   const voiceURI = useSettings((x) => x.voiceURI)
   const rate = useSettings((x) => x.rate)
+  const bgPlayback = useSettings((x) => x.bgPlayback)
 
   const items = useMemo(() => phrases.filter(isLongReading), [phrases])
 
@@ -45,7 +47,17 @@ export default function LongReading() {
     setShowJa(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pos])
-  useEffect(() => () => stopSpeaking(), [])
+  useEffect(
+    () => () => {
+      stopSpeaking()
+      stopKeepAlive()
+    },
+    [],
+  )
+  // 読み上げが止まったらキープアライブ音声も止める（onEnd/onError 経由も含む）。
+  useEffect(() => {
+    if (!playing) stopKeepAlive()
+  }, [playing])
 
   if (items.length === 0) {
     return (
@@ -82,6 +94,10 @@ export default function LongReading() {
       return
     }
     if (!passage?.en) return
+    // 【実験的】画面オフでも読み上げ継続を試す（タップハンドラ内で開始が必要）。
+    if (bgPlayback) {
+      startKeepAlive({ title: current!.en, artist: '長文音読', onExternalPause: stopPlayback })
+    }
     setPlaying(true)
     tracker.start(passage.en, rate)
     speak(passage.en, {
