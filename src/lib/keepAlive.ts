@@ -9,22 +9,24 @@
 // 通知の⏸やイヤホン抜去では再生全体を止める（キープアライブだけが止まって
 // ハックが静かに死ぬのを防ぐ）。
 
-/** キープアライブ用WAVの生成パラメータ。既定: 40Hz・-40dBFS・8kHz・1秒。 */
+/** キープアライブ用WAVの生成パラメータ。既定: 40Hz・約-34dBFS・8kHz・30秒。 */
 export interface KeepAliveWavSpec {
   sampleRate?: number
   seconds?: number
   freqHz?: number
-  /** フルスケール比 0..1。小さすぎると「無音」と判定される恐れがあるため既定 0.01。 */
+  /** フルスケール比 0..1。小さすぎると「無音」と判定される恐れがあるため既定 0.02。 */
   amplitude?: number
 }
 
 /**
  * ほぼ聞こえないループ用WAV（RIFF/PCM16LE・モノラル）をバイト列で生成する。
  * 40Hz はスマホのスピーカーではほぼ再生できない低さだがデジタル的には非無音。
- * 既定の 1 秒 = 40 周期ちょうどで、ループ境界が位相連続になりクリック音が出ない。
+ * 既定の 30 秒 = 1200 周期ちょうどで、ループ境界が位相連続になりクリック音が出ない。
+ * ※ Android Chrome は**5秒未満のメディアをメディア再生として扱わない**
+ * （通知が出ず、バックグラウンド凍結の免除も受けられない）ため、既定は十分長い30秒にする。
  */
 export function generateKeepAliveWav(spec: KeepAliveWavSpec = {}): Uint8Array {
-  const { sampleRate = 8000, seconds = 1, freqHz = 40, amplitude = 0.01 } = spec
+  const { sampleRate = 8000, seconds = 30, freqHz = 40, amplitude = 0.02 } = spec
   const numSamples = Math.round(sampleRate * seconds)
   const dataSize = numSamples * 2 // 16bit モノラル
   const buf = new ArrayBuffer(44 + dataSize)
