@@ -5,6 +5,7 @@ import { useSettings } from '../store/useSettings'
 import { hasVoiceForLang, loadVoices, speakSequence, stopSpeaking } from '../lib/tts'
 import type { SeqPart } from '../lib/tts'
 import { useWakeLock } from '../lib/wakeLock'
+import { startKeepAlive, stopKeepAlive, updateKeepAliveMetadata } from '../lib/keepAlive'
 import { isLongReading } from '../lib/longReading'
 import MetaChips from '../components/MetaChips'
 import ReproCard from '../components/ReproCard'
@@ -86,6 +87,7 @@ export default function PhraseDetail() {
   const speakPhrase = useSettings((x) => x.speakPhrase)
   const speakExample = useSettings((x) => x.speakExample)
   const speakJa = useSettings((x) => x.speakJa)
+  const bgPlayback = useSettings((x) => x.bgPlayback)
   const setRepeat = useSettings((x) => x.setRepeat)
   const setShuffle = useSettings((x) => x.setShuffle)
   const setSpeakPhrase = useSettings((x) => x.setSpeakPhrase)
@@ -116,9 +118,14 @@ export default function PhraseDetail() {
   // 暗転モード中も同様に点けたままにして Web Speech を止めない。
   useWakeLock(playing || dark)
 
-  // 再生が止まったら暗転も解除（無音の黒画面が残らないように）。
+  // 再生が止まったら暗転も解除（無音の黒画面が残らないように）し、
+  // バックグラウンド再生用のキープアライブ音声も止める（手動停止・
+  // リスト末尾・エラーなど全ての停止経路をここでカバー）。
   useEffect(() => {
-    if (!playing && dark) setDark(false)
+    if (!playing) {
+      stopKeepAlive()
+      if (dark) setDark(false)
+    }
   }, [playing, dark])
 
   // Read settings inside async callbacks without re-triggering the player effect.
@@ -189,8 +196,14 @@ export default function PhraseDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phrase])
 
-  // Stop any speech when leaving the page.
-  useEffect(() => () => stopSpeaking(), [])
+  // Stop any speech (and the keep-alive audio) when leaving the page.
+  useEffect(
+    () => () => {
+      stopSpeaking()
+      stopKeepAlive()
+    },
+    [],
+  )
 
   // Continuous playback: read the current card (per the toggles), then advance.
   useEffect(() => {
@@ -200,6 +213,8 @@ export default function PhraseDetail() {
       setPlaying(false)
       return
     }
+    // ロック画面・通知の表示を今のカードに合わせる（キープアライブOFF時は no-op）。
+    updateKeepAliveMetadata({ title: p.en, artist: p.ja })
     let cancelled = false
     let gapTimer: ReturnType<typeof setTimeout> | undefined
     const goNext = () => {
@@ -238,6 +253,21 @@ export default function PhraseDetail() {
     )
   }
 
+  // 【実験的】バックグラウンド再生ON時のキープアライブ開始。autoplay 制限が
+  // あるため、必ず ▶ / 🌙 のタップハンドラ内（ユーザージェスチャ内）で呼ぶ。
+  // 通知の⏸・イヤホン抜去などで外から止められたら再生全体を止める。
+  const startKeepAliveIfEnabled = () => {
+    if (!bgPlayback || !phrase) return
+    startKeepAlive({
+      title: phrase.en,
+      artist: phrase.ja,
+      onExternalPause: () => {
+        stopSpeaking()
+        setPlaying(false)
+      },
+    })
+  }
+
   const togglePlay = () => {
     if (playing) {
       stopSpeaking()
@@ -245,6 +275,7 @@ export default function PhraseDetail() {
     } else {
       manualToken.current++ // cancel any single-card playback first
       stopSpeaking()
+      startKeepAliveIfEnabled()
       setPlaying(true)
     }
   }
@@ -254,6 +285,7 @@ export default function PhraseDetail() {
     if (!playing) {
       manualToken.current++
       stopSpeaking()
+      startKeepAliveIfEnabled()
       setPlaying(true)
     }
     setDark(true)

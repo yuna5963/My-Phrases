@@ -14,6 +14,8 @@ export interface SettingsState {
   speakExample: boolean // 例文（英語）を読み上げる
   speakJa: boolean // 日本語訳も読み上げる
   showKana: boolean // 英文の下にシラブル音節カナを表示する
+  // 【実験的】連続再生中にほぼ無音の音声をループ再生し、画面オフでも読み上げ継続を試みる
+  bgPlayback: boolean
   // チャット練習（AI英語コーチ）
   chatApiKey: string // Gemini API キー（この端末の localStorage にのみ保存）
   chatModel: string // OpenAI互換エンドポイントに渡すモデル名
@@ -30,6 +32,7 @@ export interface SettingsState {
   setSpeakExample: (b: boolean) => void
   setSpeakJa: (b: boolean) => void
   setShowKana: (b: boolean) => void
+  setBgPlayback: (b: boolean) => void
   setChatApiKey: (v: string) => void
   setChatModel: (v: string) => void
   setChatFeedbackJa: (b: boolean) => void
@@ -52,6 +55,7 @@ export const useSettings = create<SettingsState>()(
       speakExample: true,
       speakJa: false,
       showKana: true,
+      bgPlayback: false,
       chatApiKey: '',
       chatModel: 'gemma-4-31b-it',
       chatFeedbackJa: true,
@@ -72,6 +76,7 @@ export const useSettings = create<SettingsState>()(
       setSpeakExample: (speakExample) => set({ speakExample }),
       setSpeakJa: (speakJa) => set({ speakJa }),
       setShowKana: (showKana) => set({ showKana }),
+      setBgPlayback: (bgPlayback) => set({ bgPlayback }),
       setChatApiKey: (chatApiKey) => set({ chatApiKey }),
       setChatModel: (chatModel) => set({ chatModel }),
       setChatFeedbackJa: (chatFeedbackJa) => set({ chatFeedbackJa }),
