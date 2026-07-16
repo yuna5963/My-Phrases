@@ -4,7 +4,8 @@ import { useDeck } from '../store/useDeck'
 import { useSettings } from '../store/useSettings'
 import { speak, stopSpeaking } from '../lib/tts'
 import { useWakeLock } from '../lib/wakeLock'
-import { startKeepAlive, stopKeepAlive } from '../lib/keepAlive'
+import { startBackgroundSession, stopBackgroundSession } from '../lib/backgroundSession'
+import { isNativeApp } from '../lib/platform'
 import { isLongReading } from '../lib/longReading'
 import { useSpokenWordTracker } from '../hooks/useSpokenWordTracker'
 import MetaChips from '../components/MetaChips'
@@ -50,13 +51,13 @@ export default function LongReading() {
   useEffect(
     () => () => {
       stopSpeaking()
-      stopKeepAlive()
+      stopBackgroundSession()
     },
     [],
   )
-  // 読み上げが止まったらキープアライブ音声も止める（onEnd/onError 経由も含む）。
+  // 読み上げが止まったらバックグラウンドセッションも止める（onEnd/onError 経由も含む）。
   useEffect(() => {
-    if (!playing) stopKeepAlive()
+    if (!playing) stopBackgroundSession()
   }, [playing])
 
   if (items.length === 0) {
@@ -94,9 +95,14 @@ export default function LongReading() {
       return
     }
     if (!passage?.en) return
-    // 【実験的】画面オフでも読み上げ継続を試す（タップハンドラ内で開始が必要）。
-    if (bgPlayback) {
-      startKeepAlive({ title: current!.en, artist: '長文音読', onExternalPause: stopPlayback })
+    // 画面オフでも読み上げが続くように（ネイティブは常時・Webは実験設定ON時。
+    // Webのautoplay制限があるためタップハンドラ内で開始する）。
+    if (isNativeApp || bgPlayback) {
+      startBackgroundSession({
+        title: current!.en,
+        artist: '長文音読',
+        onExternalPause: stopPlayback,
+      })
     }
     setPlaying(true)
     tracker.start(passage.en, rate)

@@ -12,7 +12,14 @@ import {
   type TtsVoice,
 } from '../lib/tts'
 import { csvFilename, phrasesToCsv } from '../lib/export'
-import { shareOrDownloadCsv } from '../lib/share'
+import { shareOrDownloadCsv, shareOrDownloadText } from '../lib/share'
+import {
+  backupFilename,
+  collectBackup,
+  parseBackup,
+  restoreBackup,
+  serializeBackup,
+} from '../lib/backup'
 import UsageBadge from '../components/UsageBadge'
 
 /** モデル選択の候補。これ以外は「その他（手入力）」で自由に指定できる。 */
@@ -41,7 +48,9 @@ export default function Settings() {
   )
   const [voiceStatus, setVoiceStatus] = useState(getVoiceStatus())
   const [testMsg, setTestMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [backupMsg, setBackupMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const backupRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     loadVoices().then(() => {
@@ -109,6 +118,45 @@ export default function Settings() {
     const outcome = await shareOrDownloadCsv(csvFilename('deck'), phrasesToCsv(phrases))
     if (outcome === 'shared') setExportMsg('✓ 共有しました。')
     else if (outcome === 'downloaded') setExportMsg('✓ CSVをダウンロードしました。')
+  }
+
+  const exportFullBackup = async () => {
+    setBackupMsg(null)
+    const deck = useDeck.getState()
+    const data = await collectBackup(deck.phrases, deck.progress, deck.streak)
+    const outcome = await shareOrDownloadText(
+      backupFilename(),
+      serializeBackup(data),
+      'application/json',
+    )
+    if (outcome === 'shared') setBackupMsg({ ok: true, text: '✓ バックアップを共有しました。' })
+    else if (outcome === 'downloaded')
+      setBackupMsg({ ok: true, text: '✓ バックアップをダウンロードしました。' })
+  }
+
+  const onPickBackup = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    setBackupMsg(null)
+    try {
+      const data = parseBackup(await files[0].text())
+      if (
+        !confirm(
+          `バックアップ（教材 ${data.phrases.length}件・進捗 ${data.progress.length}件）で、` +
+            'この端末の教材・SRS進捗・ストリークをすべて置き換えます。よろしいですか？',
+        )
+      )
+        return
+      const r = await restoreBackup(data)
+      await useDeck.getState().load()
+      setBackupMsg({
+        ok: true,
+        text: `✓ 復元しました（教材 ${r.phrases}件・進捗 ${r.progress}件）。APIキーのみ再入力が必要です。`,
+      })
+    } catch (e) {
+      setBackupMsg({ ok: false, text: `⚠ ${(e as Error).message}` })
+    } finally {
+      if (backupRef.current) backupRef.current.value = ''
+    }
   }
 
   return (
@@ -430,6 +478,36 @@ export default function Settings() {
       </Section>
 
       <Section title="データ">
+        <p className="text-sm text-slate-500">
+          フルバックアップは教材に加えて<strong>SRS進捗・ストリークも含みます</strong>
+          （APIキーは含みません）。スマホアプリ版への移行や機種変更はこれで行います。
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={exportFullBackup}
+            className="rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-medium text-white active:scale-[0.99]"
+          >
+            📦 フルバックアップ
+          </button>
+          <button
+            onClick={() => backupRef.current?.click()}
+            className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-600 dark:border-slate-700 dark:text-slate-300 active:scale-[0.99]"
+          >
+            📥 バックアップを復元
+          </button>
+        </div>
+        <input
+          ref={backupRef}
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          onChange={(e) => onPickBackup(e.target.files)}
+        />
+        {backupMsg && (
+          <p className={`text-sm ${backupMsg.ok ? 'text-emerald-500' : 'text-rose-500'}`}>
+            {backupMsg.text}
+          </p>
+        )}
         <button
           onClick={() => {
             if (confirm('学習の進捗（ボックス・連続日数）をすべて消去します。よろしいですか？')) {
