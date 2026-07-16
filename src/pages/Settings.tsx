@@ -9,6 +9,7 @@ import {
   loadVoices,
   resolveVoice,
   speak,
+  type TtsVoice,
 } from '../lib/tts'
 import { csvFilename, phrasesToCsv } from '../lib/export'
 import { shareOrDownloadCsv } from '../lib/share'
@@ -28,7 +29,7 @@ export default function Settings() {
   const source = useDeck((d) => d.source)
   const phrases = useDeck((d) => d.phrases)
   const phraseCount = phrases.length
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [voices, setVoices] = useState<TtsVoice[]>([])
   const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const [exportMsg, setExportMsg] = useState<string | null>(null)
   const [replaceMode, setReplaceMode] = useState(false)
