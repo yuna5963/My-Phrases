@@ -236,23 +236,13 @@ export default function ChatPractice() {
     )
   }
 
-  // 会話画面は下部ナビを出さない全画面レイアウト（fixed）。viewport の
-  // interactive-widget=resizes-content と合わせて、キーボードが出ると画面全体が
-  // 縮んで入力バーがキーボード直上に来る（LINE風）。セッションはストアに残るので、
-  // ← でホームへ戻っても会話は消えない。
+  // 会話画面も他タブと同じ通常レイアウト（下部ナビあり。v1.0.1）。キーボード表示中は
+  // viewport の interactive-widget=resizes-content（Web）/ WebViewのリサイズ（ネイティブ）で
+  // 画面全体が縮み、入力バーはキーボードの上に見えたまま。タブ移動しても会話はストアに残る。
   return (
-    <div className="safe-top fixed inset-0 z-30 mx-auto flex max-w-md flex-col bg-slate-100 px-4 pt-4 dark:bg-slate-950">
+    <div className="flex h-full flex-col">
       <header className="flex items-center justify-between pb-2">
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => navigate('/')}
-            aria-label="ホームへ戻る（会話は保持されます）"
-            className="-ml-2 rounded-full px-2 py-1 text-xl leading-none text-slate-400 active:scale-95"
-          >
-            ‹
-          </button>
-          <h1 className="font-bold">💬 チャット練習</h1>
-        </div>
+        <h1 className="font-bold">💬 チャット練習</h1>
         <button
           onClick={onEnd}
           className="rounded-full border border-slate-300 px-3 py-1 text-sm text-slate-500 dark:border-slate-700 active:scale-95"
@@ -298,7 +288,7 @@ export default function ChatPractice() {
         <div ref={bottomRef} />
       </div>
 
-      <div className="safe-bottom flex items-end gap-2 border-t border-slate-200 pb-2 pt-2 dark:border-slate-800">
+      <div className="flex items-end gap-2 border-t border-slate-200 pt-2 dark:border-slate-800">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
