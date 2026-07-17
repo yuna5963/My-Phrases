@@ -1,8 +1,8 @@
-# My Phrases — 英語チャンク練習 PWA
+# My Phrases — 英語チャンク練習アプリ（Android / PWA）
 
 日常英語の**チャンク（語・型）と例文**を自分のデッキに貯め、**SRSで反復練習**し、
 **AI英語コーチとの会話で実際に使い**、足りなかった表現を**AIで教材化してデッキに追加する**——
-「貯める → 練習する → 使う → 増やす」の学習サイクルがアプリ内で完結する、一人用のスマホ向けPWAです。
+「貯める → 練習する → 使う → 増やす」の学習サイクルがアプリ内で完結する、一人用のスマホ向けアプリです（Androidアプリ / Web PWA の2形態・同一コードベース）。
 
 当初は「Notionのフレーズ集を取り込んで瞬間英作文するアプリ」でしたが、
 現在は教材の追加・編集・練習・アウトプットまでを一貫して担う学習アプリに育っています。
@@ -42,6 +42,16 @@ Notionは取り込み元のひとつ（任意）です。
 - **アプリ内で編集・削除・手動追加** — カナの手直しや不要教材の整理がCSV往復なしで完結
 - **CSV入出力** — デッキ全件のバックアップ／再取り込み（マージ・全置換）。Notionエクスポート（.zip）もそのまま読める
 - 学習進捗は端末内（IndexedDB）に保存。再取り込みしてもIDキーで進捗は保持
+
+## 📲 Androidアプリ（推奨）
+
+[**Releases**](https://github.com/yuna5963/My-Phrases/releases/latest) から `my-phrases-vX.Y.Z.apk` をダウンロードしてインストールします
+（Playストア外配布のため「提供元不明のアプリ」の許可が必要）。**連続再生が画面オフでも続きます**（v1.0.0〜）。
+
+- 中身はWeb版と同一。読み上げだけ Android システムTTS 直結（WebViewにWeb Speech APIが無いため）
+- 更新: 新しいReleaseのAPKをタップして上書きインストール（設定→アプリについて に導線あり）
+- PWA/別端末からの移行: 旧環境で 設定→「📦 フルバックアップ」→ アプリで「📥 復元」（教材・SRS進捗・ストリークが移行。APIキーのみ再入力）
+- APKはmainへのマージ時にGitHub Actionsが自動ビルド・署名して添付します。**署名キー（`Documents/my-phrases-signing/`）は絶対に紛失しないこと**（紛失すると上書き更新が不可になります）
 
 ## セットアップ
 
@@ -87,7 +97,7 @@ version が上がっていればタグと GitHub Release も自動作成され�
 | SRS（復習間隔）・出題 | `src/lib/srs.ts`, `src/lib/session.ts`, `src/lib/dailyForm.ts` |
 | 進捗・教材保存（IndexedDB） | `src/lib/db.ts`, `src/store/useDeck.ts` |
 | 取り込み / CSV出力 | `src/lib/import.ts`, `src/lib/export.ts` |
-| TTS（読み上げ・Word Spark） | `src/lib/tts.ts`, `src/lib/spokenWords.ts` |
+| TTS（読み上げ・Word Spark） | `src/lib/tts/`（Web Speech / AndroidネイティブTTSの差し替え式）, `src/lib/spokenWords.ts` |
 | AIクライアント（SSE・再試行） | `src/lib/chatApi.ts` |
 | AIコーチ / 教材化 / AI長文 | `src/lib/coachPrompt.ts`, `src/lib/enrich.ts`, `src/lib/longGen.ts` |
 | カナ検証 / 無料枠カウント | `src/lib/kanaLint.ts`, `src/lib/usage.ts` |
@@ -102,8 +112,7 @@ version が上がっていればタグと GitHub Release も自動作成され�
 
 ## 既知の注意点
 
-- **画面オフでの連続再生は不可**（Web Speech APIの制約）。代替として「🌙 暗くして再生」
-  （全画面黒オーバーレイ＋Wake Lock）を用意
+- 【Web/PWA限定】**画面オフでの連続再生は不可**（Web Speech APIの制約）。代替は「🌙 暗くして再生」か **Androidアプリ**（画面オフ対応済み）
 - **iOS Safari**: TTSは最初の再生にユーザー操作（ボタンタップ）が必要
 - 音声の種類・品質は端末依存（設定画面で選択可。英語音声が無い場合は診断とインストール案内を表示）
 - AI機能のみネットワークが必要。無料枠のレート上限（429）時は時間を置く
