@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useDeck } from './store/useDeck'
 import { isTTSAvailable, loadVoices, primeTTS } from './lib/tts'
+import { isNativeApp } from './lib/platform'
 import BottomNav from './components/BottomNav'
 import SupportBanner from './components/SupportBanner'
 import Home from './pages/Home'
@@ -37,6 +38,33 @@ export default function App() {
     window.addEventListener('pointerdown', onFirstGesture, { once: true })
     return () => window.removeEventListener('pointerdown', onFirstGesture)
   }, [load])
+
+  // 【ネイティブ】Androidの戻るボタンを明示制御する。既定挙動だと履歴が無い画面で
+  // アプリが終了してしまうため、ホーム以外なら「戻る（無ければホームへ）」、
+  // ホームでは終了ではなく最小化（バックグラウンドへ。次回起動が速い）にする。
+  useEffect(() => {
+    if (!isNativeApp) return
+    let cleanup: (() => void) | undefined
+    void import('@capacitor/app').then(({ App: CapApp }) => {
+      const sub = CapApp.addListener('backButton', ({ canGoBack }) => {
+        const atHome =
+          window.location.hash === '' ||
+          window.location.hash === '#' ||
+          window.location.hash === '#/'
+        if (atHome) {
+          void CapApp.minimizeApp()
+        } else if (canGoBack) {
+          window.history.back()
+        } else {
+          window.location.hash = '#/'
+        }
+      })
+      cleanup = () => {
+        void sub.then((s) => s.remove())
+      }
+    })
+    return () => cleanup?.()
+  }, [])
 
   return (
     <div className="mx-auto flex h-full max-w-md flex-col">
