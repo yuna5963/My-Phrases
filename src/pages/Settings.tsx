@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ALL_STATUSES, useSettings } from '../store/useSettings'
 import { useDeck } from '../store/useDeck'
+import { isNativeApp } from '../lib/platform'
 import { useStock } from '../store/useStock'
 import {
   getEnglishVoices,
@@ -12,7 +13,14 @@ import {
   type TtsVoice,
 } from '../lib/tts'
 import { csvFilename, phrasesToCsv } from '../lib/export'
-import { shareOrDownloadCsv } from '../lib/share'
+import { shareOrDownloadCsv, shareOrDownloadText } from '../lib/share'
+import {
+  backupFilename,
+  collectBackup,
+  parseBackup,
+  restoreBackup,
+  serializeBackup,
+} from '../lib/backup'
 import UsageBadge from '../components/UsageBadge'
 
 /** モデル選択の候補。これ以外は「その他（手入力）」で自由に指定できる。 */
@@ -41,7 +49,9 @@ export default function Settings() {
   )
   const [voiceStatus, setVoiceStatus] = useState(getVoiceStatus())
   const [testMsg, setTestMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [backupMsg, setBackupMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const backupRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     loadVoices().then(() => {
@@ -111,6 +121,45 @@ export default function Settings() {
     else if (outcome === 'downloaded') setExportMsg('✓ CSVをダウンロードしました。')
   }
 
+  const exportFullBackup = async () => {
+    setBackupMsg(null)
+    const deck = useDeck.getState()
+    const data = await collectBackup(deck.phrases, deck.progress, deck.streak)
+    const outcome = await shareOrDownloadText(
+      backupFilename(),
+      serializeBackup(data),
+      'application/json',
+    )
+    if (outcome === 'shared') setBackupMsg({ ok: true, text: '✓ バックアップを共有しました。' })
+    else if (outcome === 'downloaded')
+      setBackupMsg({ ok: true, text: '✓ バックアップをダウンロードしました。' })
+  }
+
+  const onPickBackup = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    setBackupMsg(null)
+    try {
+      const data = parseBackup(await files[0].text())
+      if (
+        !confirm(
+          `バックアップ（教材 ${data.phrases.length}件・進捗 ${data.progress.length}件）で、` +
+            'この端末の教材・SRS進捗・ストリークをすべて置き換えます。よろしいですか？',
+        )
+      )
+        return
+      const r = await restoreBackup(data)
+      await useDeck.getState().load()
+      setBackupMsg({
+        ok: true,
+        text: `✓ 復元しました（教材 ${r.phrases}件・進捗 ${r.progress}件）。APIキーのみ再入力が必要です。`,
+      })
+    } catch (e) {
+      setBackupMsg({ ok: false, text: `⚠ ${(e as Error).message}` })
+    } finally {
+      if (backupRef.current) backupRef.current.value = ''
+    }
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold">設定</h1>
@@ -147,19 +196,28 @@ export default function Settings() {
         <Row label="カナ（音節）を表示">
           <Toggle checked={s.showKana} onChange={s.setShowKana} />
         </Row>
-        <Row label="🔋 画面オフでも再生を試す（実験的）">
-          <Toggle checked={s.bgPlayback} onChange={s.setBgPlayback} />
-        </Row>
-        {s.bgPlayback && (
+        {isNativeApp ? (
           <p className="text-xs text-slate-400">
-            連続再生・長文音読の間、ほぼ無音の音声を流し続けてブラウザに「音を再生中のタブ」と
-            認識させ、画面を消しても読み上げが続くことを狙う実験的な機能です。効果は端末や
-            Chrome のバージョンに依存し、うまくいかない場合があります。効かないときは Android の
-            設定 → アプリ → Chrome → バッテリーを「制限なし」にすると安定することがあります。
-            確実に聞き流したいときは従来どおり「🌙 暗くして再生」を使ってください
-            （ONの間は通知に再生中のメディアが表示され、電池消費がやや増えます。
-            通知の⏸やイヤホンを抜くと再生ごと停止します）。
+            🔋 アプリ版では、連続再生・長文音読は<strong>画面を消しても再生が続きます</strong>
+            （再生中は通知が表示されます。通知を消すには再生を停止してください）。
           </p>
+        ) : (
+          <>
+            <Row label="🔋 画面オフでも再生を試す（実験的）">
+              <Toggle checked={s.bgPlayback} onChange={s.setBgPlayback} />
+            </Row>
+            {s.bgPlayback && (
+              <p className="text-xs text-slate-400">
+                連続再生・長文音読の間、ほぼ無音の音声を流し続けてブラウザに「音を再生中のタブ」と
+                認識させ、画面を消しても読み上げが続くことを狙う実験的な機能です。効果は端末や
+                Chrome のバージョンに依存し、うまくいかない場合があります。効かないときは Android の
+                設定 → アプリ → Chrome → バッテリーを「制限なし」にすると安定することがあります。
+                確実に聞き流したいときは「🌙 暗くして再生」か、スマホアプリ版を使ってください
+                （ONの間は通知に再生中のメディアが表示され、電池消費がやや増えます。
+                通知の⏸やイヤホンを抜くと再生ごと停止します）。
+              </p>
+            )}
+          </>
         )}
         <button
           onClick={runTest}
@@ -430,6 +488,36 @@ export default function Settings() {
       </Section>
 
       <Section title="データ">
+        <p className="text-sm text-slate-500">
+          フルバックアップは教材に加えて<strong>SRS進捗・ストリークも含みます</strong>
+          （APIキーは含みません）。スマホアプリ版への移行や機種変更はこれで行います。
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={exportFullBackup}
+            className="rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-medium text-white active:scale-[0.99]"
+          >
+            📦 フルバックアップ
+          </button>
+          <button
+            onClick={() => backupRef.current?.click()}
+            className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-600 dark:border-slate-700 dark:text-slate-300 active:scale-[0.99]"
+          >
+            📥 バックアップを復元
+          </button>
+        </div>
+        <input
+          ref={backupRef}
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          onChange={(e) => onPickBackup(e.target.files)}
+        />
+        {backupMsg && (
+          <p className={`text-sm ${backupMsg.ok ? 'text-emerald-500' : 'text-rose-500'}`}>
+            {backupMsg.text}
+          </p>
+        )}
         <button
           onClick={() => {
             if (confirm('学習の進捗（ボックス・連続日数）をすべて消去します。よろしいですか？')) {
@@ -440,6 +528,26 @@ export default function Settings() {
         >
           学習進捗をリセット
         </button>
+      </Section>
+
+      <Section title="アプリについて">
+        <p className="text-sm text-slate-500">
+          バージョン{' '}
+          <span className="font-medium text-slate-700 dark:text-slate-200">
+            {__APP_VERSION__}
+          </span>
+          {isNativeApp ? '（Androidアプリ版）' : '（Web/PWA版）'}
+        </p>
+        {isNativeApp && (
+          <a
+            href="https://github.com/yuna5963/My-Phrases/releases/latest"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-block text-sm font-medium text-sky-500 underline"
+          >
+            ▶ 最新版APKを入手（GitHub Releases）
+          </a>
+        )}
       </Section>
     </div>
   )

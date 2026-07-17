@@ -5,7 +5,12 @@ import { useSettings } from '../store/useSettings'
 import { hasVoiceForLang, loadVoices, speakSequence, stopSpeaking } from '../lib/tts'
 import type { SeqPart } from '../lib/tts'
 import { useWakeLock } from '../lib/wakeLock'
-import { startKeepAlive, stopKeepAlive, updateKeepAliveMetadata } from '../lib/keepAlive'
+import {
+  startBackgroundSession,
+  stopBackgroundSession,
+  updateBackgroundSession,
+} from '../lib/backgroundSession'
+import { isNativeApp } from '../lib/platform'
 import { isLongReading } from '../lib/longReading'
 import MetaChips from '../components/MetaChips'
 import ReproCard from '../components/ReproCard'
@@ -126,7 +131,7 @@ export default function PhraseDetail() {
   // リスト末尾・エラーなど全ての停止経路をここでカバー）。
   useEffect(() => {
     if (!playing) {
-      stopKeepAlive()
+      stopBackgroundSession()
       setKeepAliveState('idle')
       if (dark) setDark(false)
     }
@@ -200,11 +205,11 @@ export default function PhraseDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phrase])
 
-  // Stop any speech (and the keep-alive audio) when leaving the page.
+  // Stop any speech (and the background session) when leaving the page.
   useEffect(
     () => () => {
       stopSpeaking()
-      stopKeepAlive()
+      stopBackgroundSession()
     },
     [],
   )
@@ -217,8 +222,8 @@ export default function PhraseDetail() {
       setPlaying(false)
       return
     }
-    // ロック画面・通知の表示を今のカードに合わせる（キープアライブOFF時は no-op）。
-    updateKeepAliveMetadata({ title: p.en, artist: p.ja })
+    // ロック画面・通知の表示を今のカードに合わせる（セッションOFF時は no-op）。
+    updateBackgroundSession({ title: p.en, artist: p.ja })
     let cancelled = false
     let gapTimer: ReturnType<typeof setTimeout> | undefined
     const goNext = () => {
@@ -257,12 +262,13 @@ export default function PhraseDetail() {
     )
   }
 
-  // 【実験的】バックグラウンド再生ON時のキープアライブ開始。autoplay 制限が
-  // あるため、必ず ▶ / 🌙 のタップハンドラ内（ユーザージェスチャ内）で呼ぶ。
+  // バックグラウンド再生セッションの開始。ネイティブアプリでは常時、Webでは
+  // 実験設定（bgPlayback）ON時のみ。Webのautoplay制限があるため、必ず ▶ / 🌙 の
+  // タップハンドラ内（ユーザージェスチャ内）で呼ぶ。
   // 通知の⏸・イヤホン抜去などで外から止められたら再生全体を止める。
   const startKeepAliveIfEnabled = () => {
-    if (!bgPlayback || !phrase) return
-    startKeepAlive({
+    if (!(isNativeApp || bgPlayback) || !phrase) return
+    startBackgroundSession({
       title: phrase.en,
       artist: phrase.ja,
       onExternalPause: () => {
@@ -373,11 +379,13 @@ export default function PhraseDetail() {
           </button>
         </div>
 
-        {bgPlayback && playing && keepAliveState !== 'idle' && (
+        {(isNativeApp || bgPlayback) && playing && keepAliveState !== 'idle' && (
           <p className="text-center text-xs text-slate-400">
             {keepAliveState === 'on'
-              ? '🔋 画面オフ再生の実験モード作動中（通知に再生中メディアが出ます）'
-              : '⚠ 実験モードを開始できませんでした（⏸ で止めて ▶ を押し直してください）'}
+              ? isNativeApp
+                ? '🔋 バックグラウンド再生 作動中（画面を消しても続きます）'
+                : '🔋 画面オフ再生の実験モード作動中（通知に再生中メディアが出ます）'
+              : '⚠ バックグラウンド再生を開始できませんでした（⏸ で止めて ▶ を押し直してください）'}
           </p>
         )}
 

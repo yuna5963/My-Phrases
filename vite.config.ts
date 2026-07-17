@@ -5,9 +5,17 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
   // Relative base so the build works on GitHub Pages / any subpath host.
   base: './',
+  // 設定画面のバージョン表示用（package.json の version を埋め込む）。
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
+  },
   plugins: [
     react(),
     VitePWA({
+      // ネイティブアプリ（Capacitor）向けビルドでは Service Worker を無効化する。
+      // APK 同梱アセットを SW がキャッシュすると、アプリ更新後に古い JS を配信する
+      // 事故が起こりうるため（Web/PWA ビルドは従来どおり）。
+      disable: !!process.env.CAPACITOR_BUILD,
       registerType: 'autoUpdate',
       includeAssets: ['icons/favicon.ico', 'icons/favicon.svg', 'icons/apple-touch-icon.png'],
       workbox: {

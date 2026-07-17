@@ -14,6 +14,9 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    outputs:
+      created: ${{ steps.rel.outputs.created }}
+      tag: ${{ steps.rel.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,15 +26,32 @@ jobs:
         name: Read version from package.json
         run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
-      - name: Create tag and release if new
+      - id: rel
+        name: Create tag and release if new
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="v${{ steps.ver.outputs.version }}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "created=false" >> "$GITHUB_OUTPUT"
             echo "Tag $TAG already exists — nothing to release."
             exit 0
           fi
           git tag "$TAG"
           git push origin "$TAG"
           gh release create "$TAG" --title "$TAG" --generate-notes
+          echo "created=true" >> "$GITHUB_OUTPUT"
+
+  # Release を作ったら署名済みAPKをビルドして添付する。
+  # （github.token で作った Release は `on: release` を発火させないため、
+  #   イベント連鎖ではなく workflow_call でつなぐ）
+  android:
+    needs: release
+    if: needs.release.outputs.created == 'true'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/android.yml
+    with:
+      tag: ${{ needs.release.outputs.tag }}
+    secrets: inherit

@@ -1,0 +1,100 @@
+# Android APK のビルド・署名・Release への添付。
+# 通常は release.yml から workflow_call で呼ばれる（Release 作成と同時に APK が付く）。
+# 手動再ビルドは Actions タブの workflow_dispatch から（tag に vX.Y.Z を指定）。
+# 署名キーはリポジトリシークレット（ANDROID_KEYSTORE_B64 ほか）。鍵の実体と
+# 復旧手順は Documents/my-phrases-signing/README.txt を参照（紛失＝更新不可）。
+name: Build Android APK
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'APKを添付するリリースタグ（例: v0.12.0）'
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'APKを添付するリリースタグ（例: v0.12.0）。空なら apk-preview プレリリースに添付'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve target tag
+        id: target
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          if [ -n "$INPUT_TAG" ]; then
+            echo "tag=$INPUT_TAG" >> "$GITHUB_OUTPUT"
+            echo "ref=$INPUT_TAG" >> "$GITHUB_OUTPUT"
+            echo "preview=false" >> "$GITHUB_OUTPUT"
+          else
+            # タグ未指定（手動の先行ビルド）: 現在のブランチを apk-preview プレリリースへ
+            echo "tag=apk-preview" >> "$GITHUB_OUTPUT"
+            echo "ref=${{ github.ref }}" >> "$GITHUB_OUTPUT"
+            echo "preview=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.target.outputs.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web assets (Service Worker disabled for APK)
+        run: npm run build
+        env:
+          CAPACITOR_BUILD: '1'
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Decode signing keystore
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: echo "$ANDROID_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.p12"
+
+      - name: Build signed release APK
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/release.p12
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease
+
+      - name: Ensure preview prerelease exists
+        if: steps.target.outputs.preview == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view apk-preview -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create apk-preview -R "$GITHUB_REPOSITORY" --prerelease \
+              --title "APK preview（動作確認用）" \
+              --notes "実機検証用の先行ビルド。正式版は各バージョンの Release から。"
+
+      - name: Attach APK to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.target.outputs.tag }}"
+          cp android/app/build/outputs/apk/release/app-release.apk "my-phrases-$TAG.apk"
+          gh release upload "$TAG" "my-phrases-$TAG.apk" -R "$GITHUB_REPOSITORY" --clobber

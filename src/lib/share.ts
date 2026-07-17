@@ -1,12 +1,17 @@
-// CSV を端末に保存/共有する。モバイルでは OS の共有シート（メール・Drive 等）を優先し、
-// 使えない環境ではファイルとしてダウンロードする。
+// テキストファイル（CSV・バックアップJSON）を端末に保存/共有する。モバイルでは OS の
+// 共有シート（メール・Drive 等）を優先し、使えない環境ではファイルとしてダウンロードする。
 export type ShareOutcome = 'shared' | 'downloaded' | 'cancelled'
 
-export async function shareOrDownloadCsv(
+export async function shareOrDownloadCsv(filename: string, csv: string): Promise<ShareOutcome> {
+  return shareOrDownloadText(filename, csv, 'text/csv')
+}
+
+export async function shareOrDownloadText(
   filename: string,
-  csv: string,
+  content: string,
+  mime: string,
 ): Promise<ShareOutcome> {
-  const file = new File([csv], filename, { type: 'text/csv' })
+  const file = new File([content], filename, { type: mime })
   if (navigator.canShare?.({ files: [file] })) {
     try {
       await navigator.share({ files: [file], title: filename })

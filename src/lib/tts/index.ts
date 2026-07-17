@@ -3,15 +3,37 @@
 // ネイティブアプリ = Android システムTTS（capacitorTts.ts、PR3で追加予定）。
 // 声のキャッシュ・選択と speakSequence（連続再生の連鎖）はエンジン非依存で
 // ここに置く。消費者側の import パス（'../lib/tts'）と挙動は従来と同一。
+import { isNativeApp } from '../platform'
 import { resolveVoiceFrom } from './pickVoice'
 import type { SeqPart, SpeakOptions, TtsEngine, TtsVoice, VoiceStatus } from './types'
 import { webSpeechEngine } from './webSpeech'
 
 export type { SeqPart, SpeakOptions, TtsVoice, VoiceStatus }
 
-// 現状は常にWebエンジン。ネイティブエンジンは PR3 で isNativeApp のとき
-// dynamic import で差し替える（Webバンドルには混入させない）。
+// Webでは常にWebエンジン（同期・従来どおり）。ネイティブアプリでは
+// dynamic import でネイティブエンジンへ差し替える（Webバンドルには混入しない。
+// isNativeApp はビルド時ではなく実行時判定だが、Vite が別チャンクに分割するので
+// Webユーザーがこのチャンクを取得することはない）。
 let engine: TtsEngine = webSpeechEngine
+let engineResolved = !isNativeApp
+const engineReady: Promise<void> = isNativeApp
+  ? import('./capacitorTts')
+      .then((m) => {
+        engine = m.capacitorTtsEngine
+      })
+      .catch(() => {
+        /* 読み込み失敗時はWebエンジンのまま（発話時にエラー表示される） */
+      })
+      .then(() => {
+        engineResolved = true
+      })
+  : Promise.resolve()
+
+/** エンジン確定後に実行する。Webでは同期（従来と同じタイミング）で走る。 */
+function withEngine(fn: () => void): void {
+  if (engineResolved) fn()
+  else void engineReady.then(fn)
+}
 
 let voicesCache: TtsVoice[] = []
 
@@ -25,6 +47,7 @@ export function isTTSAvailable(): boolean {
 }
 
 export async function loadVoices(): Promise<TtsVoice[]> {
+  await engineReady
   const v = await engine.loadVoices()
   if (v.length) voicesCache = v
   return voicesCache
@@ -56,17 +79,19 @@ export function getVoiceStatus(): VoiceStatus {
 
 /** 最初のユーザージェスチャでの音声アンロック（iOS Safari 対策。エンジンにより no-op）。 */
 export function primeTTS(): void {
-  engine.prime()
+  withEngine(() => engine.prime())
 }
 
 export function speak(text: string, opts: SpeakOptions = {}): void {
   if (!text) return
-  refreshCacheIfEmpty()
-  engine.speak(text, opts, resolveVoiceFrom(voicesCache, opts.voiceURI, opts.lang ?? 'en-US'))
+  withEngine(() => {
+    refreshCacheIfEmpty()
+    engine.speak(text, opts, resolveVoiceFrom(voicesCache, opts.voiceURI, opts.lang ?? 'en-US'))
+  })
 }
 
 export function stopSpeaking(): void {
-  engine.stop()
+  withEngine(() => engine.stop())
 }
 
 /**

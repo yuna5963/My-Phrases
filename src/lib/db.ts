@@ -90,6 +90,15 @@ export async function saveProgress(p: Progress): Promise<void> {
   await db.put('progress', p)
 }
 
+/** Replace all SRS progress in one transaction (backup restore). */
+export async function replaceProgress(list: Progress[]): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction('progress', 'readwrite')
+  await tx.store.clear()
+  for (const p of list) await tx.store.put(p)
+  await tx.done
+}
+
 export async function clearProgress(): Promise<void> {
   const db = await getDB()
   await db.clear('progress')
