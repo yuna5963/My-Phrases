@@ -371,12 +371,16 @@ export default function PhraseDetail() {
           >
             {playing ? '⏸ 停止' : '▶ 自動再生'}
           </button>
-          <button
-            onClick={startDark}
-            className="rounded-full bg-slate-700 px-5 py-3 text-base font-semibold text-white active:scale-95"
-          >
-            🌙 暗くして再生
-          </button>
+          {/* 🌙 はWeb（PWA）専用の画面点灯前提の回避策。ネイティブアプリは
+              画面オフでそのまま再生が続くため不要になり、非表示にする。 */}
+          {!isNativeApp && (
+            <button
+              onClick={startDark}
+              className="rounded-full bg-slate-700 px-5 py-3 text-base font-semibold text-white active:scale-95"
+            >
+              🌙 暗くして再生
+            </button>
+          )}
         </div>
 
         {(isNativeApp || bgPlayback) && playing && keepAliveState !== 'idle' && (
