@@ -9,6 +9,36 @@
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-07-17
+
+**Androidネイティブアプリ化。** 当初からの懸案だった「画面オフでの連続再生」を、ハックではなく
+Android公式の仕組み（フォアグラウンドサービス）で正式サポートする。Web/PWA版も従来どおり併存。
+
+### 追加
+- **Androidアプリ（APK）**（Capacitor 8）。読み上げは Android システムTTS 直結の新エンジン
+  （`lib/tts/capacitorTts.ts`。WebViewに speechSynthesis が無いため。Chromeと同じエンジン・声）。
+  Word Spark は onRangeStart イベントで**ネイティブでは正確なハイライト**に
+- **画面オフでも連続再生・長文音読が継続**（`PlaybackService`: mediaPlayback型フォアグラウンドサービス
+  + 部分ウェイクロック。通知に再生中チャンクを表示・カード送りで更新・停止で消灯。
+  Android 13+ の通知権限は拒否でも再生可）。実機で確認済み
+- **進捗込みフルバックアップ（JSON）**（`lib/backup.ts` + 設定→データ）。教材＋SRS進捗＋ストリークを
+  丸ごとエクスポート/復元（全置換・確認付き）。PWA→アプリ移行・機種変更用。APIキーは含めない
+- **APKの自動ビルド・署名・Release添付**（`.github/workflows/android.yml`。release.yml から連結、
+  手動実行では apk-preview プレリリースへ）。versionCode は package.json から自動導出
+- 設定に「アプリについて」（バージョン表示・最新APKリンク）
+- ユニットテスト: `pickVoice.test.ts` +8 / `capacitorTts.test.ts` +8 / `backup.test.ts` +6（全178件）
+
+### 変更
+- TTS層をエンジン差し替え式に再構成（`lib/tts/` — index / webSpeech / capacitorTts / pickVoice / types）。
+  Web側の挙動・公開APIは不変
+- バックグラウンド再生の窓口を `lib/backgroundSession.ts` に一本化（Web=キープアライブ / ネイティブ=FGS）
+- 下部メニューのラベルを短縮（チャンク一覧→チャンク・例文一覧→例文）し折り返し禁止に、
+  本文下部の余白を拡大（ネイティブのフォント拡大でもメニューが2行にならず、最後のボタンが隠れない）
+- 🌙 暗くして再生と実験的キープアライブ設定は **Web限定表示** に（ネイティブでは画面オフ再生が標準のため不要）
+
+### 備考
+- ネイティブアプリの初回はデータが空です。PWAで「📦 フルバックアップ」→ アプリで「📥 復元」で移行してください
+
 ## [0.11.1] - 2026-07-14
 
 v0.11.0 の実験的バックグラウンド再生が実機で「通知が出ない・画面オフで止まる」だった件の対策パッチ。

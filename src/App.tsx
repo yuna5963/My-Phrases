@@ -41,7 +41,9 @@ export default function App() {
   return (
     <div className="mx-auto flex h-full max-w-md flex-col">
       <SupportBanner show={!ttsUsable} />
-      <main className="safe-top flex-1 overflow-y-auto px-4 pb-24 pt-4">
+      {/* pb はナビの高さ＋余裕。ネイティブアプリでは端末のフォントサイズ設定で
+          ナビが高くなるため、最後のボタンが隠れない余白を確保する。 */}
+      <main className="safe-top flex-1 overflow-y-auto px-4 pb-32 pt-4">
         {!loaded ? (
           <p className="mt-20 text-center text-slate-400">読み込み中…</p>
         ) : error ? (

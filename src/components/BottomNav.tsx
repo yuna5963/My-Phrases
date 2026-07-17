@@ -1,9 +1,11 @@
 import { NavLink, useLocation } from 'react-router-dom'
 
+// ラベルはネイティブアプリのフォント拡大（端末のフォントサイズ設定が
+// WebView に反映される）でも1行に収まる短さにする。
 const tabs = [
   { to: '/', label: 'ホーム', icon: '🏠' },
-  { to: '/browse', label: 'チャンク一覧', icon: '📚' },
-  { to: '/examples', label: '例文一覧', icon: '📝' },
+  { to: '/browse', label: 'チャンク', icon: '📚' },
+  { to: '/examples', label: '例文', icon: '📝' },
   { to: '/chat', label: 'チャット', icon: '💬' },
   { to: '/settings', label: '設定', icon: '⚙️' },
 ]
@@ -34,7 +36,7 @@ export default function BottomNav() {
               to={t.to}
               end={t.to === '/'}
               className={({ isActive }) =>
-                `flex flex-col items-center gap-0.5 py-2.5 text-xs ${
+                `flex flex-col items-center gap-0.5 whitespace-nowrap py-2.5 text-xs ${
                   isActive
                     ? 'text-sky-500'
                     : 'text-slate-400 dark:text-slate-500'
