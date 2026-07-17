@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ALL_STATUSES, useSettings } from '../store/useSettings'
 import { useDeck } from '../store/useDeck'
+import { isNativeApp } from '../lib/platform'
 import { useStock } from '../store/useStock'
 import {
   getEnglishVoices,
@@ -195,19 +196,28 @@ export default function Settings() {
         <Row label="カナ（音節）を表示">
           <Toggle checked={s.showKana} onChange={s.setShowKana} />
         </Row>
-        <Row label="🔋 画面オフでも再生を試す（実験的）">
-          <Toggle checked={s.bgPlayback} onChange={s.setBgPlayback} />
-        </Row>
-        {s.bgPlayback && (
+        {isNativeApp ? (
           <p className="text-xs text-slate-400">
-            連続再生・長文音読の間、ほぼ無音の音声を流し続けてブラウザに「音を再生中のタブ」と
-            認識させ、画面を消しても読み上げが続くことを狙う実験的な機能です。効果は端末や
-            Chrome のバージョンに依存し、うまくいかない場合があります。効かないときは Android の
-            設定 → アプリ → Chrome → バッテリーを「制限なし」にすると安定することがあります。
-            確実に聞き流したいときは従来どおり「🌙 暗くして再生」を使ってください
-            （ONの間は通知に再生中のメディアが表示され、電池消費がやや増えます。
-            通知の⏸やイヤホンを抜くと再生ごと停止します）。
+            🔋 アプリ版では、連続再生・長文音読は<strong>画面を消しても再生が続きます</strong>
+            （再生中は通知が表示されます。通知を消すには再生を停止してください）。
           </p>
+        ) : (
+          <>
+            <Row label="🔋 画面オフでも再生を試す（実験的）">
+              <Toggle checked={s.bgPlayback} onChange={s.setBgPlayback} />
+            </Row>
+            {s.bgPlayback && (
+              <p className="text-xs text-slate-400">
+                連続再生・長文音読の間、ほぼ無音の音声を流し続けてブラウザに「音を再生中のタブ」と
+                認識させ、画面を消しても読み上げが続くことを狙う実験的な機能です。効果は端末や
+                Chrome のバージョンに依存し、うまくいかない場合があります。効かないときは Android の
+                設定 → アプリ → Chrome → バッテリーを「制限なし」にすると安定することがあります。
+                確実に聞き流したいときは「🌙 暗くして再生」か、スマホアプリ版を使ってください
+                （ONの間は通知に再生中のメディアが表示され、電池消費がやや増えます。
+                通知の⏸やイヤホンを抜くと再生ごと停止します）。
+              </p>
+            )}
+          </>
         )}
         <button
           onClick={runTest}
@@ -518,6 +528,26 @@ export default function Settings() {
         >
           学習進捗をリセット
         </button>
+      </Section>
+
+      <Section title="アプリについて">
+        <p className="text-sm text-slate-500">
+          バージョン{' '}
+          <span className="font-medium text-slate-700 dark:text-slate-200">
+            {__APP_VERSION__}
+          </span>
+          {isNativeApp ? '（Androidアプリ版）' : '（Web/PWA版）'}
+        </p>
+        {isNativeApp && (
+          <a
+            href="https://github.com/yuna5963/My-Phrases/releases/latest"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-block text-sm font-medium text-sky-500 underline"
+          >
+            ▶ 最新版APKを入手（GitHub Releases）
+          </a>
+        )}
       </Section>
     </div>
   )

@@ -15,25 +15,42 @@ export interface SessionMeta {
 
 /**
  * バックグラウンド再生セッションを開始する。**ユーザージェスチャのハンドラ内で
- * 同期的に呼ぶこと**（Webのautoplay制限）。開始できなければ false（再生自体は続行してよい）。
+ * 同期的に呼ぶこと**（Webのautoplay制限。ネイティブに制限はない）。
+ * 開始できなければ false（再生自体は続行してよい）。
  */
 export async function startBackgroundSession(meta: SessionMeta): Promise<boolean> {
   if (isNativeApp) {
-    // ネイティブ実装は PR3（Capacitor導入）で dynamic import される。
-    // それまで isNativeApp は常に false のため、この分岐には入らない。
-    return false
+    try {
+      const { BackgroundPlayback } = await import('./native/backgroundPlayback')
+      await BackgroundPlayback.start({ title: meta.title, body: meta.artist ?? '' })
+      return true
+    } catch {
+      return false
+    }
   }
   return startKeepAlive(meta)
 }
 
 /** 通知/ロック画面の表示を今のカードに合わせる（セッション停止中は no-op）。 */
 export function updateBackgroundSession(meta: { title: string; artist?: string }): void {
-  if (isNativeApp) return
+  if (isNativeApp) {
+    void import('./native/backgroundPlayback')
+      .then(({ BackgroundPlayback }) =>
+        BackgroundPlayback.update({ title: meta.title, body: meta.artist ?? '' }),
+      )
+      .catch(() => {})
+    return
+  }
   updateKeepAliveMetadata(meta)
 }
 
 /** セッションを止める（冪等・例外を投げない）。 */
 export function stopBackgroundSession(): void {
-  if (isNativeApp) return
+  if (isNativeApp) {
+    void import('./native/backgroundPlayback')
+      .then(({ BackgroundPlayback }) => BackgroundPlayback.stop())
+      .catch(() => {})
+    return
+  }
   stopKeepAlive()
 }

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">My Phrases</string>
+    <string name="title_activity_main">My Phrases</string>
+    <string name="package_name">com.yuna5963.myphrases</string>
+    <string name="custom_url_scheme">com.yuna5963.myphrases</string>
+</resources>
