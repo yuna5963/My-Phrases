@@ -67,18 +67,43 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Decode signing keystore
+      - name: Decode signing keystore and normalize secrets
         env:
           ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
-        run: echo "$ANDROID_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.p12"
+          RAW_STORE_PW: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          RAW_KEY_PW: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          RAW_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          # base64 は改行が混ざっていても復号できるよう -d は寛容だが、念のため空白を除く
+          printf '%s' "$ANDROID_KEYSTORE_B64" | tr -d '[:space:]' | base64 -d > "$RUNNER_TEMP/release.p12"
+          # シークレット末尾に紛れ込んだ改行/復帰(\r)/空白を除去（CR混入対策）
+          STORE_PW="$(printf '%s' "$RAW_STORE_PW" | tr -d '\r\n')"
+          KEY_PW="$(printf '%s' "$RAW_KEY_PW" | tr -d '\r\n')"
+          ALIAS="$(printf '%s' "$RAW_ALIAS" | tr -d '\r\n')"
+          echo "::add-mask::$STORE_PW"
+          echo "::add-mask::$KEY_PW"
+          echo "STORE_PW=$STORE_PW" >> "$GITHUB_ENV"
+          echo "KEY_PW=$KEY_PW" >> "$GITHUB_ENV"
+          echo "KEY_ALIAS=$ALIAS" >> "$GITHUB_ENV"
+          # 診断: 値は伏せ、長さ・バイト数だけ出す（新しいシークレットが入っているかの確認用）
+          echo "keystore bytes: $(wc -c < "$RUNNER_TEMP/release.p12")"
+          echo "store password length: ${#STORE_PW}"
+          echo "key password length: ${#KEY_PW}"
+          echo "alias: $ALIAS (length ${#ALIAS})"
+          # キーストアが本当にこのパスワードで開くかを署名前に検証（失敗理由を早期に特定）
+          if openssl pkcs12 -info -in "$RUNNER_TEMP/release.p12" -passin "pass:$STORE_PW" -noenc -nokeys >/dev/null 2>&1; then
+            echo "keystore opens with STORE_PW: OK"
+          else
+            echo "keystore does NOT open with STORE_PW (password mismatch — シークレット再登録が必要)"
+          fi
 
       - name: Build signed release APK
         working-directory: android
         env:
           ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/release.p12
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ env.STORE_PW }}
+          ANDROID_KEY_ALIAS: ${{ env.KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ env.KEY_PW }}
         run: |
           chmod +x ./gradlew
           ./gradlew assembleRelease
