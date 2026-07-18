@@ -49,6 +49,8 @@ interface DeckState {
   setGoalTrack: (id: string) => Promise<void>
   /** 連続再生の経過秒数を学習ログに記録する。最低ライン（5分）到達でストリークも維持する。 */
   notePlayback: (seconds: number) => Promise<void>
+  /** チャット練習の完了（まとめ）を学習ログに記録する。完了＝当日の最低ライン達成でストリークを維持する。 */
+  noteChatComplete: (targetChunkIds: string[], usedChunkIds: string[], userMessageCount: number) => Promise<void>
   grade: (id: string, g: Grade, mode?: PracticeMode) => Promise<void>
   setLearned: (id: string, learned: boolean) => Promise<void>
   reset: () => Promise<void>
@@ -84,6 +86,29 @@ async function loadSample(): Promise<Phrase[]> {
   const res = await fetch(dataUrl(), { cache: 'no-cache' })
   if (!res.ok) throw new Error(`phrases.json ${res.status}`)
   return (await res.json()) as Phrase[]
+}
+
+/**
+ * 学習ログを1件追記し（best-effort）、当日の最低ライン（採点/チャット完了 or 再生5分）に
+ * 達していればストリークを維持する。連続再生・チャット完了で共通の後段処理。
+ * ログに失敗した場合はストリーク判定もしない（採点フローとは独立させる）。
+ */
+async function logAndMaybeStreak(
+  get: () => DeckState,
+  set: (partial: Partial<DeckState>) => void,
+  event: LearningEvent,
+): Promise<void> {
+  try {
+    await logEvent(event)
+  } catch {
+    return
+  }
+  const events = [...get().events, event]
+  if (minimumLineMet(eventsOn(events, todayStr()))) {
+    set({ events, streak: await bumpStreak() })
+  } else {
+    set({ events })
+  }
 }
 
 /**
@@ -153,21 +178,18 @@ export const useDeck = create<DeckState>((set, get) => ({
 
   notePlayback: async (seconds) => {
     if (seconds <= 0) return
-    const event = makeEvent('play', { seconds })
-    try {
-      await logEvent(event)
-    } catch {
-      return // ログできなければストリーク判定もしない（採点側とは独立）
-    }
-    const events = [...get().events, event]
-    // 「疲れた日は連続再生だけ」でもゼロの日にしない: 今日の最低ライン
-    // （採点/チャット1件 or 再生5分）を満たしたらストリークを維持する。
-    if (minimumLineMet(eventsOn(events, todayStr()))) {
-      const streak = await bumpStreak()
-      set({ events, streak })
-    } else {
-      set({ events })
-    }
+    // 「疲れた日は連続再生だけ」でもゼロの日にしない: 5分以上で当日の最低ラインに達する。
+    await logAndMaybeStreak(get, set, makeEvent('play', { seconds }))
+  },
+
+  noteChatComplete: async (targetChunkIds, usedChunkIds, userMessageCount) => {
+    // チャット練習の「完了（まとめ）」を1セッションとして記録し、最低ライン達成でストリークを維持する
+    // （1メッセージだけ送って離脱した会話は記録せず、完了したセッションのみを継続の材料にする）。
+    await logAndMaybeStreak(
+      get,
+      set,
+      makeEvent('chat', { targetChunkIds, usedChunkIds, userMessageCount }),
+    )
   },
 
   importFiles: async (files, mode = 'merge') => {
