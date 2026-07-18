@@ -16,7 +16,7 @@ import StepNav from '../components/StepNav'
  * 1チャンクにつきマッチした例文からランダムに1つを出す。
  */
 export default function Cloze() {
-  const s = useSession({ filter: hasCloze })
+  const s = useSession({ filter: hasCloze, mode: 'cloze' })
   const autoPlay = useSettings((x) => x.autoPlay)
   const voiceURI = useSettings((x) => x.voiceURI)
   const rate = useSettings((x) => x.rate)

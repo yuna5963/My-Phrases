@@ -3,7 +3,8 @@
 // 教材だけでなく SRS 進捗・ストリークごと持ち運べるようにする）。機種変更時の保険にもなる。
 // APIキー（chatApiKey）は意図的に含めない（平文ファイルに書き出さないため）。
 import type { Phrase, Progress } from '../types'
-import { getMeta, replacePhrases, replaceProgress, setMeta } from './db'
+import type { LearningEvent } from './events'
+import { getAllEvents, getMeta, replaceEvents, replacePhrases, replaceProgress, setMeta } from './db'
 
 export interface BackupData {
   app: 'my-phrases'
@@ -13,9 +14,13 @@ export interface BackupData {
   progress: Progress[]
   streak: number
   lastStudyDate: string // YYYY-MM-DD（ストリーク継続判定用）
+  /** 学習ログ（フェーズ0で追加・任意）。旧バックアップ互換のため optional。 */
+  events?: LearningEvent[]
+  /** 選択中のゴールトラックID（任意）。 */
+  goalTrackId?: string
 }
 
-/** ストアの現在値からバックアップデータを組み立てる（IndexedDBはmetaのみ参照）。 */
+/** ストアの現在値からバックアップデータを組み立てる（IndexedDBはmeta・eventsを参照）。 */
 export async function collectBackup(
   phrases: Phrase[],
   progress: Record<string, Progress>,
@@ -29,6 +34,8 @@ export async function collectBackup(
     progress: Object.values(progress),
     streak,
     lastStudyDate: await getMeta<string>('lastStudyDate', ''),
+    events: await getAllEvents(),
+    goalTrackId: await getMeta<string>('goalTrackId', ''),
   }
 }
 
@@ -72,6 +79,11 @@ export function parseBackup(json: string): BackupData {
   ) {
     throw new Error('バックアップの進捗データが壊れています')
   }
+  // events は任意。壊れていても学習ログの欠落に留め、復元自体は失敗させない。
+  const events =
+    Array.isArray(raw.events) && raw.events.every((e) => isRecord(e) && typeof e.id === 'string')
+      ? (raw.events as unknown as LearningEvent[])
+      : undefined
   return {
     app: 'my-phrases',
     format: 1,
@@ -80,6 +92,8 @@ export function parseBackup(json: string): BackupData {
     progress: progress as unknown as Progress[],
     streak: typeof raw.streak === 'number' ? raw.streak : 0,
     lastStudyDate: typeof raw.lastStudyDate === 'string' ? raw.lastStudyDate : '',
+    ...(events ? { events } : {}),
+    ...(typeof raw.goalTrackId === 'string' && raw.goalTrackId ? { goalTrackId: raw.goalTrackId } : {}),
   }
 }
 
@@ -92,7 +106,9 @@ export async function restoreBackup(
 ): Promise<{ phrases: number; progress: number }> {
   await replacePhrases(data.phrases)
   await replaceProgress(data.progress)
+  await replaceEvents(data.events ?? [])
   await setMeta('streak', data.streak)
   await setMeta('lastStudyDate', data.lastStudyDate)
+  if (data.goalTrackId) await setMeta('goalTrackId', data.goalTrackId)
   return { phrases: data.phrases.length, progress: data.progress.length }
 }

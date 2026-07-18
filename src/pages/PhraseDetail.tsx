@@ -5,6 +5,7 @@ import { useSettings } from '../store/useSettings'
 import { hasVoiceForLang, loadVoices, speakSequence, stopSpeaking } from '../lib/tts'
 import type { SeqPart } from '../lib/tts'
 import { useWakeLock } from '../lib/wakeLock'
+import { usePlayTracking } from '../hooks/usePlayTracking'
 import {
   startBackgroundSession,
   stopBackgroundSession,
@@ -125,6 +126,8 @@ export default function PhraseDetail() {
   // 連続再生中は画面スリープを抑止（消灯で再生が止まらないように）。
   // 暗転モード中も同様に点けたままにして Web Speech を止めない。
   useWakeLock(playing || dark)
+  // 連続再生の経過時間を学習ログへ（最低ライン=5分の判定材料）。
+  usePlayTracking(playing)
 
   // 再生が止まったら暗転も解除（無音の黒画面が残らないように）し、
   // バックグラウンド再生用のキープアライブ音声も止める（手動停止・

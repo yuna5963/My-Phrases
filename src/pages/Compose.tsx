@@ -16,7 +16,7 @@ import StepNav from '../components/StepNav'
  * 同じタイプ・同じカテゴリのチャンクへ優先的に遷移する（clusterByFacet）。
  */
 export default function Compose() {
-  const s = useSession({ clusterByFacet: true })
+  const s = useSession({ clusterByFacet: true, mode: 'compose' })
   const navigate = useNavigate()
 
   // 最後の項目（例文の末尾）の英文まで開示したら採点ボタンを出す。

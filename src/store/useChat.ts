@@ -11,6 +11,8 @@ import {
   type ChatFocus,
 } from '../lib/coachPrompt'
 import { extractSuggestions, filterNewSuggestions, type Suggestion } from '../lib/suggestions'
+import { logEvent } from '../lib/db'
+import { makeEvent } from '../lib/events'
 import { useDeck } from './useDeck'
 import { useSettings } from './useSettings'
 
@@ -166,6 +168,21 @@ export const useChat = create<ChatState>()((set, get) => {
       if (full !== null) {
         // ➕ 行（追加候補）を本文から分離し、デッキに既にある表現は除外する。
         const { body, suggestions } = extractSuggestions(stripThoughts(full))
+        const { targets, usedChunkIds, messages } = get()
+        // 学習ログ（追記）。セッション完了時に実戦投入率の材料を残す。
+        // usedChunkIds は endSession で消えるため、消える前にここで永続化する。
+        try {
+          await logEvent(
+            makeEvent('chat', {
+              targetChunkIds: targets.map((p) => p.id),
+              usedChunkIds,
+              userMessageCount: messages.filter((m) => m.role === 'user' && !m.hidden).length,
+            }),
+          )
+          await useDeck.getState().refreshEvents()
+        } catch {
+          /* ログは best-effort */
+        }
         set({
           summary: body,
           suggestions: filterNewSuggestions(suggestions, useDeck.getState().phrases),

@@ -1,5 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 import type { Phrase, Progress } from '../types'
+import type { LearningEvent } from './events'
 
 interface MyPhrasesDB extends DBSchema {
   progress: {
@@ -14,14 +15,20 @@ interface MyPhrasesDB extends DBSchema {
     key: string
     value: unknown
   }
+  /** 学習ログ（追記型・フェーズ0で追加）。date インデックスで日次集計する。 */
+  events: {
+    key: string
+    value: LearningEvent
+    indexes: { date: string }
+  }
 }
 
 let dbPromise: Promise<IDBPDatabase<MyPhrasesDB>> | null = null
 
 function getDB() {
   if (!dbPromise) {
-    dbPromise = openDB<MyPhrasesDB>('my-phrases', 2, {
-      upgrade(db) {
+    dbPromise = openDB<MyPhrasesDB>('my-phrases', 3, {
+      upgrade(db, oldVersion) {
         if (!db.objectStoreNames.contains('progress')) {
           db.createObjectStore('progress', { keyPath: 'id' })
         }
@@ -30,6 +37,11 @@ function getDB() {
         }
         if (!db.objectStoreNames.contains('meta')) {
           db.createObjectStore('meta')
+        }
+        // v3: 学習ログ。既存ユーザー（oldVersion<3）にも追加で作られる。
+        if (oldVersion < 3 && !db.objectStoreNames.contains('events')) {
+          const store = db.createObjectStore('events', { keyPath: 'id' })
+          store.createIndex('date', 'date')
         }
       },
     })
@@ -102,6 +114,34 @@ export async function replaceProgress(list: Progress[]): Promise<void> {
 export async function clearProgress(): Promise<void> {
   const db = await getDB()
   await db.clear('progress')
+}
+
+/** 学習ログを1件追記する（失敗しても学習フローを止めないよう呼び出し側で握りつぶす想定）。 */
+export async function logEvent(event: LearningEvent): Promise<void> {
+  const db = await getDB()
+  await db.put('events', event)
+}
+
+/** date（YYYY-MM-DD）が from 以上のイベントを古い順で返す。日次・週次KPIの材料。 */
+export async function getEventsSince(from: string): Promise<LearningEvent[]> {
+  const db = await getDB()
+  const range = IDBKeyRange.lowerBound(from)
+  return db.getAllFromIndex('events', 'date', range)
+}
+
+/** 全イベントを返す（バックアップ用）。 */
+export async function getAllEvents(): Promise<LearningEvent[]> {
+  const db = await getDB()
+  return db.getAll('events')
+}
+
+/** 全イベントを置換する（バックアップ復元）。 */
+export async function replaceEvents(list: LearningEvent[]): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction('events', 'readwrite')
+  await tx.store.clear()
+  for (const e of list) await tx.store.put(e)
+  await tx.done
 }
 
 export async function getMeta<T>(key: string, fallback: T): Promise<T> {

@@ -36,6 +36,8 @@ export default function ExpressionStock() {
     const outcome = await shareOrDownloadCsv(csvFilename('stock'), stockToCsv(items))
     if (outcome === 'shared') setShareMsg('✓ 共有しました。')
     else if (outcome === 'downloaded') setShareMsg('✓ CSVをダウンロードしました。')
+    else if (outcome === 'saved') setShareMsg('✓ スマホの Documents フォルダに保存しました。')
+    else if (outcome === 'failed') setShareMsg('⚠ 保存に失敗しました。もう一度お試しください。')
   }
 
   return (

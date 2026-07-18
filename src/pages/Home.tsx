@@ -4,6 +4,8 @@ import { useDeck } from '../store/useDeck'
 import { useSettings } from '../store/useSettings'
 import { useStock } from '../store/useStock'
 import { computeStats } from '../lib/session'
+import { computeDailySummary } from '../lib/kpi'
+import GoalProgress from '../components/GoalProgress'
 
 function Stat({ value, label, accent }: { value: number; label: string; accent?: string }) {
   return (
@@ -20,6 +22,7 @@ export default function Home() {
   const progress = useDeck((s) => s.progress)
   const streak = useDeck((s) => s.streak)
   const source = useDeck((s) => s.source)
+  const events = useDeck((s) => s.events)
   const includeStatuses = useSettings((s) => s.includeStatuses)
   const stockCount = useStock((s) => s.items.length)
 
@@ -27,6 +30,7 @@ export default function Home() {
     () => computeStats(phrases, progress, includeStatuses),
     [phrases, progress, includeStatuses],
   )
+  const today = useMemo(() => computeDailySummary(events), [events])
 
   return (
     <div className="space-y-6">
@@ -43,6 +47,31 @@ export default function Home() {
           📥 いまはサンプル表示中。Notionのエクスポートを取り込む →
         </button>
       )}
+
+      <GoalProgress />
+
+      <section className="rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-900">
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="text-sm font-bold">今日のあゆみ</h2>
+          <span className="text-xs text-slate-500">
+            {today.minimumMet ? '✅ 今日の最低ラインは達成' : '5分の連続再生だけでもOK'}
+          </span>
+        </div>
+        <div className="grid grid-cols-3 gap-3 text-center">
+          <div>
+            <div className="text-2xl font-bold text-sky-500">{today.graded}</div>
+            <div className="mt-0.5 text-xs text-slate-500">採点した</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-violet-500">{today.outputs}</div>
+            <div className="mt-0.5 text-xs text-slate-500">アウトプット</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-emerald-500">{today.retained}</div>
+            <div className="mt-0.5 text-xs text-slate-500">定着した</div>
+          </div>
+        </div>
+      </section>
 
       <section className="grid grid-cols-3 gap-3">
         <Stat value={stats.due} label="今日の出題" accent="text-sky-500" />
