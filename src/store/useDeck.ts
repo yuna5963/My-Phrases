@@ -6,14 +6,18 @@ import {
   clearProgress,
   deletePhrase,
   deleteProgress,
+  getAllEvents,
   getAllPhrases,
   getAllProgress,
   getMeta,
+  logEvent,
   putPhrases,
   replacePhrases,
   saveProgress,
   setMeta,
 } from '../lib/db'
+import { makeEvent, type LearningEvent, type PracticeMode } from '../lib/events'
+import { eventsOn, minimumLineMet } from '../lib/kpi'
 import { mergePhrases, parsePhrasesFromFiles } from '../lib/import'
 
 export type DeckSource = 'imported' | 'sample'
@@ -34,8 +38,18 @@ interface DeckState {
   source: DeckSource
   loaded: boolean
   error: string | null
+  /** 学習ログ（フェーズ0）。ホームのKPI・ゴール進捗の材料。 */
+  events: LearningEvent[]
+  /** 選択中のゴールトラックID（''=未選択）。 */
+  goalTrackId: string
   load: () => Promise<void>
-  grade: (id: string, g: Grade) => Promise<void>
+  /** 学習ログをIndexedDBから読み直す（チャット・教材化の後に呼ぶ）。 */
+  refreshEvents: () => Promise<void>
+  /** ゴールトラックを選ぶ（meta永続）。 */
+  setGoalTrack: (id: string) => Promise<void>
+  /** 連続再生の経過秒数を学習ログに記録する。最低ライン（5分）到達でストリークも維持する。 */
+  notePlayback: (seconds: number) => Promise<void>
+  grade: (id: string, g: Grade, mode?: PracticeMode) => Promise<void>
   setLearned: (id: string, learned: boolean) => Promise<void>
   reset: () => Promise<void>
   importFiles: (files: File[], mode?: ImportMode) => Promise<ImportSummary>
@@ -89,6 +103,8 @@ export const useDeck = create<DeckState>((set, get) => ({
   source: 'sample',
   loaded: false,
   error: null,
+  events: [],
+  goalTrackId: '',
 
   load: async () => {
     try {
@@ -118,9 +134,39 @@ export const useDeck = create<DeckState>((set, get) => ({
         progress[p.id] = { ...base, learned: base.learned ?? false }
       }
       const streak = await getMeta<number>('streak', 0)
-      set({ phrases, progress, streak, source, loaded: true, error: null })
+      const events = await getAllEvents()
+      const goalTrackId = await getMeta<string>('goalTrackId', '')
+      set({ phrases, progress, streak, source, events, goalTrackId, loaded: true, error: null })
     } catch (e) {
       set({ error: (e as Error).message, loaded: true })
+    }
+  },
+
+  refreshEvents: async () => {
+    set({ events: await getAllEvents() })
+  },
+
+  setGoalTrack: async (id) => {
+    await setMeta('goalTrackId', id)
+    set({ goalTrackId: id })
+  },
+
+  notePlayback: async (seconds) => {
+    if (seconds <= 0) return
+    const event = makeEvent('play', { seconds })
+    try {
+      await logEvent(event)
+    } catch {
+      return // ログできなければストリーク判定もしない（採点側とは独立）
+    }
+    const events = [...get().events, event]
+    // 「疲れた日は連続再生だけ」でもゼロの日にしない: 今日の最低ライン
+    // （採点/チャット1件 or 再生5分）を満たしたらストリークを維持する。
+    if (minimumLineMet(eventsOn(events, todayStr()))) {
+      const streak = await bumpStreak()
+      set({ events, streak })
+    } else {
+      set({ events })
     }
   },
 
@@ -178,15 +224,32 @@ export const useDeck = create<DeckState>((set, get) => ({
     await get().load()
   },
 
-  grade: async (id, g) => {
+  grade: async (id, g, mode) => {
     const current = get().progress[id]
     if (!current) return
     const updated = applyGrade(current, g)
     await saveProgress(updated)
+    // 学習ログ（追記）。box遷移を残すので「定着への昇格」もここから集計できる。
+    // ログ失敗で採点フローを止めないよう握りつぶす。
+    const event = makeEvent('grade', {
+      chunkId: id,
+      grade: g,
+      boxFrom: current.box,
+      boxTo: updated.box,
+      ...(mode ? { mode } : {}),
+    })
+    let logged = false
+    try {
+      await logEvent(event)
+      logged = true
+    } catch {
+      /* ログは best-effort */
+    }
     const streak = await bumpStreak()
     set((state) => ({
       progress: { ...state.progress, [id]: updated },
       streak,
+      events: logged ? [...state.events, event] : state.events,
     }))
   },
 

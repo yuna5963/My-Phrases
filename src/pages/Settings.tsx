@@ -119,6 +119,8 @@ export default function Settings() {
     const outcome = await shareOrDownloadCsv(csvFilename('deck'), phrasesToCsv(phrases))
     if (outcome === 'shared') setExportMsg('✓ 共有しました。')
     else if (outcome === 'downloaded') setExportMsg('✓ CSVをダウンロードしました。')
+    else if (outcome === 'saved') setExportMsg('✓ スマホの Documents フォルダに保存しました。')
+    else if (outcome === 'failed') setExportMsg('⚠ 保存に失敗しました。もう一度お試しください。')
   }
 
   const exportFullBackup = async () => {
@@ -133,6 +135,10 @@ export default function Settings() {
     if (outcome === 'shared') setBackupMsg({ ok: true, text: '✓ バックアップを共有しました。' })
     else if (outcome === 'downloaded')
       setBackupMsg({ ok: true, text: '✓ バックアップをダウンロードしました。' })
+    else if (outcome === 'saved')
+      setBackupMsg({ ok: true, text: '✓ スマホの Documents フォルダに保存しました。' })
+    else if (outcome === 'failed')
+      setBackupMsg({ ok: false, text: '⚠ 保存に失敗しました。もう一度お試しください。' })
   }
 
   const onPickBackup = async (files: FileList | null) => {

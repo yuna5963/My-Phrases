@@ -4,6 +4,8 @@ import { useDeck } from '../store/useDeck'
 import { useSettings } from '../store/useSettings'
 import { useStock } from '../store/useStock'
 import { normalize } from '../lib/chunkMatch'
+import { logEvent } from '../lib/db'
+import { makeEvent } from '../lib/events'
 import { lintKana } from '../lib/kanaLint'
 import Field from '../components/FormField'
 import UsageBadge from '../components/UsageBadge'
@@ -173,6 +175,14 @@ export default function StockEnrich() {
     try {
       await addPhrases(keep.map(draftToPhrase))
       keep.forEach((d) => removeFromStock(d.en))
+      // 学習ログ（追記・best-effort）。教材化した件数を記録する。
+      try {
+        await logEvent(makeEvent('materialize', { addedCount: keep.length }))
+      } catch {
+        /* ログは best-effort */
+      }
+      // addPhrases が load() を呼ぶので events も読み直されるが、明示的に整合させる。
+      await useDeck.getState().refreshEvents()
       setAddedCount(keep.length)
       setPhase('done')
     } finally {

@@ -32,7 +32,7 @@ const FORM_META: Record<DailyForm, { label: string; hint: string }> = {
  * 同じセッション内の再出題でも形式が習熟度に追従する。
  */
 export default function Daily() {
-  const s = useSession({ noFallback: true })
+  const s = useSession({ noFallback: true, mode: 'daily' })
   const progress = useDeck((x) => x.progress)
   const autoPlay = useSettings((x) => x.autoPlay)
   const voiceURI = useSettings((x) => x.voiceURI)

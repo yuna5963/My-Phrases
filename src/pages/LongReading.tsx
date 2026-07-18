@@ -8,6 +8,7 @@ import { startBackgroundSession, stopBackgroundSession } from '../lib/background
 import { isNativeApp } from '../lib/platform'
 import { isLongReading } from '../lib/longReading'
 import { useSpokenWordTracker } from '../hooks/useSpokenWordTracker'
+import { usePlayTracking } from '../hooks/usePlayTracking'
 import MetaChips from '../components/MetaChips'
 import StepNav from '../components/StepNav'
 import KanaLine from '../components/KanaLine'
@@ -36,6 +37,8 @@ export default function LongReading() {
 
   // 長文の読み上げ中は画面スリープを抑止（消灯で再生が止まらないように）。
   useWakeLock(playing)
+  // お手本再生の経過時間を学習ログへ（最低ライン=5分の判定材料）。
+  usePlayTracking(playing)
 
   const current = items[pos]
   const passage = current?.examples[0]

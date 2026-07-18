@@ -4,6 +4,7 @@ import { useDeck } from '../store/useDeck'
 import { useSettings } from '../store/useSettings'
 import { buildSession, clusterByTypeCategory } from '../lib/session'
 import { isLongReading } from '../lib/longReading'
+import type { PracticeMode } from '../lib/events'
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr]
@@ -37,6 +38,8 @@ export interface SessionOptions {
    * 同じタイプ・同じカテゴリのチャンクへ優先的に遷移する。
    */
   clusterByFacet?: boolean
+  /** 採点ログに残す練習モード（KPIの内訳把握用）。 */
+  mode?: PracticeMode
 }
 
 /**
@@ -52,6 +55,7 @@ export function useSession(options: SessionOptions = {}) {
     onlyUnsure = false,
     noFallback = false,
     clusterByFacet = false,
+    mode,
   } = options
   const phrases = useDeck((s) => s.phrases)
   const grade = useDeck((s) => s.grade)
@@ -119,7 +123,7 @@ export function useSession(options: SessionOptions = {}) {
   async function answer(g: Grade) {
     const id = queue[pos]
     if (!id) return
-    await grade(id, g)
+    await grade(id, g, mode)
     setTally((t) => ({ ...t, [g]: t[g] + 1 }))
     if (g !== 'good') setQueue((q) => [...q, id]) // re-show weak cards
     setPos((p) => p + 1)
