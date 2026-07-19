@@ -39,7 +39,10 @@ export interface GoalTrack {
   steps: GoalStep[]
 }
 
-// 注: target 値・カテゴリ名は暫定ドラフト。実データ（phrases.json のカテゴリ分布）に合わせて要調整。
+// target 値・カテゴリ名は実デッキ（2026-07-18 エクスポート・488チャンク）の分布に合わせて較正した。
+// 参考分布: Level=Basic 297 / Core 151 / Intermediate 33 / Advanced 7。
+//   ビジネス系カテゴリ= Business transformation 29 / Work 23 / Business 11 / Career・Booth 10 …。
+// retainedInCategory の target は「そのカテゴリの実在数」を超えないこと（超えると到達不能になる）。
 export const GOAL_TRACKS: GoalTrack[] = [
   {
     id: 'business',
@@ -69,11 +72,12 @@ export const GOAL_TRACKS: GoalTrack[] = [
         target: 60,
       },
       {
-        id: 'biz-work',
-        title: '仕事の話題で戦える',
-        desc: 'Work分野の定着チャンクが80個そろった',
-        metric: { kind: 'retainedInCategory', category: 'Work' },
-        target: 80,
+        id: 'biz-domain',
+        title: 'ビジネス領域で戦える',
+        // Business transformation はデッキ最大のビジネス系カテゴリ（29件）。20件=約7割の定着を狙う。
+        desc: 'ビジネス変革の話題で定着したチャンクが20個そろった',
+        metric: { kind: 'retainedInCategory', category: 'Business transformation' },
+        target: 20,
       },
     ],
   },
