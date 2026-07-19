@@ -11,8 +11,6 @@ import {
   type ChatFocus,
 } from '../lib/coachPrompt'
 import { extractSuggestions, filterNewSuggestions, type Suggestion } from '../lib/suggestions'
-import { logEvent } from '../lib/db'
-import { makeEvent } from '../lib/events'
 import { useDeck } from './useDeck'
 import { useSettings } from './useSettings'
 
@@ -169,17 +167,17 @@ export const useChat = create<ChatState>()((set, get) => {
         // ➕ 行（追加候補）を本文から分離し、デッキに既にある表現は除外する。
         const { body, suggestions } = extractSuggestions(stripThoughts(full))
         const { targets, usedChunkIds, messages } = get()
-        // 学習ログ（追記）。セッション完了時に実戦投入率の材料を残す。
-        // usedChunkIds は endSession で消えるため、消える前にここで永続化する。
+        // 学習ログ（追記）＝1セッション完了。実戦投入率の材料を残し、当日の最低ライン達成で
+        // ストリークも維持する（noteChatComplete）。usedChunkIds は endSession で消えるため、
+        // 消える前のこのタイミングで永続化する。ログ失敗はまとめ表示を妨げない。
         try {
-          await logEvent(
-            makeEvent('chat', {
-              targetChunkIds: targets.map((p) => p.id),
+          await useDeck
+            .getState()
+            .noteChatComplete(
+              targets.map((p) => p.id),
               usedChunkIds,
-              userMessageCount: messages.filter((m) => m.role === 'user' && !m.hidden).length,
-            }),
-          )
-          await useDeck.getState().refreshEvents()
+              messages.filter((m) => m.role === 'user' && !m.hidden).length,
+            )
         } catch {
           /* ログは best-effort */
         }

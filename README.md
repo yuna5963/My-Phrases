@@ -37,11 +37,18 @@ Notionは取り込み元のひとつ（任意）です。
 - **AI長文作成** — デッキのチャンク3〜5個を織り込んだ音読用の長文を生成
 - **無料枠の残り目安** — 端末内でAPIリクエスト数を日次集計し「残り 約n回」を表示
 
+**続ける（ゴール・記録）**
+- **ゴール設定** — 💼ビジネス / 🎓留学 / 🗣️日常会話 から最終ゴールを選ぶと、そこへ向かう**中間ゴールの梯子**が並ぶ。
+  ホームの進捗バーで「最終ゴールにどれだけ近づいたか」と「次の小さな目標」が一目でわかる
+- **今日のあゆみ** — その日の採点数・アウトプット数・定着数を表示。学習ログ（`events`）から日次集計
+- **最低ライン方式** — 採点が無い日でも**連続再生5分でストリークを維持**。疲れた日にゼロにさせない
+
 **教材管理**
 - **表現ストック** — チャットで出会った表現や自分で思いついた表現のメモ置き場（教材化の入口）
 - **アプリ内で編集・削除・手動追加** — カナの手直しや不要教材の整理がCSV往復なしで完結
-- **CSV入出力** — デッキ全件のバックアップ／再取り込み（マージ・全置換）。Notionエクスポート（.zip）もそのまま読める
-- 学習進捗は端末内（IndexedDB）に保存。再取り込みしてもIDキーで進捗は保持
+- **CSV入出力** — デッキ全件のバックアップ／再取り込み（マージ・全置換）。Notionエクスポート（.zip）もそのまま読める。
+  ネイティブアプリでは端末の **Documents フォルダ**に保存（Filesアプリから取り出し可）
+- 学習進捗・学習ログは端末内（IndexedDB）に保存。再取り込みしてもIDキーで進捗は保持
 
 ## 📲 Androidアプリ（推奨）
 
@@ -96,7 +103,8 @@ version が上がっていればタグと GitHub Release も自動作成され�
 |---|---|
 | SRS（復習間隔）・出題 | `src/lib/srs.ts`, `src/lib/session.ts`, `src/lib/dailyForm.ts` |
 | 進捗・教材保存（IndexedDB） | `src/lib/db.ts`, `src/store/useDeck.ts` |
-| 取り込み / CSV出力 | `src/lib/import.ts`, `src/lib/export.ts` |
+| 学習ログ・KPI・ゴール | `src/lib/events.ts`, `src/lib/kpi.ts`, `src/lib/goals.ts`, `src/lib/playTracker.ts` |
+| 取り込み / CSV出力 / 保存 | `src/lib/import.ts`, `src/lib/export.ts`, `src/lib/share.ts` |
 | TTS（読み上げ・Word Spark） | `src/lib/tts/`（Web Speech / AndroidネイティブTTSの差し替え式）, `src/lib/spokenWords.ts` |
 | AIクライアント（SSE・再試行） | `src/lib/chatApi.ts` |
 | AIコーチ / 教材化 / AI長文 | `src/lib/coachPrompt.ts`, `src/lib/enrich.ts`, `src/lib/longGen.ts` |

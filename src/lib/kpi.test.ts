@@ -87,6 +87,9 @@ describe('minimumLineMet', () => {
   it('met when a grade exists', () => {
     expect(minimumLineMet([grade('2026-07-17', 'a', 0, 1)])).toBe(true)
   })
+  it('met when a chat session was completed (even 0 chunks used)', () => {
+    expect(minimumLineMet([chat('2026-07-17', ['a'], [], 1)])).toBe(true)
+  })
   it('met when play >= 5min even without grading', () => {
     expect(minimumLineMet([play('2026-07-17', 300)])).toBe(true)
   })
