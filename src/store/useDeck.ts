@@ -18,6 +18,7 @@ import {
 } from '../lib/db'
 import { makeEvent, type LearningEvent, type PracticeMode } from '../lib/events'
 import { eventsOn, minimumLineMet } from '../lib/kpi'
+import type { Energy } from '../lib/planEngine'
 import { mergePhrases, parsePhrasesFromFiles } from '../lib/import'
 
 export type DeckSource = 'imported' | 'sample'
@@ -42,11 +43,17 @@ interface DeckState {
   events: LearningEvent[]
   /** 選択中のゴールトラックID（''=未選択）。 */
   goalTrackId: string
+  /** 今日のプランで選んだ体調（null=今日はまだ未選択）。日付が変わると自動でリセット。 */
+  planEnergy: Energy | null
   load: () => Promise<void>
   /** 学習ログをIndexedDBから読み直す（チャット・教材化の後に呼ぶ）。 */
   refreshEvents: () => Promise<void>
   /** ゴールトラックを選ぶ（meta永続）。 */
   setGoalTrack: (id: string) => Promise<void>
+  /** 今日の体調を選んでプランを確定する（meta永続・当日限り）。 */
+  setPlanEnergy: (energy: Energy) => Promise<void>
+  /** 今日のプランを取り消して体調選択に戻す（気分の選び直し）。 */
+  clearPlanEnergy: () => Promise<void>
   /** 連続再生の経過秒数を学習ログに記録する。最低ライン（5分）到達でストリークも維持する。 */
   notePlayback: (seconds: number) => Promise<void>
   /** チャット練習の完了（まとめ）を学習ログに記録する。完了＝当日の最低ライン達成でストリークを維持する。 */
@@ -130,6 +137,7 @@ export const useDeck = create<DeckState>((set, get) => ({
   error: null,
   events: [],
   goalTrackId: '',
+  planEnergy: null,
 
   load: async () => {
     try {
@@ -161,7 +169,21 @@ export const useDeck = create<DeckState>((set, get) => ({
       const streak = await getMeta<number>('streak', 0)
       const events = await getAllEvents()
       const goalTrackId = await getMeta<string>('goalTrackId', '')
-      set({ phrases, progress, streak, source, events, goalTrackId, loaded: true, error: null })
+      // 今日のプランは当日限り。保存日が今日でなければ未選択（体調選択から）に戻す。
+      const planDate = await getMeta<string>('planDate', '')
+      const savedEnergy = await getMeta<string>('planEnergy', '')
+      const planEnergy = planDate === todayStr() && savedEnergy ? (savedEnergy as Energy) : null
+      set({
+        phrases,
+        progress,
+        streak,
+        source,
+        events,
+        goalTrackId,
+        planEnergy,
+        loaded: true,
+        error: null,
+      })
     } catch (e) {
       set({ error: (e as Error).message, loaded: true })
     }
@@ -174,6 +196,17 @@ export const useDeck = create<DeckState>((set, get) => ({
   setGoalTrack: async (id) => {
     await setMeta('goalTrackId', id)
     set({ goalTrackId: id })
+  },
+
+  setPlanEnergy: async (energy) => {
+    await setMeta('planDate', todayStr())
+    await setMeta('planEnergy', energy)
+    set({ planEnergy: energy })
+  },
+
+  clearPlanEnergy: async () => {
+    await setMeta('planEnergy', '')
+    set({ planEnergy: null })
   },
 
   notePlayback: async (seconds) => {
