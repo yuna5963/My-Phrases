@@ -11,7 +11,7 @@ function renderKana(kana: string) {
     i % 2 === 1 ? (
       <strong
         key={i}
-        className="font-semibold text-slate-600 dark:text-slate-300"
+        className="font-semibold t-muted"
       >
         {seg}
       </strong>
@@ -36,7 +36,7 @@ export default function KanaLine({
   const showKana = useSettings((s) => s.showKana)
   if (!showKana || !kana) return null
   return (
-    <p className={`mt-0.5 text-xs leading-snug text-slate-400 ${className ?? ''}`}>
+    <p className={`mt-0.5 text-xs leading-snug t-subtle ${className ?? ''}`}>
       {renderKana(kana)}
     </p>
   )

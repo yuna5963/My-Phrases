@@ -44,9 +44,9 @@ export default function ExpressionStock() {
     <div className="space-y-4">
       <header className="flex items-baseline justify-between">
         <h1 className="text-xl font-bold">📥 表現ストック</h1>
-        <span className="text-sm text-slate-500">{items.length}件</span>
+        <span className="text-sm t-muted">{items.length}件</span>
       </header>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm t-muted">
         チャット練習のまとめでチェックした表現や、自分で思いついた表現の置き場です。
         たまったら「教材化」でそのままデッキに追加できます。
       </p>
@@ -56,19 +56,19 @@ export default function ExpressionStock() {
       {items.length > 0 && (
         <button
           onClick={() => navigate('/stock/enrich')}
-          className="w-full rounded-2xl bg-violet-500 py-4 font-medium text-white active:scale-95"
+          className="btn-primary w-full py-4 font-medium"
         >
           ✨ 教材化する（AIが訳・例文・カナを補完）
         </button>
       )}
 
       {items.length === 0 ? (
-        <div className="rounded-2xl bg-white p-6 text-center text-sm text-slate-400 shadow-sm dark:bg-slate-900">
+        <div className="tile p-6 text-center text-sm t-subtle ">
           <p>まだ何もありません。</p>
           <p className="mt-1">
             チャット練習の終了まとめで「➕ 追加すると良さそうな表現」にチェックすると、ここにたまります。
           </p>
-          <button onClick={() => navigate('/chat')} className="mt-4 font-medium text-sky-500">
+          <button onClick={() => navigate('/chat')} className="mt-4 font-medium link">
             💬 チャット練習へ →
           </button>
         </div>
@@ -77,25 +77,25 @@ export default function ExpressionStock() {
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={copyAll}
-              className="rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-medium text-white active:scale-[0.99]"
+              className="btn-primary px-4 py-2.5 text-sm font-medium"
             >
               {copied ? '✓ コピーしました' : '📋 全てコピー'}
             </button>
             <a
               href={`mailto:?subject=${encodeURIComponent('表現ストック')}&body=${encodeURIComponent(mailBody)}`}
-              className="rounded-xl border border-slate-300 px-4 py-2.5 text-center text-sm font-medium text-slate-600 dark:border-slate-700 dark:text-slate-300 active:scale-[0.99]"
+              className="btn-tertiary px-4 py-2.5 text-center text-sm font-medium"
             >
               ✉️ メールで送る
             </a>
           </div>
           <button
             onClick={shareCsv}
-            className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-600 dark:border-slate-700 dark:text-slate-300 active:scale-[0.99]"
+            className="btn-tertiary w-full px-4 py-2.5 text-sm font-medium"
           >
             📤 CSVで共有 / 保存
           </button>
-          {shareMsg && <p className="text-sm text-emerald-500">{shareMsg}</p>}
-          <p className="text-xs text-slate-400">
+          {shareMsg && <p className="text-sm text-carbon-success">{shareMsg}</p>}
+          <p className="text-xs t-subtle">
             コピーはタブ区切りなので、表計算や Notion のテーブルにそのまま貼り付けられます。CSVは共有シートからメールや Drive に送れます。
           </p>
 
@@ -103,17 +103,17 @@ export default function ExpressionStock() {
             {items.map((i) => (
               <li
                 key={i.en}
-                className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm dark:bg-slate-900"
+                className="flex items-center gap-3 tile p-3 "
               >
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">{i.en}</p>
-                  {i.ja && <p className="text-sm text-slate-500">{i.ja}</p>}
-                  <p className="mt-0.5 text-xs text-slate-400">{i.addedAt}</p>
+                  {i.ja && <p className="text-sm t-muted">{i.ja}</p>}
+                  <p className="mt-0.5 text-xs t-subtle">{i.addedAt}</p>
                 </div>
                 <button
                   onClick={() => remove(i.en)}
                   aria-label={`${i.en} を削除`}
-                  className="shrink-0 rounded-full px-2 py-1 text-slate-400 active:scale-95"
+                  className="t-subtle shrink-0 px-2 py-1 active:opacity-80"
                 >
                   ✕
                 </button>
@@ -125,7 +125,7 @@ export default function ExpressionStock() {
             onClick={() => {
               if (confirm('ストックを空にします（Notionへ追加し終えたら）。よろしいですか？')) clear()
             }}
-            className="text-sm text-slate-400 underline"
+            className="text-sm t-subtle underline"
           >
             全て削除（追加し終えたら）
           </button>
@@ -151,7 +151,7 @@ function ManualAdd() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="w-full rounded-2xl border border-dashed border-slate-300 py-3 text-sm font-medium text-slate-500 active:scale-[0.99] dark:border-slate-700 dark:text-slate-400"
+        className="t-muted w-full rounded-none border border-dashed border-carbon-ink-subtle py-3 text-sm font-medium active:opacity-90"
       >
         ✍️ 自分で追加（思いついた表現をメモ）
       </button>
@@ -172,7 +172,7 @@ function ManualAdd() {
   }
 
   return (
-    <div className="space-y-2 rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-900">
+    <div className="space-y-2 tile p-4 ">
       <div className="flex items-baseline justify-between">
         <h2 className="text-sm font-semibold">✍️ 自分で追加</h2>
         <button
@@ -180,7 +180,7 @@ function ManualAdd() {
             setOpen(false)
             setMsg(null)
           }}
-          className="text-xs text-slate-400 underline"
+          className="text-xs t-subtle underline"
         >
           閉じる
         </button>
@@ -206,18 +206,18 @@ function ManualAdd() {
       <button
         onClick={submit}
         disabled={!en.trim()}
-        className="w-full rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-40 active:scale-[0.99]"
+        className="btn-primary w-full px-4 py-2.5 text-sm font-medium"
       >
         📥 ストックに追加
       </button>
       {msg && (
-        <p className={`text-sm ${msg.startsWith('✓') ? 'text-emerald-500' : 'text-amber-600 dark:text-amber-400'}`}>
+        <p className={`text-sm ${msg.startsWith('✓') ? 'text-carbon-success' : 't-muted'}`}>
           {msg}
         </p>
       )}
-      <p className="text-xs text-slate-400">
+      <p className="text-xs t-subtle">
         例文やカナまで自分で書きたいときは{' '}
-        <Link to="/chunk/new" className="font-medium text-sky-500 underline">
+        <Link to="/chunk/new" className="font-medium link underline">
           チャンクを直接追加 →
         </Link>
       </p>

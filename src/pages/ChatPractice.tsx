@@ -151,11 +151,11 @@ export default function ChatPractice() {
 
   if (!chatApiKey) {
     return (
-      <div className="pt-20 text-center text-slate-500">
+      <div className="pt-20 text-center t-muted">
         <p className="text-3xl">💬</p>
         <p className="mt-4">チャット練習には Gemini API キーが必要です。</p>
         <p className="mt-1 text-sm">設定画面でキーを登録してください（無料で取得できます）。</p>
-        <Link to="/settings" className="mt-4 inline-block font-medium text-sky-500 underline">
+        <Link to="/settings" className="mt-4 inline-block font-medium link underline">
           ⚙️ 設定を開く
         </Link>
       </div>
@@ -164,9 +164,9 @@ export default function ChatPractice() {
 
   if (phrases.length === 0) {
     return (
-      <div className="pt-20 text-center text-slate-500">
+      <div className="pt-20 text-center t-muted">
         <p>練習できるフレーズがありません。</p>
-        <button onClick={() => navigate('/')} className="mt-4 text-sky-500">
+        <button onClick={() => navigate('/')} className="mt-4 link">
           ホームへ戻る
         </button>
       </div>
@@ -181,9 +181,9 @@ export default function ChatPractice() {
     return (
       <div className="flex h-full flex-col gap-4">
         <h1 className="text-xl font-bold">💬 チャット練習 おつかれさま！</h1>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm t-muted">
           使えたチャンク:{' '}
-          <span className="font-bold text-emerald-500">{usedCount}</span> / {chat.targets.length}
+          <span className="font-bold text-carbon-success">{usedCount}</span> / {chat.targets.length}
         </p>
         <div className="flex flex-wrap gap-2">
           {chat.targets.map((p) => (
@@ -191,13 +191,13 @@ export default function ChatPractice() {
           ))}
         </div>
         <div className="flex-1 space-y-3 overflow-y-auto">
-          <div className="rounded-2xl bg-white p-4 text-sm leading-relaxed shadow-sm dark:bg-slate-900">
+          <div className="tile p-4 text-sm leading-relaxed ">
             {streamingSummary ? (
               <p className="whitespace-pre-wrap">{streamingSummary}</p>
             ) : chat.status === 'error' ? (
-              <p className="text-rose-500">{chat.error}</p>
+              <p className="text-carbon-error">{chat.error}</p>
             ) : (
-              <p className="text-slate-400">まとめを作成中…</p>
+              <p className="t-subtle">まとめを作成中…</p>
             )}
           </div>
           {chat.suggestions.length > 0 && <SuggestionsCard suggestions={chat.suggestions} />}
@@ -207,13 +207,13 @@ export default function ChatPractice() {
             <div className="grid grid-cols-2 gap-2">
               <a
                 href={`mailto:?subject=${encodeURIComponent('チャット練習のまとめ')}&body=${encodeURIComponent(buildShareText(chat.summary ?? ''))}`}
-                className="rounded-xl border border-slate-300 px-4 py-2.5 text-center text-sm font-medium text-slate-600 dark:border-slate-700 dark:text-slate-300 active:scale-[0.99]"
+                className="btn-tertiary px-4 py-2.5 text-center text-sm font-medium"
               >
                 ✉️ メールで共有
               </a>
               <button
                 onClick={() => copyShareText(chat.summary ?? '')}
-                className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-600 dark:border-slate-700 dark:text-slate-300 active:scale-[0.99]"
+                className="btn-tertiary px-4 py-2.5 text-sm font-medium"
               >
                 {copied ? '✓ コピーしました' : '📋 内容をコピー'}
               </button>
@@ -221,13 +221,13 @@ export default function ChatPractice() {
           )}
           <button
             onClick={restart}
-            className="w-full rounded-xl bg-sky-500 px-4 py-3 font-medium text-white active:scale-[0.99]"
+            className="btn-primary w-full px-4 py-3 font-medium"
           >
             🔁 もう一度（新しいチャンクで）
           </button>
           <button
             onClick={() => navigate('/')}
-            className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-500 dark:border-slate-700 active:scale-[0.99]"
+            className="btn-tertiary w-full px-4 py-3"
           >
             ホームへ戻る
           </button>
@@ -245,7 +245,7 @@ export default function ChatPractice() {
         <h1 className="font-bold">💬 チャット練習</h1>
         <button
           onClick={onEnd}
-          className="rounded-full border border-slate-300 px-3 py-1 text-sm text-slate-500 dark:border-slate-700 active:scale-95"
+          className="chip px-3 py-1 text-sm active:opacity-80"
         >
           終了してまとめ
         </button>
@@ -266,19 +266,19 @@ export default function ChatPractice() {
           return (
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
-                className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                  m.role === 'user'
-                    ? 'rounded-br-md bg-sky-500 text-white'
-                    : 'rounded-bl-md bg-white shadow-sm dark:bg-slate-900'
+                className={`max-w-[85%] whitespace-pre-wrap rounded-none px-4 py-2.5 text-sm leading-relaxed ${
+ m.role === 'user'
+                    ? 'bg-carbon-blue text-white'
+                    : 'tile'
                 }`}
               >
-                {text || <span className="animate-pulse text-slate-400">…</span>}
+                {text || <span className="animate-pulse t-subtle">…</span>}
               </div>
             </div>
           )
         })}
         {chat.status === 'error' && (
-          <div className="rounded-xl border border-rose-300 bg-rose-50 p-3 text-sm text-rose-600 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
+          <div className="rounded-none border-l-4 border-carbon-error bg-carbon-surface p-3 text-sm text-carbon-error dark:bg-carbon-layer">
             <p>⚠ {chat.error}</p>
             <button onClick={chat.retryLast} className="mt-1 font-medium underline">
               もう一度送る
@@ -288,7 +288,7 @@ export default function ChatPractice() {
         <div ref={bottomRef} />
       </div>
 
-      <div className="flex items-end gap-2 border-t border-slate-200 pt-2 dark:border-slate-800">
+      <div className="flex items-end gap-2 border-t border-carbon-hairline pt-2 dark:border-carbon-line-dark">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -301,12 +301,12 @@ export default function ChatPractice() {
           }}
           placeholder="英語で返信してみよう…"
           rows={2}
-          className="min-h-[44px] flex-1 resize-none rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+          className="input min-h-[44px] flex-1 resize-none px-3 py-2 text-sm"
         />
         <button
           onClick={send}
           disabled={!input.trim() || chat.status === 'streaming'}
-          className="rounded-xl bg-sky-500 px-4 py-2.5 font-medium text-white disabled:opacity-40 active:scale-95"
+          className="btn-primary px-4 py-2.5 font-medium"
         >
           送信
         </button>
@@ -326,11 +326,11 @@ function SuggestionsCard({ suggestions }: { suggestions: { en: string; ja: strin
   const stocked = (en: string) => items.some((i) => stockKey(i.en) === stockKey(en))
 
   return (
-    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/40">
-      <h2 className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+    <div className="rounded-none border-l-4 border-carbon-success bg-carbon-surface p-4 dark:bg-carbon-layer">
+      <h2 className="text-sm font-semibold text-carbon-success">
         ➕ 追加すると良さそうな表現
       </h2>
-      <p className="mt-0.5 text-xs text-emerald-600/80 dark:text-emerald-400/80">
+      <p className="t-muted mt-0.5 text-xs">
         チェックすると端末の「表現ストック」にたまります（あとで PC からまとめて Notion へ）
       </p>
       <ul className="mt-2 space-y-1.5 text-sm">
@@ -347,7 +347,7 @@ function SuggestionsCard({ suggestions }: { suggestions: { en: string; ja: strin
                 />
                 <span>
                   <span className="font-medium">{s.en}</span>
-                  {s.ja && <span className="text-slate-500"> — {s.ja}</span>}
+                  {s.ja && <span className="t-muted"> — {s.ja}</span>}
                 </span>
               </label>
             </li>
@@ -356,7 +356,7 @@ function SuggestionsCard({ suggestions }: { suggestions: { en: string; ja: strin
       </ul>
       <Link
         to="/stock"
-        className="mt-3 inline-block text-sm font-medium text-emerald-700 underline dark:text-emerald-300"
+        className="link mt-3 inline-block text-sm font-medium underline"
       >
         📥 表現ストックを見る（{items.length}件）
       </Link>
@@ -367,10 +367,10 @@ function SuggestionsCard({ suggestions }: { suggestions: { en: string; ja: strin
 function ChunkChip({ phrase, used }: { phrase: Phrase; used: boolean }) {
   return (
     <span
-      className={`shrink-0 rounded-full px-3 py-1 text-xs ${
-        used
-          ? 'bg-emerald-500 text-white'
-          : 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+      className={`shrink-0 px-3 py-1 text-xs ${
+ used
+          ? 'rounded-none bg-carbon-success text-white'
+          : 'chip'
       }`}
       title={phrase.ja}
     >

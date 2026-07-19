@@ -73,9 +73,9 @@ export default function App() {
           ナビが高くなるため、最後のボタンが隠れない余白を確保する。 */}
       <main className="safe-top flex-1 overflow-y-auto px-4 pb-32 pt-4">
         {!loaded ? (
-          <p className="mt-20 text-center text-slate-400">読み込み中…</p>
+          <p className="t-subtle mt-20 text-center">読み込み中…</p>
         ) : error ? (
-          <p className="mt-20 text-center text-rose-500">
+          <p className="mt-20 text-center text-carbon-error">
             データの読み込みに失敗しました: {error}
           </p>
         ) : (

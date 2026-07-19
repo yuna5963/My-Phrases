@@ -10,13 +10,14 @@ export default function SessionHeader({ pos, total, title }: Props) {
     <div className="mb-4">
       <div className="mb-2 flex items-center justify-between text-sm">
         <span className="font-medium">{title}</span>
-        <span className="text-slate-400">
+        <span className="t-subtle">
           {Math.min(pos + 1, total)} / {total}
         </span>
       </div>
-      <div className="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-800">
+      {/* Carbon: 直角のトラック＋青いフィル */}
+      <div className="h-1 w-full bg-carbon-surface-2 dark:bg-carbon-line-dark">
         <div
-          className="h-1.5 rounded-full bg-sky-500 transition-all"
+          className="h-1 bg-carbon-blue transition-all dark:bg-carbon-blue-40"
           style={{ width: `${pct}%` }}
         />
       </div>

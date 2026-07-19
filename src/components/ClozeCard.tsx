@@ -20,17 +20,17 @@ export default function ClozeCard({
 }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 py-6">
-      <div className="w-full rounded-2xl bg-white p-5 text-center shadow-sm dark:bg-slate-900">
+      <div className="tile w-full p-5 text-center">
         <p className="text-xl font-semibold leading-relaxed">
           {item.before}
-          <span className="font-bold text-rose-500 dark:text-rose-400">
+          <span className="font-semibold text-carbon-blue dark:text-carbon-blue-40">
             {revealed ? item.chunk : '____'}
           </span>
           {item.after}
         </p>
         {revealed && <KanaLine kana={item.kana} className="text-center" />}
-        {item.ja && <p className="mt-2 text-sm text-slate-500">{item.ja}</p>}
-        <p className="mt-1 text-xs text-slate-400">ヒント: {chunkJa}</p>
+        {item.ja && <p className="t-muted mt-2 text-sm">{item.ja}</p>}
+        <p className="t-subtle mt-1 text-xs">ヒント: {chunkJa}</p>
         {revealed && (
           <div className="mt-4 flex justify-center">
             <PlayButton text={item.before + item.chunk + item.after} />
@@ -41,7 +41,7 @@ export default function ClozeCard({
       {!revealed && (
         <button
           onClick={onReveal}
-          className="rounded-2xl border-2 border-dashed border-slate-300 px-8 py-4 text-slate-500 dark:border-slate-700"
+          className="t-muted rounded-none border border-dashed border-carbon-ink-subtle px-8 py-4"
         >
           答えを見る 👀
         </button>

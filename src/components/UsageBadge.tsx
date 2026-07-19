@@ -10,7 +10,7 @@ export default function UsageBadge({ className = '' }: { className?: string }) {
   const used = useUsage((s) => todayCountOf(s, model))
   const limit = freeTierDailyLimit(model)
   return (
-    <p className={`text-xs text-slate-400 ${className}`}>
+    <p className={`t-subtle text-xs ${className}`}>
       {limit !== undefined
         ? `⚡ 無料枠の目安: 残り 約${Math.max(limit - used, 0).toLocaleString()}回（今日 ${used}回使用）`
         : `⚡ AIの使用: 今日 ${used}回`}

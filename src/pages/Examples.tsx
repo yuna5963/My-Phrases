@@ -78,13 +78,13 @@ export default function Examples() {
 
       <FacetFilters filter={filter} />
 
-      <p className="text-xs text-slate-400">{rows.length} 件</p>
+      <p className="text-xs t-subtle">{rows.length} 件</p>
 
       <ul className="space-y-2">
         {pageRows.map((r) => (
           <li
             key={r.key}
-            className="flex items-center gap-2 rounded-xl bg-white p-3 shadow-sm dark:bg-slate-900"
+            className="tile flex items-center gap-2 p-3"
           >
             <button
               onClick={() =>
@@ -96,14 +96,14 @@ export default function Examples() {
             >
               <p className="font-medium leading-relaxed">{r.en}</p>
               <KanaLine kana={r.kana} />
-              {r.ja && <p className="mt-0.5 text-sm text-slate-500">{r.ja}</p>}
-              <p className="mt-1 truncate text-xs text-slate-400">
+              {r.ja && <p className="mt-0.5 text-sm t-muted">{r.ja}</p>}
+              <p className="mt-1 truncate text-xs t-subtle">
                 例文{r.index}・{r.chunkEn}
               </p>
             </button>
             <button
               onClick={() => speak(r.en, { voiceURI, rate })}
-              className="shrink-0 rounded-full bg-sky-100 px-3 py-2 text-sky-600 active:scale-95 dark:bg-sky-900/40 dark:text-sky-400"
+              className="btn-tertiary shrink-0 px-3 py-2"
             >
               🔊
             </button>
@@ -112,7 +112,7 @@ export default function Examples() {
       </ul>
 
       {rows.length === 0 && (
-        <p className="py-10 text-center text-sm text-slate-400">
+        <p className="py-10 text-center text-sm t-subtle">
           該当する例文がありません
         </p>
       )}

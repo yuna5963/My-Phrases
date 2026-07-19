@@ -13,7 +13,7 @@ import SpokenText from './SpokenText'
  */
 export default function ExampleList({
   examples,
-  className = 'mt-4 space-y-3 border-t border-slate-100 pt-4 dark:border-slate-800',
+  className = 'mt-4 space-y-3 border-t border-carbon-hairline pt-4 dark:border-carbon-line-dark',
 }: {
   examples: Example[]
   className?: string
@@ -57,16 +57,13 @@ export default function ExampleList({
       {examples.map((ex, i) => (
         <li key={i} className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-base leading-relaxed text-slate-700 dark:text-slate-200">
+            <p className="text-base leading-relaxed">
               <SpokenText text={ex.en} current={i === active ? tracker.current : -1} />
             </p>
             <KanaLine kana={ex.kana} />
-            {ex.ja && <p className="mt-0.5 text-xs text-slate-400">{ex.ja}</p>}
+            {ex.ja && <p className="t-subtle mt-0.5 text-xs">{ex.ja}</p>}
           </div>
-          <button
-            onClick={() => play(i, ex.en)}
-            className="shrink-0 text-sky-500 active:scale-95"
-          >
+          <button onClick={() => play(i, ex.en)} className="link shrink-0 active:opacity-70">
             🔊
           </button>
         </li>

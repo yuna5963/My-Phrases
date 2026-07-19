@@ -31,9 +31,9 @@ export default function Compose() {
 
   if (s.empty) {
     return (
-      <div className="pt-20 text-center text-slate-500">
+      <div className="pt-20 text-center t-muted">
         <p>練習できるフレーズがありません。</p>
-        <button onClick={() => navigate('/')} className="mt-4 text-sky-500">
+        <button onClick={() => navigate('/')} className="mt-4 link">
           ホームへ戻る
         </button>
       </div>
@@ -50,10 +50,10 @@ export default function Compose() {
           key={s.pos}
           items={items}
           meta={<MetaChips phrase={c!} />}
-          accentClass="text-sky-600 dark:text-sky-400"
+          accentClass="link"
           onStep={(st) => setAtEnd(st.revealed && st.idx === items.length - 1)}
         />
-        <p className="text-center text-sm text-slate-400">
+        <p className="text-center text-sm t-subtle">
           日本語を見て声に出して英作文 → タッチで答え合わせ
         </p>
       </div>
@@ -70,7 +70,7 @@ export default function Compose() {
       {/* 片手で押せるよう、終了は画面下部に置く。 */}
       <button
         onClick={() => navigate('/')}
-        className="mt-2 w-full py-2 text-center text-sm text-slate-400 active:scale-95"
+        className="mt-2 w-full py-2 text-center text-sm t-subtle active:opacity-80"
       >
         ✕ やめる
       </button>

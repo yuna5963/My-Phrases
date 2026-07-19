@@ -39,9 +39,9 @@ export default function Cloze() {
 
   if (s.empty) {
     return (
-      <div className="pt-20 text-center text-slate-500">
+      <div className="pt-20 text-center t-muted">
         <p>穴埋めにできる例文がありません。</p>
-        <button onClick={() => navigate('/')} className="mt-4 text-sky-500">
+        <button onClick={() => navigate('/')} className="mt-4 link">
           ホームへ戻る
         </button>
       </div>
@@ -74,7 +74,7 @@ export default function Cloze() {
       {/* 片手で押せるよう、終了は画面下部に置く。 */}
       <button
         onClick={() => navigate('/')}
-        className="mt-2 w-full py-2 text-center text-sm text-slate-400 active:scale-95"
+        className="mt-2 w-full py-2 text-center text-sm t-subtle active:opacity-80"
       >
         ✕ やめる
       </button>

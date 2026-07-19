@@ -10,7 +10,7 @@ export default function FacetFilters({ filter }: { filter: PhraseFilter }) {
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="検索（チャンク / 日本語 / 例文）"
-        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-sky-500 dark:border-slate-700 dark:bg-slate-900"
+        className="input w-full text-sm"
       />
 
       <div className="flex gap-2 overflow-x-auto pb-1">
@@ -22,7 +22,7 @@ export default function FacetFilters({ filter }: { filter: PhraseFilter }) {
       {FACETS.map((f) =>
         facetValues[f.key].length ? (
           <div key={f.key} className="flex items-center gap-2">
-            <span className="w-12 shrink-0 text-xs text-slate-400">{f.label}</span>
+            <span className="t-subtle w-12 shrink-0 text-xs">{f.label}</span>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {facetValues[f.key].map((v) => (
                 <Chip
@@ -53,11 +53,7 @@ function Chip({
   return (
     <button
       onClick={onClick}
-      className={`shrink-0 rounded-full px-4 py-1.5 text-sm ${
-        active
-          ? 'bg-sky-500 text-white'
-          : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
-      }`}
+      className={`shrink-0 px-4 py-1.5 text-sm ${active ? 'chip-active' : 'chip'}`}
     >
       {children}
     </button>

@@ -16,13 +16,13 @@ export default function MetaChips({
       {items.map((t) => (
         <span
           key={t}
-          className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+          className="rounded-none bg-carbon-surface px-2 py-0.5 text-[11px] text-carbon-ink-muted dark:bg-carbon-line-dark dark:text-carbon-inverse-muted"
         >
           {t}
         </span>
       ))}
       {phrase.priority && (
-        <span className="text-[11px] text-amber-500">{phrase.priority}</span>
+        <span className="t-subtle text-[11px]">{phrase.priority}</span>
       )}
     </div>
   )

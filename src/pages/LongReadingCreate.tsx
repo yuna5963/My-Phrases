@@ -65,11 +65,11 @@ export default function LongReadingCreate() {
 
   if (!apiKey) {
     return (
-      <div className="pt-20 text-center text-slate-500">
+      <div className="pt-20 text-center t-muted">
         <p className="text-3xl">📖</p>
         <p className="mt-4">AI長文の作成には Gemini API キーが必要です。</p>
         <p className="mt-1 text-sm">設定画面でキーを登録してください（無料で取得できます）。</p>
-        <Link to="/settings" className="mt-4 inline-block font-medium text-sky-500 underline">
+        <Link to="/settings" className="mt-4 inline-block font-medium link underline">
           ⚙️ 設定を開く
         </Link>
       </div>
@@ -121,12 +121,12 @@ export default function LongReadingCreate() {
 
   if (busy) {
     return (
-      <div className="pt-20 text-center text-slate-500">
+      <div className="pt-20 text-center t-muted">
         <p className="text-3xl">📖</p>
         <p className="mt-4">長文を生成しています…</p>
         <button
           onClick={() => abortRef.current?.abort()}
-          className="mt-6 text-sm text-slate-400 underline"
+          className="mt-6 text-sm t-subtle underline"
         >
           中止する
         </button>
@@ -138,7 +138,7 @@ export default function LongReadingCreate() {
     return (
       <div className="space-y-4">
         <h1 className="text-xl font-bold">📖 生成された長文</h1>
-        <div className="space-y-2 rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-900">
+        <div className="space-y-2 tile p-4 ">
           <Field label="タイトル" value={draft.titleEn} onChange={(titleEn) => setDraft({ ...draft, titleEn })} />
           <Field label="タイトル訳" value={draft.titleJa} onChange={(titleJa) => setDraft({ ...draft, titleJa })} />
           <Area label="本文" value={draft.en} rows={8} onChange={(en) => setDraft({ ...draft, en })} />
@@ -146,18 +146,18 @@ export default function LongReadingCreate() {
         </div>
 
         {usedOpts.chunks.length > 0 && (
-          <div className="rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-900">
-            <p className="text-xs text-slate-400">指定チャンクの含有チェック</p>
+          <div className="tile p-4 ">
+            <p className="text-xs t-subtle">指定チャンクの含有チェック</p>
             <ul className="mt-2 flex flex-wrap gap-2">
               {usedOpts.chunks.map((c) => {
                 const ok = matchesChunk(c.en, draft.en)
                 return (
                   <li
                     key={c.id}
-                    className={`rounded-full px-3 py-1 text-xs ${
-                      ok
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
-                        : 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300'
+                    className={`rounded-none border px-3 py-1 text-xs ${
+ ok
+                        ? 'border-carbon-success text-carbon-success'
+                        : 'border-carbon-error text-carbon-error'
                     }`}
                   >
                     {ok ? '✓' : '✗'} {c.en}
@@ -165,30 +165,30 @@ export default function LongReadingCreate() {
                 )
               })}
             </ul>
-            <p className="mt-2 text-xs text-slate-400">
+            <p className="mt-2 text-xs t-subtle">
               ✗ があっても保存はできます。気になる場合は「もう一度生成」を。
             </p>
           </div>
         )}
 
-        {error && <p className="text-sm text-rose-500">⚠ {error}</p>}
+        {error && <p className="text-sm text-carbon-error">⚠ {error}</p>}
         <button
           disabled={saving || !draft.titleEn || !draft.en}
           onClick={save}
-          className="w-full rounded-2xl bg-amber-500 py-4 font-medium text-white active:scale-95 disabled:opacity-50"
+          className="btn-primary w-full py-4 font-medium"
         >
           {saving ? '追加中…' : '📖 デッキに追加して音読へ'}
         </button>
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={generate}
-            className="rounded-2xl bg-slate-200 py-3 text-sm font-medium text-slate-600 active:scale-95 dark:bg-slate-800 dark:text-slate-300"
+            className="btn-secondary py-3 text-sm font-medium"
           >
             ↻ もう一度生成
           </button>
           <button
             onClick={() => setDraft(null)}
-            className="rounded-2xl bg-slate-200 py-3 text-sm font-medium text-slate-600 active:scale-95 dark:bg-slate-800 dark:text-slate-300"
+            className="btn-secondary py-3 text-sm font-medium"
           >
             ← 条件を変える
           </button>
@@ -202,19 +202,19 @@ export default function LongReadingCreate() {
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">📖 AIで長文を作る</h1>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm t-muted">
         デッキのチャンクを織り込んだ音読用の長文を生成します。テーマとチャンク（{MIN_CHUNKS}〜{MAX_CHUNKS}個）を選んでください。
       </p>
       <UsageBadge />
 
-      <section className="space-y-3 rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-900">
+      <section className="space-y-3 tile p-4 ">
         <label className="block">
-          <span className="text-xs text-slate-400">テーマ</span>
+          <span className="text-xs t-subtle">テーマ</span>
           <input
             value={theme}
             onChange={(e) => setTheme(e.target.value)}
             placeholder="例: 日常、仕事の報告、旅行の思い出"
-            className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
+            className="input mt-0.5 w-full px-2 py-1.5 text-sm"
           />
         </label>
         <div className="flex flex-wrap gap-2">
@@ -222,28 +222,20 @@ export default function LongReadingCreate() {
             <button
               key={t}
               onClick={() => setTheme(t)}
-              className={`rounded-full px-3 py-1 text-xs ${
-                theme === t
-                  ? 'bg-amber-500 text-white'
-                  : 'bg-slate-200 text-slate-500 dark:bg-slate-800'
-              }`}
+              className={`px-3 py-1 text-xs ${theme === t ? 'chip-active' : 'chip'}`}
             >
               {t}
             </button>
           ))}
         </div>
         <div>
-          <span className="text-xs text-slate-400">難易度</span>
+          <span className="text-xs t-subtle">難易度</span>
           <div className="mt-1 flex gap-2">
             {LONG_LEVELS.map((l) => (
               <button
                 key={l}
                 onClick={() => setLevel(l)}
-                className={`flex-1 rounded-full px-3 py-1.5 text-sm ${
-                  level === l
-                    ? 'bg-amber-500 text-white'
-                    : 'bg-slate-200 text-slate-500 dark:bg-slate-800'
-                }`}
+                className={`flex-1 px-3 py-1.5 text-sm ${level === l ? 'chip-active' : 'chip'}`}
               >
                 {l}
               </button>
@@ -251,7 +243,7 @@ export default function LongReadingCreate() {
           </div>
         </div>
         <div>
-          <span className="text-xs text-slate-400">長さ</span>
+          <span className="text-xs t-subtle">長さ</span>
           <div className="mt-1 flex gap-2">
             {(
               [
@@ -262,11 +254,7 @@ export default function LongReadingCreate() {
               <button
                 key={v}
                 onClick={() => setLength(v)}
-                className={`flex-1 rounded-full px-3 py-1.5 text-sm ${
-                  length === v
-                    ? 'bg-amber-500 text-white'
-                    : 'bg-slate-200 text-slate-500 dark:bg-slate-800'
-                }`}
+                className={`flex-1 px-3 py-1.5 text-sm ${length === v ? 'chip-active' : 'chip'}`}
               >
                 {label}
               </button>
@@ -275,22 +263,22 @@ export default function LongReadingCreate() {
         </div>
       </section>
 
-      <section className="space-y-2 rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-900">
+      <section className="space-y-2 tile p-4 ">
         <div className="flex items-baseline justify-between">
           <span className="text-sm font-medium">織り込むチャンク</span>
-          <span className="text-xs text-slate-400">{selectedIds.size} / {MAX_CHUNKS}</span>
+          <span className="text-xs t-subtle">{selectedIds.size} / {MAX_CHUNKS}</span>
         </div>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="検索（英語・日本語）"
-          className="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
+          className="input w-full px-2 py-1.5 text-sm"
         />
-        <p className="text-xs text-slate-400">今日の復習対象（期日到来）を先頭に表示しています。</p>
+        <p className="text-xs t-subtle">今日の復習対象（期日到来）を先頭に表示しています。</p>
         <ul className="max-h-64 space-y-1 overflow-y-auto">
           {filtered.map((p) => (
             <li key={p.id}>
-              <label className="flex items-start gap-2 rounded-lg px-1 py-1.5">
+              <label className="flex items-start gap-2 px-1 py-1.5">
                 <input
                   type="checkbox"
                   className="mt-1"
@@ -302,12 +290,12 @@ export default function LongReadingCreate() {
                   <span className="block text-sm">
                     {p.en}
                     {isDue(progress[p.id]) && (
-                      <span className="ml-1 rounded bg-sky-100 px-1 text-[10px] text-sky-600 dark:bg-sky-950/50 dark:text-sky-300">
+                      <span className="link ml-1 rounded-none border border-carbon-blue px-1 text-[10px] dark:border-carbon-blue-40">
                         今日
                       </span>
                     )}
                   </span>
-                  <span className="block text-xs text-slate-400">{p.ja}</span>
+                  <span className="block text-xs t-subtle">{p.ja}</span>
                 </span>
               </label>
             </li>
@@ -315,16 +303,16 @@ export default function LongReadingCreate() {
         </ul>
       </section>
 
-      {error && <p className="text-sm text-rose-500">⚠ {error}</p>}
+      {error && <p className="text-sm text-carbon-error">⚠ {error}</p>}
       <button
         disabled={!canGenerate}
         onClick={generate}
-        className="w-full rounded-2xl bg-amber-500 py-4 font-medium text-white active:scale-95 disabled:opacity-50"
+        className="btn-primary w-full py-4 font-medium"
       >
         📖 生成する
       </button>
       {!canGenerate && (
-        <p className="text-center text-xs text-slate-400">
+        <p className="text-center text-xs t-subtle">
           チャンクを{MIN_CHUNKS}〜{MAX_CHUNKS}個選ぶと生成できます。
         </p>
       )}
@@ -343,11 +331,11 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-xs text-slate-400">{label}</span>
+      <span className="text-xs t-subtle">{label}</span>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
+        className="input mt-0.5 w-full px-2 py-1.5 text-sm"
       />
     </label>
   )
@@ -366,12 +354,12 @@ function Area({
 }) {
   return (
     <label className="block">
-      <span className="text-xs text-slate-400">{label}</span>
+      <span className="text-xs t-subtle">{label}</span>
       <textarea
         value={value}
         rows={rows}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm leading-relaxed dark:border-slate-700 dark:bg-slate-900"
+        className="input mt-0.5 w-full px-2 py-1.5 text-sm leading-relaxed"
       />
     </label>
   )

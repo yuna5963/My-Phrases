@@ -47,9 +47,9 @@ export default function ExampleDetail() {
 
   if (!phrase || !example?.en) {
     return (
-      <div className="pt-20 text-center text-slate-500">
+      <div className="pt-20 text-center t-muted">
         <p>例文が見つかりませんでした。</p>
-        <button onClick={() => navigate(backTo)} className="mt-4 text-sky-500">
+        <button onClick={() => navigate(backTo)} className="mt-4 link">
           一覧へ戻る
         </button>
       </div>
@@ -60,7 +60,7 @@ export default function ExampleDetail() {
     <div className="flex h-full flex-col">
       <div className="mb-2 flex items-center justify-between text-sm">
         <span className="font-medium">例文カード</span>
-        <span className="text-slate-400">
+        <span className="t-subtle">
           {pos + 1} / {items.length}
         </span>
       </div>
@@ -70,11 +70,11 @@ export default function ExampleDetail() {
           key={pos}
           items={[{ en: example.en, ja: example.ja, kana: example.kana }]}
           meta={
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs t-subtle">
               例文{ref.index + 1}・{phrase.en}
             </p>
           }
-          accentClass="text-sky-600 dark:text-sky-400"
+          accentClass="link"
         />
         <button
           onClick={() =>
@@ -82,13 +82,13 @@ export default function ExampleDetail() {
               state: { ids: [...new Set(items.map((r) => r.phraseId))], backTo },
             })
           }
-          className="text-sm text-slate-400 active:opacity-70"
+          className="text-sm t-subtle active:opacity-70"
         >
           📚 チャンク詳細（{phrase.en}）を見る →
         </button>
         <button
           onClick={() => navigate(`/chat?focus=${phrase.id}&example=${ref.index}`)}
-          className="rounded-full bg-sky-500 px-5 py-2.5 text-sm font-medium text-white active:scale-95"
+          className="btn-primary px-5 py-2.5 text-sm font-medium"
         >
           💬 この例文で会話練習
         </button>
@@ -104,7 +104,7 @@ export default function ExampleDetail() {
       {/* 片手で押せるよう、終了は画面下部に置く。 */}
       <button
         onClick={() => navigate(backTo)}
-        className="mt-2 w-full py-2 text-center text-sm text-slate-400 active:scale-95"
+        className="mt-2 w-full py-2 text-center text-sm t-subtle active:opacity-80"
       >
         ← 一覧へ
       </button>

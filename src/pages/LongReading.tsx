@@ -67,18 +67,18 @@ export default function LongReading() {
     return (
       <div className="flex h-full flex-col">
         <Header pos={0} total={0} />
-        <div className="pt-20 text-center text-slate-500">
+        <div className="pt-20 text-center t-muted">
           <p>長文音読のコンテンツがありません。</p>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs t-subtle">
             Type が「Long Reading」のフレーズを取り込むと表示されます。
           </p>
           <button
             onClick={() => navigate('/long-reading/new')}
-            className="mt-6 w-full rounded-2xl bg-amber-500 py-4 font-medium text-white active:scale-95"
+            className="btn-primary mt-6 w-full py-4 font-medium"
           >
             ＋ AIで長文を作る
           </button>
-          <button onClick={() => navigate('/')} className="mt-4 text-sky-500">
+          <button onClick={() => navigate('/')} className="mt-4 link">
             ホームへ戻る
           </button>
         </div>
@@ -132,18 +132,18 @@ export default function LongReading() {
 
       {/* 本文は長いのでこの領域だけスクロール。お手本ボタンは常時見えるよう外に出す。 */}
       <div className="min-h-0 flex-1 overflow-y-auto py-2">
-        <div className="w-full rounded-2xl bg-white p-6 shadow-sm dark:bg-slate-900">
+        <div className="w-full tile p-6 ">
           <div className="text-center">
-            <p className="text-lg font-bold leading-relaxed text-amber-600 dark:text-amber-400">
+            <p className="text-lg font-semibold leading-relaxed text-carbon-blue dark:text-carbon-blue-40">
               {current!.en}
             </p>
             <KanaLine kana={current!.kana} className="text-center" />
-            <p className="mt-1 text-sm text-slate-500">{current!.ja}</p>
+            <p className="mt-1 text-sm t-muted">{current!.ja}</p>
             <MetaChips phrase={current!} className="mt-2" />
           </div>
 
-          <div className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800">
-            <p className="text-left text-lg leading-loose text-slate-800 dark:text-slate-100">
+          <div className="mt-4 border-t border-carbon-hairline pt-4 dark:border-carbon-line-dark">
+            <p className="text-left text-lg leading-loose">
               {passage?.en && (
                 <SpokenText text={passage.en} current={tracker.current} />
               )}
@@ -153,12 +153,12 @@ export default function LongReading() {
               <>
                 <button
                   onClick={() => setShowJa((v) => !v)}
-                  className="mt-4 text-sm text-slate-400"
+                  className="mt-4 text-sm t-subtle"
                 >
                   {showJa ? '訳を隠す' : '訳を見る'}
                 </button>
                 {showJa && (
-                  <p className="mt-2 text-left text-sm leading-relaxed text-slate-500">
+                  <p className="mt-2 text-left text-sm leading-relaxed t-muted">
                     {passage.ja}
                   </p>
                 )}
@@ -171,13 +171,13 @@ export default function LongReading() {
       <div className="flex flex-col items-center gap-2 py-3">
         <button
           onClick={togglePlay}
-          className={`rounded-full px-6 py-3 font-medium text-white active:scale-95 ${
-            playing ? 'bg-rose-500' : 'bg-amber-500'
+          className={`px-6 py-3 font-medium active:opacity-80 ${
+ playing ? 'btn-secondary' : 'btn-primary'
           }`}
         >
           {playing ? '⏸ 停止' : '🔊 お手本を聞く'}
         </button>
-        <p className="text-center text-xs text-slate-400">
+        <p className="text-center text-xs t-subtle">
           お手本に続けて、声に出して読んでみよう
         </p>
       </div>
@@ -192,7 +192,7 @@ export default function LongReading() {
       {/* 片手で押せるよう、終了は画面下部に置く。 */}
       <button
         onClick={() => navigate('/')}
-        className="mt-2 w-full py-2 text-center text-sm text-slate-400 active:scale-95"
+        className="mt-2 w-full py-2 text-center text-sm t-subtle active:opacity-80"
       >
         ✕ やめる
       </button>
@@ -208,11 +208,11 @@ function Header({ pos, total }: { pos: number; total: number }) {
       <span className="flex items-center gap-3">
         <button
           onClick={() => navigate('/long-reading/new')}
-          className="font-medium text-amber-500"
+          className="link font-medium"
         >
           ＋ AIで作る
         </button>
-        <span className="text-slate-400">
+        <span className="t-subtle">
           {pos} / {total}
         </span>
       </span>

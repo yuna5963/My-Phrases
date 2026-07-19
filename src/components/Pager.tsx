@@ -17,20 +17,16 @@ export default function Pager({
   if (pageCount <= 1) return null
   return (
     <div className="flex items-center justify-center gap-4 pt-2">
-      <button
-        onClick={onPrev}
-        disabled={page === 0}
-        className="rounded-full bg-slate-200 px-5 py-2 text-sm font-medium text-slate-600 active:scale-95 disabled:opacity-40 disabled:active:scale-100 dark:bg-slate-800 dark:text-slate-300"
-      >
+      <button onClick={onPrev} disabled={page === 0} className="chip px-5 py-2 text-sm font-medium">
         ← 前
       </button>
-      <span className="text-sm text-slate-400">
+      <span className="t-subtle text-sm">
         {page + 1} / {pageCount}
       </span>
       <button
         onClick={onNext}
         disabled={page >= pageCount - 1}
-        className="rounded-full bg-slate-200 px-5 py-2 text-sm font-medium text-slate-600 active:scale-95 disabled:opacity-40 disabled:active:scale-100 dark:bg-slate-800 dark:text-slate-300"
+        className="chip px-5 py-2 text-sm font-medium"
       >
         次 →
       </button>

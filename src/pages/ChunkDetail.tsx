@@ -33,9 +33,9 @@ export default function ChunkDetail() {
   const phrase = phrases.find((p) => p.id === id)
   if (!phrase) {
     return (
-      <div className="pt-20 text-center text-slate-500">
+      <div className="pt-20 text-center t-muted">
         <p>フレーズが見つかりませんでした。</p>
-        <button onClick={() => navigate(backTo)} className="mt-4 text-sky-500">
+        <button onClick={() => navigate(backTo)} className="mt-4 link">
           一覧へ戻る
         </button>
       </div>
@@ -50,47 +50,47 @@ export default function ChunkDetail() {
     <div className="space-y-4">
       <div className="flex items-baseline justify-between">
         <h1 className="text-xl font-bold">チャンク詳細</h1>
-        <span className="text-xs text-slate-400">ステータス: {phrase.status || '—'}</span>
+        <span className="text-xs t-subtle">ステータス: {phrase.status || '—'}</span>
       </div>
 
-      <ModelCard phrase={phrase} accentText="text-sky-600 dark:text-sky-400" />
+      <ModelCard phrase={phrase} accentText="link" />
 
       {!!phrase.kanaWarnings?.length && (
-        <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+        <p className="t-muted border-l-4 border-carbon-warning bg-carbon-surface px-3 py-2 text-xs dark:bg-carbon-layer">
           ⚠ カナ要確認: {phrase.kanaWarnings.join(' / ')} — AI生成の下書きです。「✏️ 編集」でカナを修正すると解除されます。
         </p>
       )}
 
       {phrase.note && (
-        <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+        <section className="rounded-none border-l-4 border-carbon-warning bg-carbon-surface p-4 text-sm leading-relaxed dark:bg-carbon-layer">
           📝 {phrase.note}
         </section>
       )}
 
-      <section className="rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-900">
-        <h2 className="text-sm font-medium text-slate-500">学習の記録</h2>
+      <section className="tile p-4 ">
+        <h2 className="text-sm font-medium t-muted">学習の記録</h2>
         <div className="mt-3 grid grid-cols-3 gap-2 text-center">
           <div>
             <div className="text-xl font-bold">{pr ? `${pr.box} / 5` : '—'}</div>
-            <div className="mt-0.5 text-xs text-slate-500">習熟度</div>
+            <div className="mt-0.5 text-xs t-muted">習熟度</div>
           </div>
           <div>
-            <div className="text-xl font-bold text-emerald-500">{pr?.correct ?? 0}</div>
-            <div className="mt-0.5 text-xs text-slate-500">できた</div>
+            <div className="text-xl font-bold text-carbon-success">{pr?.correct ?? 0}</div>
+            <div className="mt-0.5 text-xs t-muted">できた</div>
           </div>
           <div>
-            <div className="text-xl font-bold text-rose-500">{pr?.wrong ?? 0}</div>
-            <div className="mt-0.5 text-xs text-slate-500">できなかった</div>
+            <div className="text-xl font-bold text-carbon-error">{pr?.wrong ?? 0}</div>
+            <div className="mt-0.5 text-xs t-muted">できなかった</div>
           </div>
         </div>
-        <p className="mt-3 text-center text-xs text-slate-400">{dueLabel(pr)}</p>
+        <p className="mt-3 text-center text-xs t-subtle">{dueLabel(pr)}</p>
         <div className="mt-3 flex justify-center">
           <button
             onClick={() => setLearned(phrase.id, !learned)}
-            className={`rounded-full px-5 py-2 text-sm font-medium active:scale-95 ${
-              learned
-                ? 'bg-emerald-500 text-white'
-                : 'border border-slate-300 text-slate-500 dark:border-slate-700 dark:text-slate-300'
+            className={`px-5 py-2 text-sm font-medium active:opacity-80 ${
+ learned
+                ? 'rounded-none bg-carbon-success text-white'
+                : 'chip'
             }`}
           >
             {learned ? '☑ 覚えた' : '☐ 覚えた'}
@@ -101,7 +101,7 @@ export default function ChunkDetail() {
       {/* 片手で押せるよう、アクションは画面下部にまとめる。 */}
       <button
         onClick={() => navigate(`/chat?focus=${phrase.id}`)}
-        className="w-full rounded-2xl bg-sky-500 py-4 font-medium text-white active:scale-95"
+        className="btn-primary w-full py-4 font-medium"
       >
         💬 このチャンクで会話練習
       </button>
@@ -110,7 +110,7 @@ export default function ChunkDetail() {
           onClick={() =>
             navigate(`/chunk/${phrase.id}/edit`, { state: { ids, backTo } })
           }
-          className="rounded-2xl bg-slate-200 py-4 font-medium text-slate-600 active:scale-95 dark:bg-slate-800 dark:text-slate-300"
+          className="btn-secondary py-4 font-medium"
         >
           ✏️ 編集
         </button>
@@ -123,7 +123,7 @@ export default function ChunkDetail() {
             await removePhrase(phrase.id)
             navigate(backTo, { replace: true })
           }}
-          className="rounded-2xl bg-rose-50 py-4 font-medium text-rose-600 active:scale-95 dark:bg-rose-950/40 dark:text-rose-300"
+          className="rounded-none border border-carbon-error py-4 font-medium text-carbon-error active:opacity-80"
         >
           🗑 削除
         </button>
@@ -131,13 +131,13 @@ export default function ChunkDetail() {
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={() => navigate(backTo)}
-          className="rounded-2xl bg-slate-200 py-4 font-medium text-slate-600 active:scale-95 dark:bg-slate-800 dark:text-slate-300"
+          className="btn-secondary py-4 font-medium"
         >
           ← 一覧へ
         </button>
         <button
           onClick={() => navigate(`/phrase/${phrase.id}`, { state: { ids, backTo } })}
-          className="rounded-2xl bg-violet-500 py-4 font-medium text-white active:scale-95"
+          className="btn-primary py-4 font-medium"
         >
           ▶ 連続再生
         </button>
