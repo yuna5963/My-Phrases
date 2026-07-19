@@ -175,7 +175,7 @@ export default function Settings() {
           <select
             value={s.voiceURI ?? ''}
             onChange={(e) => s.setVoiceURI(e.target.value || null)}
-            className="max-w-[60%] rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
+            className="input max-w-[60%] px-2 py-1.5 text-sm"
           >
             <option value="">自動（端末内を優先）</option>
             {voices.map((v) => (
@@ -203,7 +203,7 @@ export default function Settings() {
           <Toggle checked={s.showKana} onChange={s.setShowKana} />
         </Row>
         {isNativeApp ? (
-          <p className="text-xs text-slate-400">
+          <p className="text-xs t-subtle">
             🔋 アプリ版では、連続再生・長文音読は<strong>画面を消しても再生が続きます</strong>
             （再生中は通知が表示されます。通知を消すには再生を停止してください）。
           </p>
@@ -213,7 +213,7 @@ export default function Settings() {
               <Toggle checked={s.bgPlayback} onChange={s.setBgPlayback} />
             </Row>
             {s.bgPlayback && (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs t-subtle">
                 連続再生・長文音読の間、ほぼ無音の音声を流し続けてブラウザに「音を再生中のタブ」と
                 認識させ、画面を消しても読み上げが続くことを狙う実験的な機能です。効果は端末や
                 Chrome のバージョンに依存し、うまくいかない場合があります。効かないときは Android の
@@ -227,22 +227,22 @@ export default function Settings() {
         )}
         <button
           onClick={runTest}
-          className="w-full rounded-xl bg-sky-500 px-4 py-2.5 font-medium text-white"
+          className="btn-primary w-full px-4 py-2.5 font-medium"
         >
           🔊 テスト再生
         </button>
         {testMsg && (
-          <p className={`text-sm ${testMsg.ok ? 'text-emerald-500' : 'text-rose-500'}`}>
+          <p className={`text-sm ${testMsg.ok ? 'text-carbon-success' : 'text-carbon-error'}`}>
             {testMsg.text}
           </p>
         )}
-        <p className="text-xs text-slate-400">
+        <p className="text-xs t-subtle">
           診断: 読み上げ {voiceStatus.supported ? '対応' : '非対応'} / 英語の音声{' '}
           {voiceStatus.english}個 / 全{voiceStatus.total}個
         </p>
 
         {voiceStatus.english === 0 && (
-          <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
+          <div className="rounded-none border-l-4 border-carbon-warning bg-carbon-surface p-3 text-sm dark:bg-carbon-layer">
             <p className="font-medium">英語の読み上げ音声が端末にありません</p>
             <p className="mt-1">
               端末に音声合成エンジンが無いと、どのアプリでも英語を読み上げできません。
@@ -269,7 +269,7 @@ export default function Settings() {
           </div>
         )}
 
-        <details className="text-sm text-slate-500">
+        <details className="text-sm t-muted">
           <summary className="cursor-pointer">音が出ないとき（Android）</summary>
           <ul className="ml-4 mt-2 list-disc space-y-1">
             <li>
@@ -302,16 +302,14 @@ export default function Settings() {
           />
         </Row>
         <div>
-          <p className="mb-2 text-sm text-slate-500">練習対象のステータス</p>
+          <p className="mb-2 text-sm t-muted">練習対象のステータス</p>
           <div className="flex flex-wrap gap-2">
             {ALL_STATUSES.map((st) => (
               <button
                 key={st}
                 onClick={() => s.toggleStatus(st)}
-                className={`rounded-full px-4 py-1.5 text-sm ${
-                  s.includeStatuses.includes(st)
-                    ? 'bg-sky-500 text-white'
-                    : 'bg-slate-200 text-slate-500 dark:bg-slate-800'
+                className={`px-4 py-1.5 text-sm ${
+ s.includeStatuses.includes(st) ? 'chip-active' : 'chip'
                 }`}
               >
                 {st}
@@ -322,7 +320,7 @@ export default function Settings() {
       </Section>
 
       <Section title="チャット練習（AI）">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm t-muted">
           AIコーチとの英会話練習に使う設定です。Google AI Studio で無料の APIキーを取得して貼り付けてください。
         </p>
         <Row label="APIキー">
@@ -332,7 +330,7 @@ export default function Settings() {
             onChange={(e) => s.setChatApiKey(e.target.value.trim())}
             placeholder="AIza..."
             autoComplete="off"
-            className="max-w-[60%] rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
+            className="input max-w-[60%] px-2 py-1.5 text-sm"
           />
         </Row>
         <Row label="モデル">
@@ -346,7 +344,7 @@ export default function Settings() {
                 s.setChatModel(e.target.value)
               }
             }}
-            className="max-w-[60%] rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
+            className="input max-w-[60%] px-2 py-1.5 text-sm"
           >
             {MODEL_PRESETS.map((m) => (
               <option key={m.id} value={m.id}>
@@ -364,7 +362,7 @@ export default function Settings() {
               onChange={(e) => s.setChatModel(e.target.value.trim())}
               placeholder="gemma-4-31b-it"
               autoComplete="off"
-              className="max-w-[60%] rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
+              className="input max-w-[60%] px-2 py-1.5 text-sm"
             />
           </Row>
         )}
@@ -382,12 +380,12 @@ export default function Settings() {
           />
         </Row>
         <UsageBadge />
-        <p className="text-xs text-slate-400">
+        <p className="text-xs t-subtle">
           残り回数は「この端末のこのアプリから送った回数」で数えた目安です（AI Studio
           や他端末での利用は含まれません）。無料枠は毎日太平洋時間の深夜
           （日本時間の夕方16〜17時ごろ）にリセットされます。
         </p>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs t-subtle">
           キーはこの端末内（ブラウザ）にのみ保存され、Google 以外へは送信されません。
           モデルはチャット練習・教材化・AI長文で共通です。混雑エラー（500）が続くときは
           モデルを切り替えると回避できることがあります。
@@ -396,38 +394,38 @@ export default function Settings() {
           href="https://aistudio.google.com/apikey"
           target="_blank"
           rel="noreferrer"
-          className="inline-block text-sm font-medium text-sky-500 underline"
+          className="inline-block text-sm font-medium link underline"
         >
           ▶ Google AI Studio でAPIキーを取得
         </a>
         <Link
           to="/stock"
-          className="block text-sm font-medium text-sky-500 underline"
+          className="block text-sm font-medium link underline"
         >
           📥 表現ストックを開く（{stockCount}件）
         </Link>
       </Section>
 
       <Section title="フレーズの取り込み">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm t-muted">
           現在のデータ:{' '}
-          <span className="font-medium text-slate-700 dark:text-slate-200">
+          <span className="font-medium ">
             {source === 'imported' ? '取り込み済み' : 'サンプル'} / {phraseCount}件
           </span>
         </p>
-        <div className="space-y-2 text-sm text-slate-500">
-          <p className="font-medium text-slate-600 dark:text-slate-300">
+        <div className="space-y-2 text-sm t-muted">
+          <p className="font-medium t-muted">
             次のいずれかを取り込めます
           </p>
           <p>
             <span className="font-medium">① CSVを直接</span>（
-            <code className="rounded bg-slate-200 px-1 dark:bg-slate-800">.csv</code>
-            ）— 列: ID, Type, Category, Level, Priority, Chunk, 日本語, Example1, 日本語訳1, … Example5, 日本語訳5, Note。任意で <strong>音節</strong>（チャンクのカナ）/ <strong>音節1〜音節5</strong>（各例文のカナ）列を追加できます。強勢の音節は <code className="rounded bg-slate-200 px-1 dark:bg-slate-800">*</code> で囲むと太字表示されます（例: ス・*ティ*‿ラ）
+            <code className="rounded-none bg-carbon-surface px-1 dark:bg-carbon-line-dark">.csv</code>
+            ）— 列: ID, Type, Category, Level, Priority, Chunk, 日本語, Example1, 日本語訳1, … Example5, 日本語訳5, Note。任意で <strong>音節</strong>（チャンクのカナ）/ <strong>音節1〜音節5</strong>（各例文のカナ）列を追加できます。強勢の音節は <code className="rounded-none bg-carbon-surface px-1 dark:bg-carbon-line-dark">*</code> で囲むと太字表示されます（例: ス・*ティ*‿ラ）
           </p>
           <p>
             <span className="font-medium">② Notionエクスポート</span> — DBの「•••」→
             エクスポート →「Markdown &amp; CSV」でDLした{' '}
-            <code className="rounded bg-slate-200 px-1 dark:bg-slate-800">.zip</code>{' '}
+            <code className="rounded-none bg-carbon-surface px-1 dark:bg-carbon-line-dark">.zip</code>{' '}
             をそのまま選択（解凍不要）
           </p>
         </div>
@@ -443,11 +441,11 @@ export default function Settings() {
         <button
           disabled={busy}
           onClick={() => fileRef.current?.click()}
-          className="w-full rounded-xl bg-sky-500 px-4 py-3 font-medium text-white disabled:opacity-50"
+          className="btn-primary w-full px-4 py-3 font-medium"
         >
           {busy ? '取り込み中…' : '📥 ファイルを選択（.csv / .zip）'}
         </button>
-        <label className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
+        <label className="flex items-start gap-2 text-sm t-muted">
           <input
             type="checkbox"
             checked={replaceMode}
@@ -456,28 +454,28 @@ export default function Settings() {
           />
           <span>
             取り込み前に既存データを全て削除（全置換）
-            <span className="block text-xs text-slate-400">
+            <span className="block text-xs t-subtle">
               通常はマージ（ID一致は上書き・アプリで追加した教材は保持）。Notion側で削除した行を反映したいときだけチェック。
             </span>
           </span>
         </label>
 
         {importMsg && (
-          <p className={`text-sm ${importMsg.ok ? 'text-emerald-500' : 'text-rose-500'}`}>
+          <p className={`text-sm ${importMsg.ok ? 'text-carbon-success' : 'text-carbon-error'}`}>
             {importMsg.text}
           </p>
         )}
 
         <button
           onClick={exportDeck}
-          className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-600 dark:border-slate-700 dark:text-slate-300 active:scale-[0.99]"
+          className="btn-tertiary w-full px-4 py-2.5 text-sm font-medium"
         >
           📤 デッキをCSVでバックアップ（{phraseCount}件）
         </button>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs t-subtle">
           ステータスやカナも含めた全列を出力します。このCSVはそのまま再取り込みできます。
         </p>
-        {exportMsg && <p className="text-sm text-emerald-500">{exportMsg}</p>}
+        {exportMsg && <p className="text-sm text-carbon-success">{exportMsg}</p>}
 
         {source === 'imported' && (
           <button
@@ -486,7 +484,7 @@ export default function Settings() {
                 clearImported()
               }
             }}
-            className="text-sm text-slate-400 underline"
+            className="text-sm t-subtle underline"
           >
             取り込みデータを消去してサンプルに戻す
           </button>
@@ -494,20 +492,20 @@ export default function Settings() {
       </Section>
 
       <Section title="データ">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm t-muted">
           フルバックアップは教材に加えて<strong>SRS進捗・ストリークも含みます</strong>
           （APIキーは含みません）。スマホアプリ版への移行や機種変更はこれで行います。
         </p>
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={exportFullBackup}
-            className="rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-medium text-white active:scale-[0.99]"
+            className="btn-primary px-4 py-2.5 text-sm font-medium"
           >
             📦 フルバックアップ
           </button>
           <button
             onClick={() => backupRef.current?.click()}
-            className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-600 dark:border-slate-700 dark:text-slate-300 active:scale-[0.99]"
+            className="btn-tertiary px-4 py-2.5 text-sm font-medium"
           >
             📥 バックアップを復元
           </button>
@@ -520,7 +518,7 @@ export default function Settings() {
           onChange={(e) => onPickBackup(e.target.files)}
         />
         {backupMsg && (
-          <p className={`text-sm ${backupMsg.ok ? 'text-emerald-500' : 'text-rose-500'}`}>
+          <p className={`text-sm ${backupMsg.ok ? 'text-carbon-success' : 'text-carbon-error'}`}>
             {backupMsg.text}
           </p>
         )}
@@ -530,16 +528,16 @@ export default function Settings() {
               reset()
             }
           }}
-          className="rounded-xl border border-rose-300 px-4 py-2 text-sm text-rose-500 dark:border-rose-800"
+          className="rounded-none border border-carbon-error px-4 py-2 text-sm text-carbon-error active:opacity-80"
         >
           学習進捗をリセット
         </button>
       </Section>
 
       <Section title="アプリについて">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm t-muted">
           バージョン{' '}
-          <span className="font-medium text-slate-700 dark:text-slate-200">
+          <span className="font-medium ">
             {__APP_VERSION__}
           </span>
           {isNativeApp ? '（Androidアプリ版）' : '（Web/PWA版）'}
@@ -549,7 +547,7 @@ export default function Settings() {
             href="https://github.com/yuna5963/My-Phrases/releases/latest"
             target="_blank"
             rel="noreferrer"
-            className="inline-block text-sm font-medium text-sky-500 underline"
+            className="inline-block text-sm font-medium link underline"
           >
             ▶ 最新版APKを入手（GitHub Releases）
           </a>
@@ -561,7 +559,7 @@ export default function Settings() {
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="space-y-3 rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-900">
+    <section className="space-y-3 tile p-4 ">
       <h2 className="font-semibold">{title}</h2>
       {children}
     </section>
@@ -571,7 +569,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <span className="text-sm text-slate-600 dark:text-slate-300">{label}</span>
+      <span className="text-sm t-muted">{label}</span>
       {children}
     </div>
   )
@@ -582,12 +580,12 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (b: boolean
     <button
       onClick={() => onChange(!checked)}
       className={`relative h-6 w-11 rounded-full transition ${
-        checked ? 'bg-sky-500' : 'bg-slate-300 dark:bg-slate-700'
+ checked ? 'bg-carbon-blue' : 'bg-carbon-surface-2 dark:bg-carbon-line-dark'
       }`}
     >
       <span
         className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all ${
-          checked ? 'left-[22px]' : 'left-0.5'
+ checked ? 'left-[22px]' : 'left-0.5'
         }`}
       />
     </button>

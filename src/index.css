@@ -20,7 +20,74 @@ body {
 
 @layer base {
   body {
-    @apply bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
+    /* Carbon: 白canvas＋チャコール文字。ダークはGray-100テーマ相当（#161616）。
+       本文の letter-spacing 0.16px は Carbon の精度ディテール（DESIGN.md）。 */
+    @apply bg-white text-carbon-ink dark:bg-carbon-ink dark:text-white;
+    letter-spacing: 0.16px;
+  }
+}
+
+@layer components {
+  /* ==== Carbon コンポーネントレシピ（DESIGN.md の components を @apply で一元定義） ====
+     直角（rounded-none）・1pxヘアライン・シャドウなしがブランド。個別ページで
+     色や角丸を足さず、まずここのクラスを使う。 */
+
+  /* feature-card: 白タイル＋1pxヘアライン。ダークは layer 面 */
+  .tile {
+    @apply rounded-none border border-carbon-hairline bg-white dark:border-carbon-line-dark dark:bg-carbon-layer;
+  }
+  /* feature-card-elevated: surface-1 面のタイル（入力欄・帯にも使う） */
+  .tile-muted {
+    @apply rounded-none border border-carbon-hairline bg-carbon-surface dark:border-carbon-line-dark dark:bg-carbon-layer;
+  }
+
+  /* button-primary: 青ソリッド。押下で blue-80 */
+  .btn-primary {
+    @apply rounded-none bg-carbon-blue text-white active:bg-carbon-blue-80 disabled:opacity-40;
+  }
+  /* button-secondary: チャコールソリッド（ダークでは白抜き） */
+  .btn-secondary {
+    @apply rounded-none bg-carbon-ink text-white active:bg-black disabled:opacity-40 dark:bg-carbon-line-dark dark:active:bg-carbon-layer;
+  }
+  /* button-tertiary: 青1px枠＋青文字 */
+  .btn-tertiary {
+    @apply rounded-none border border-carbon-blue bg-transparent text-carbon-blue active:bg-carbon-blue active:text-white disabled:opacity-40 dark:border-carbon-blue-40 dark:text-carbon-blue-40;
+  }
+  /* button-danger */
+  .btn-danger {
+    @apply rounded-none bg-carbon-error text-white disabled:opacity-40;
+  }
+
+  /* タグ／トグルチップ: 直角・ヘアライン。選択状態は青ソリッド */
+  .chip {
+    @apply rounded-none border border-carbon-surface-2 bg-white text-carbon-ink-muted disabled:opacity-40 dark:border-carbon-line-dark dark:bg-transparent dark:text-carbon-inverse-muted;
+  }
+  .chip-active {
+    @apply rounded-none border border-carbon-blue bg-carbon-blue text-white disabled:opacity-40;
+  }
+
+  /* テキストリンク（唯一のアクセント色） */
+  .link {
+    @apply text-carbon-blue dark:text-carbon-blue-40;
+  }
+
+  /* text-input: surface-1 面・直角。フォーカスで青の下線（Carbon署名の扱い） */
+  .input {
+    @apply rounded-none border-0 border-b border-carbon-surface-2 bg-carbon-surface px-4 py-2.5 text-carbon-ink placeholder:text-carbon-ink-subtle focus:border-b-2 focus:border-carbon-blue focus:outline-none dark:border-carbon-line-dark dark:bg-carbon-layer dark:text-white dark:focus:border-carbon-blue-40;
+  }
+
+  /* 二次テキスト（ライト/ダーク両対応の短縮形） */
+  .t-muted {
+    @apply text-carbon-ink-muted dark:text-carbon-inverse-muted;
+  }
+  .t-subtle {
+    @apply text-carbon-ink-subtle;
+  }
+
+  /* 大きな数字・見出し: Plex Sans weight300 がブランドの声（tracking は 0 に戻す） */
+  .display {
+    @apply font-light;
+    letter-spacing: 0;
   }
 }
 

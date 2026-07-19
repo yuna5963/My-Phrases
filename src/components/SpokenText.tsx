@@ -29,8 +29,8 @@ export default function SpokenText({
         <span key={i}>
           <span
             className={`rounded transition-colors duration-150 ${
-              i === current
-                ? 'bg-amber-300/70 text-amber-950 dark:bg-amber-400/40 dark:text-amber-100'
+ i === current
+                ? 'bg-carbon-blue/20 dark:bg-carbon-blue-40/30'
                 : ''
             }`}
           >

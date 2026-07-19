@@ -25,13 +25,11 @@ export default function ModelCard({
   accentText: string
 }) {
   return (
-    <div className="w-full rounded-2xl bg-white p-6 shadow-sm dark:bg-slate-900">
+    <div className="tile w-full p-6">
       <div className="text-center">
-        <p className={`text-2xl font-bold leading-relaxed ${accentText}`}>
-          {phrase.en}
-        </p>
+        <p className={`display text-2xl leading-relaxed ${accentText}`}>{phrase.en}</p>
         <KanaLine kana={phrase.kana} className="text-center" />
-        <p className="mt-2 text-sm text-slate-500">{phrase.ja}</p>
+        <p className="t-muted mt-2 text-sm">{phrase.ja}</p>
         <MetaChips phrase={phrase} />
       </div>
       <ExampleList examples={phrase.examples} />

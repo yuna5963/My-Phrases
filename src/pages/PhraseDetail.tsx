@@ -256,9 +256,9 @@ export default function PhraseDetail() {
 
   if (!phrase) {
     return (
-      <div className="pt-20 text-center text-slate-500">
+      <div className="pt-20 text-center t-muted">
         <p>フレーズが見つかりませんでした。</p>
-        <button onClick={() => navigate(backTo)} className="mt-4 text-sky-500">
+        <button onClick={() => navigate(backTo)} className="mt-4 link">
           一覧へ戻る
         </button>
       </div>
@@ -329,7 +329,7 @@ export default function PhraseDetail() {
     <div className="flex h-full flex-col">
       <div className="mb-4 flex items-center justify-between text-sm">
         <span className="font-medium">フレーズ再生</span>
-        <span className="text-slate-400">
+        <span className="t-subtle">
           {play.cursor + 1} / {play.order.length}
         </span>
       </div>
@@ -338,25 +338,25 @@ export default function PhraseDetail() {
         {reproActive ? (
           <ReproCard items={items} meta={<MetaChips phrase={phrase} className="mt-2" />} />
         ) : (
-          <div className="w-full rounded-2xl bg-white p-6 shadow-sm dark:bg-slate-900">
+          <div className="w-full tile p-6 ">
             <div className="text-center">
-              <p className="text-2xl font-bold leading-relaxed text-violet-600 dark:text-violet-400">
+              <p className="display text-2xl leading-relaxed text-carbon-blue dark:text-carbon-blue-40">
                 {phrase.en}
               </p>
               <KanaLine kana={phrase.kana} className="text-center" />
-              <p className="mt-2 text-sm text-slate-500">{phrase.ja}</p>
+              <p className="mt-2 text-sm t-muted">{phrase.ja}</p>
               <MetaChips phrase={phrase} />
             </div>
             {phrase.examples.length > 0 && (
-              <ol className="mt-4 space-y-3 border-t border-slate-100 pt-4 dark:border-slate-800">
+              <ol className="mt-4 space-y-3 border-t border-carbon-hairline pt-4 dark:border-carbon-line-dark">
                 {phrase.examples.map((ex, i) => (
                   <li key={i} className="text-left">
-                    <p className="text-base leading-relaxed text-slate-700 dark:text-slate-200">
+                    <p className="text-base leading-relaxed ">
                       {ex.en}
                     </p>
                     <KanaLine kana={ex.kana} />
                     {ex.ja && (
-                      <p className="mt-0.5 text-xs text-slate-400">{ex.ja}</p>
+                      <p className="mt-0.5 text-xs t-subtle">{ex.ja}</p>
                     )}
                   </li>
                 ))}
@@ -368,8 +368,8 @@ export default function PhraseDetail() {
         <div className="flex items-center gap-3">
           <button
             onClick={togglePlay}
-            className={`rounded-full px-8 py-3 text-lg font-semibold text-white active:scale-95 ${
-              playing ? 'bg-rose-500' : 'bg-violet-500'
+            className={`px-8 py-3 text-lg font-semibold active:opacity-80 ${
+ playing ? 'btn-secondary' : 'btn-primary'
             }`}
           >
             {playing ? '⏸ 停止' : '▶ 自動再生'}
@@ -379,7 +379,7 @@ export default function PhraseDetail() {
           {!isNativeApp && (
             <button
               onClick={startDark}
-              className="rounded-full bg-slate-700 px-5 py-3 text-base font-semibold text-white active:scale-95"
+              className="btn-secondary px-5 py-3 text-base font-semibold"
             >
               🌙 暗くして再生
             </button>
@@ -387,7 +387,7 @@ export default function PhraseDetail() {
         </div>
 
         {(isNativeApp || bgPlayback) && playing && keepAliveState !== 'idle' && (
-          <p className="text-center text-xs text-slate-400">
+          <p className="text-center text-xs t-subtle">
             {keepAliveState === 'on'
               ? isNativeApp
                 ? '🔋 バックグラウンド再生 作動中（画面を消しても続きます）'
@@ -406,7 +406,7 @@ export default function PhraseDetail() {
         </div>
 
         <div className="flex w-full flex-col items-center gap-1.5">
-          <p className="text-xs text-slate-400">読み上げる項目</p>
+          <p className="text-xs t-subtle">読み上げる項目</p>
           <div className="flex flex-wrap justify-center gap-2">
             <ToggleChip active={speakPhrase} onClick={() => setSpeakPhrase(!speakPhrase)}>
               🔊 チャンク
@@ -424,7 +424,7 @@ export default function PhraseDetail() {
           </div>
         </div>
         {!jaVoiceAvailable && (
-          <p className="text-center text-xs text-slate-400">
+          <p className="text-center text-xs t-subtle">
             日本語の読み上げ音声が端末にないため、日本語訳は再生できません
           </p>
         )}
@@ -434,14 +434,14 @@ export default function PhraseDetail() {
         <button
           onClick={() => step(-1)}
           disabled={!hasPrev}
-          className="rounded-2xl bg-slate-400 py-4 font-medium text-white active:scale-95 disabled:opacity-40 disabled:active:scale-100"
+          className="btn-secondary py-4 font-medium"
         >
           ← 戻る
         </button>
         <button
           onClick={() => step(1)}
           disabled={!hasNext}
-          className="rounded-2xl bg-violet-500 py-4 font-medium text-white active:scale-95 disabled:opacity-40 disabled:active:scale-100"
+          className="btn-primary py-4 font-medium"
         >
           進む →
         </button>
@@ -450,7 +450,7 @@ export default function PhraseDetail() {
       {/* 片手で押せるよう、一覧へ戻る導線は画面下部に置く。 */}
       <button
         onClick={() => navigate(backTo)}
-        className="mt-2 w-full py-2 text-center text-sm text-slate-400 active:scale-95"
+        className="mt-2 w-full py-2 text-center text-sm t-subtle active:opacity-80"
       >
         ← 一覧へ
       </button>
@@ -486,8 +486,8 @@ function DarkOverlay({ onExit }: { onExit: () => void }) {
       style={{ touchAction: 'none' }}
     >
       <p
-        className={`select-none text-xs text-slate-600 transition-opacity duration-1000 ${
-          showHint ? 'opacity-100' : 'opacity-0'
+        className={`select-none text-xs text-carbon-ink-subtle transition-opacity duration-1000 ${
+ showHint ? 'opacity-100' : 'opacity-0'
         }`}
       >
         2本指でタッチすると解除
@@ -511,10 +511,8 @@ function ToggleChip({
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-full px-4 py-2 text-sm font-medium transition active:scale-95 disabled:opacity-40 ${
-        active
-          ? 'bg-violet-500 text-white'
-          : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+      className={`px-4 py-2 text-sm font-medium transition active:opacity-80 ${
+ active ? 'chip-active' : 'chip'
       }`}
     >
       {children}

@@ -114,9 +114,9 @@ export default function Daily() {
 
   if (s.empty) {
     return (
-      <div className="pt-20 text-center text-slate-500">
+      <div className="pt-20 text-center t-muted">
         <p>今日の練習はすべて完了です 🎉</p>
-        <button onClick={() => navigate('/')} className="mt-4 text-sky-500">
+        <button onClick={() => navigate('/')} className="mt-4 link">
           ホームへ戻る
         </button>
       </div>
@@ -137,34 +137,34 @@ export default function Daily() {
   return (
     <div className="flex h-full flex-col">
       <SessionHeader pos={s.pos} total={s.total} title="今日の練習" />
-      <p className="mt-1 text-center text-xs font-medium text-slate-400">
+      <p className="mt-1 text-center text-xs font-medium t-subtle">
         {meta.label}
       </p>
 
       {form === 'model' && (
         <>
           <div className="flex flex-1 flex-col items-center justify-center gap-5 py-6">
-            <ModelCard phrase={c!} accentText="text-teal-600 dark:text-teal-400" />
+            <ModelCard phrase={c!} accentText="text-carbon-blue dark:text-carbon-blue-40" />
             <button
               onClick={() => (modelPlaying ? stopModel() : playModel(c!))}
-              className={`rounded-full px-5 py-2.5 font-medium text-white active:scale-95 ${
-                modelPlaying ? 'bg-rose-500' : 'bg-teal-500'
+              className={`px-5 py-2.5 font-medium active:opacity-80 ${
+ modelPlaying ? 'btn-secondary' : 'btn-primary'
               }`}
             >
               {modelPlaying ? '⏸ 停止' : '🔊 お手本を聞く'}
             </button>
-            <p className="text-center text-sm text-slate-400">{meta.hint}</p>
+            <p className="text-center text-sm t-subtle">{meta.hint}</p>
           </div>
           <div className="grid grid-cols-2 gap-3 pt-2">
             <button
               onClick={() => s.answer('vague')}
-              className="rounded-2xl bg-slate-400 py-4 font-medium text-white active:scale-95"
+              className="btn-secondary py-4 font-medium"
             >
               🔁 もう一度
             </button>
             <button
               onClick={() => s.answer('good')}
-              className="rounded-2xl bg-emerald-500 py-4 font-medium text-white active:scale-95"
+              className="rounded-none bg-carbon-success py-4 font-medium text-white active:opacity-80"
             >
               ✅ 言えた
             </button>
@@ -180,7 +180,7 @@ export default function Daily() {
               items={reproItems}
               onStep={(st) => setReproRevealed(st.revealed)}
             />
-            <p className="text-center text-sm text-slate-400">{meta.hint}</p>
+            <p className="text-center text-sm t-subtle">{meta.hint}</p>
           </div>
           {reproRevealed && <GradeButtons onGrade={s.answer} />}
         </>
@@ -193,12 +193,12 @@ export default function Daily() {
               key={s.pos}
               items={composeItems}
               meta={<MetaChips phrase={c!} />}
-              accentClass="text-sky-600 dark:text-sky-400"
+              accentClass="link"
               onStep={(st) =>
                 setComposeEnd(st.revealed && st.idx === composeItems.length - 1)
               }
             />
-            <p className="text-center text-sm text-slate-400">
+            <p className="text-center text-sm t-subtle">
               日本語を見て声に出して英作文 → タッチで答え合わせ
             </p>
           </div>
@@ -228,7 +228,7 @@ export default function Daily() {
       {/* 片手で押せるよう、終了は画面下部に置く。 */}
       <button
         onClick={() => navigate('/')}
-        className="mt-2 w-full py-2 text-center text-sm text-slate-400 active:scale-95"
+        className="mt-2 w-full py-2 text-center text-sm t-subtle active:opacity-80"
       >
         ✕ やめる
       </button>

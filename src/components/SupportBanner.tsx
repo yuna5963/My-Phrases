@@ -10,14 +10,14 @@ export default function SupportBanner({ show }: { show: boolean }) {
   )
   if (!show || dismissed) return null
   return (
-    <div className="safe-top bg-amber-100 px-4 py-2 text-sm text-amber-900 dark:bg-amber-900/40 dark:text-amber-100">
+    <div className="safe-top border-l-4 border-carbon-warning bg-carbon-surface px-4 py-2 text-sm dark:bg-carbon-layer">
       <div className="flex items-start gap-2">
         <span aria-hidden>🔇</span>
         <p className="flex-1">
           このブラウザは音声読み上げに対応していません。発音・読み上げを使うには{' '}
           <strong>Chrome</strong>（Android）や <strong>Safari</strong>（iPhone）で開いてください。
           <br />
-          <span className="text-amber-700 dark:text-amber-200/80">
+          <span className="t-muted">
             ※ 音声以外の練習はこのまま使えます。
           </span>
         </p>
@@ -27,7 +27,7 @@ export default function SupportBanner({ show }: { show: boolean }) {
             setDismissed(true)
           }}
           aria-label="閉じる"
-          className="shrink-0 px-1 text-amber-700 dark:text-amber-300"
+          className="t-muted shrink-0 px-1"
         >
           ✕
         </button>

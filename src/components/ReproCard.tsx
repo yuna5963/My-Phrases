@@ -34,7 +34,7 @@ export function chunkAndExampleItems(p: Phrase): ReproItem[] {
 export default function ReproCard({
   items,
   meta,
-  accentClass = 'text-violet-600 dark:text-violet-400',
+  accentClass = 'text-carbon-blue dark:text-carbon-blue-40',
   onStep,
 }: {
   items: ReproItem[]
@@ -122,18 +122,16 @@ export default function ReproCard({
   return (
     <div
       onClick={onTap}
-      className="w-full cursor-pointer select-none rounded-2xl bg-white p-6 text-center shadow-sm active:opacity-90 dark:bg-slate-900"
+      className="tile w-full cursor-pointer select-none p-6 text-center active:opacity-90"
     >
-      <p className="text-xs text-slate-400">
+      <p className="t-subtle text-xs">
         {st.idx + 1} / {items.length}
       </p>
       {meta}
-      <p className="mt-3 text-lg font-medium leading-relaxed text-slate-700 dark:text-slate-200">
-        {it.ja}
-      </p>
+      <p className="mt-3 text-lg font-medium leading-relaxed">{it.ja}</p>
       {st.revealed ? (
-        <div className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800">
-          <p className={`text-xl font-bold leading-relaxed ${accentClass}`}>
+        <div className="mt-4 border-t border-carbon-hairline pt-4 dark:border-carbon-line-dark">
+          <p className={`text-xl font-semibold leading-relaxed ${accentClass}`}>
             <SpokenText text={it.en} current={tracker.current} />
           </p>
           <KanaLine kana={it.kana} />
@@ -143,13 +141,13 @@ export default function ReproCard({
               stopSpeaking()
               if (it.en) speakEn(it.en)
             }}
-            className="mt-3 rounded-full bg-sky-100 px-4 py-2 text-sm font-medium text-sky-600 active:scale-95 dark:bg-sky-900/40 dark:text-sky-400"
+            className="btn-tertiary mt-3 px-4 py-2 text-sm font-medium"
           >
             🔊 もう一度
           </button>
         </div>
       ) : (
-        <p className="mt-4 border-t border-slate-100 pt-4 text-sm text-slate-400 dark:border-slate-800">
+        <p className="t-subtle mt-4 border-t border-carbon-hairline pt-4 text-sm dark:border-carbon-line-dark">
           タッチして英文を表示 👆
         </p>
       )}

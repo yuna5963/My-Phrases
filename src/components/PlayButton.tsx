@@ -15,7 +15,7 @@ export default function PlayButton({ text, className = '', label = '🔊 再生'
     <button
       type="button"
       onClick={() => speak(text, { voiceURI, rate })}
-      className={`rounded-full bg-sky-500 px-5 py-2.5 font-medium text-white active:scale-95 ${className}`}
+      className={`btn-primary px-5 py-2.5 font-medium ${className}`}
     >
       {label}
     </button>

@@ -12,12 +12,12 @@ export default function FormField({
 }) {
   return (
     <label className="block">
-      <span className="text-xs text-slate-400">{label}</span>
+      <span className="t-subtle text-xs">{label}</span>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
+        className="input mt-0.5 w-full px-2 py-1.5 text-sm"
       />
     </label>
   )

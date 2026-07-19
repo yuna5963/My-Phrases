@@ -18,12 +18,12 @@ import type { KanaIssue } from '../lib/kanaLint'
 import FormField from '../components/FormField'
 
 const SELECT_CLS =
-  'w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900'
+  'input w-full px-2 py-1.5 text-sm'
 
 function KanaWarning({ issues }: { issues: KanaIssue[] }) {
   if (!issues.length) return null
   return (
-    <p className="text-xs text-amber-600 dark:text-amber-400">
+    <p className="t-muted text-xs">
       ⚠ カナ要確認: {[...new Set(issues.map((i) => i.message))].join(' / ')}
       — このまま保存すると「要確認」フラグ付きになります。
     </p>
@@ -59,9 +59,9 @@ export default function ChunkEdit() {
 
   if (!isNew && !existing) {
     return (
-      <div className="pt-20 text-center text-slate-500">
+      <div className="pt-20 text-center t-muted">
         <p>フレーズが見つかりませんでした。</p>
-        <button onClick={() => navigate('/browse')} className="mt-4 text-sky-500">
+        <button onClick={() => navigate('/browse')} className="mt-4 link">
           一覧へ戻る
         </button>
       </div>
@@ -111,7 +111,7 @@ export default function ChunkEdit() {
     <div className="space-y-4">
       <h1 className="text-xl font-bold">{isNew ? '＋ チャンクを追加' : '✏️ チャンクを編集'}</h1>
 
-      <section className="space-y-2 rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-900">
+      <section className="space-y-2 tile p-4 ">
         <FormField
           label="英語（Chunk）"
           value={draft.en}
@@ -129,7 +129,7 @@ export default function ChunkEdit() {
 
         <div className="flex gap-2">
           <label className="block flex-1">
-            <span className="text-xs text-slate-400">Type</span>
+            <span className="text-xs t-subtle">Type</span>
             <select
               value={draft.type}
               onChange={(e) => patch({ type: e.target.value })}
@@ -144,7 +144,7 @@ export default function ChunkEdit() {
             </select>
           </label>
           <label className="block flex-1">
-            <span className="text-xs text-slate-400">Level</span>
+            <span className="text-xs t-subtle">Level</span>
             <select
               value={draft.level}
               onChange={(e) => patch({ level: e.target.value })}
@@ -161,7 +161,7 @@ export default function ChunkEdit() {
         </div>
 
         <label className="block">
-          <span className="text-xs text-slate-400">カテゴリ</span>
+          <span className="text-xs t-subtle">カテゴリ</span>
           <input
             value={draft.category}
             onChange={(e) => patch({ category: e.target.value })}
@@ -186,7 +186,7 @@ export default function ChunkEdit() {
             />
           </div>
           <label className="block flex-1">
-            <span className="text-xs text-slate-400">ステータス</span>
+            <span className="text-xs t-subtle">ステータス</span>
             <select
               value={draft.status}
               onChange={(e) => patch({ status: e.target.value })}
@@ -203,7 +203,7 @@ export default function ChunkEdit() {
         </div>
 
         <label className="block">
-          <span className="text-xs text-slate-400">Note</span>
+          <span className="text-xs t-subtle">Note</span>
           <textarea
             value={draft.note}
             onChange={(e) => patch({ note: e.target.value })}
@@ -214,14 +214,14 @@ export default function ChunkEdit() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-medium text-slate-500">例文（最大{MAX_EXAMPLES}）</h2>
+        <h2 className="text-sm font-medium t-muted">例文（最大{MAX_EXAMPLES}）</h2>
         {draft.examples.map((ex, i) => (
           <div
             key={i}
-            className="space-y-2 rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-900"
+            className="space-y-2 tile p-4 "
           >
             <div className="flex items-baseline justify-between">
-              <span className="text-xs font-medium text-slate-400">例文{i + 1}</span>
+              <span className="text-xs font-medium t-subtle">例文{i + 1}</span>
               <button
                 onClick={() => {
                   setDuplicateId(null)
@@ -230,7 +230,7 @@ export default function ChunkEdit() {
                     examples: d.examples.filter((_, j) => j !== i),
                   }))
                 }}
-                className="text-xs text-slate-400 underline"
+                className="text-xs t-subtle underline"
               >
                 ✕ この例文を削除
               </button>
@@ -248,7 +248,7 @@ export default function ChunkEdit() {
             />
             <KanaWarning issues={issues.examples[i] ?? []} />
             {!ex.en.trim() && (ex.ja.trim() || ex.kana.trim()) && (
-              <p className="text-xs text-amber-600 dark:text-amber-400">
+              <p className="t-muted text-xs">
                 ⚠ 英文が空の例文は保存されません
               </p>
             )}
@@ -259,7 +259,7 @@ export default function ChunkEdit() {
             onClick={() =>
               setDraft((d) => ({ ...d, examples: [...d.examples, emptyExample()] }))
             }
-            className="w-full rounded-2xl border border-dashed border-slate-300 py-3 text-sm font-medium text-slate-500 active:scale-[0.99] dark:border-slate-700 dark:text-slate-400"
+            className="t-muted w-full rounded-none border border-dashed border-carbon-ink-subtle py-3 text-sm font-medium active:opacity-90"
           >
             ＋ 例文を追加
           </button>
@@ -267,10 +267,10 @@ export default function ChunkEdit() {
       </section>
 
       {errors.length > 0 && (
-        <p className="text-center text-xs text-slate-400">{errors.join(' / ')}</p>
+        <p className="text-center text-xs t-subtle">{errors.join(' / ')}</p>
       )}
       {duplicateId && (
-        <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+        <p className="t-muted border-l-4 border-carbon-warning bg-carbon-surface px-3 py-2 text-sm dark:bg-carbon-layer">
           ⚠ この英文は既にデッキにあります。{' '}
           <Link to={`/chunk/${duplicateId}`} className="font-medium underline">
             既存のチャンクを開く →
@@ -281,13 +281,13 @@ export default function ChunkEdit() {
       <button
         disabled={errors.length > 0 || saving}
         onClick={save}
-        className="w-full rounded-2xl bg-sky-500 py-4 font-medium text-white active:scale-95 disabled:opacity-50"
+        className="btn-primary w-full py-4 font-medium"
       >
         {saving ? '保存中…' : isNew ? '📚 デッキに追加' : '💾 保存する'}
       </button>
       <button
         onClick={() => navigate(-1)}
-        className="w-full rounded-2xl bg-slate-200 py-4 font-medium text-slate-600 active:scale-95 dark:bg-slate-800 dark:text-slate-300"
+        className="btn-secondary w-full py-4 font-medium"
       >
         ← 戻る（保存しない）
       </button>
