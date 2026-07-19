@@ -6,6 +6,7 @@ import { useStock } from '../store/useStock'
 import { computeStats } from '../lib/session'
 import { computeDailySummary } from '../lib/kpi'
 import GoalProgress from '../components/GoalProgress'
+import TodayPlan from '../components/TodayPlan'
 
 function Stat({ value, label, accent }: { value: number; label: string; accent?: string }) {
   return (
@@ -83,6 +84,8 @@ export default function Home() {
       )}
 
       <GoalProgress />
+
+      <TodayPlan />
 
       <section className="tile p-4">
         <div className="mb-3 flex items-baseline justify-between">
