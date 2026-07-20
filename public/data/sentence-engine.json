@@ -1,0 +1,462 @@
+[
+  {
+    "id": "str-01",
+    "en": "X means that Y.",
+    "ja": "XはYということを意味する（状態・定義）",
+    "examples": [
+      { "en": "This result means that our approach is working.", "ja": "この結果は、私たちのアプローチが機能していることを意味します。" },
+      { "en": "The delay means that we need to adjust the schedule.", "ja": "この遅れは、スケジュール調整が必要だということです。" },
+      { "en": "Fewer meetings mean that we have more time for real work.", "ja": "会議が減るということは、本来の仕事に使える時間が増えるということです。" },
+      { "en": "That means we have to make a decision this week.", "ja": "つまり、今週中に決断しなければならないということです。" },
+      { "en": "It means that the current process is not sustainable.", "ja": "それは、今のプロセスが持続可能でないことを意味します。" }
+    ],
+    "type": "Structure",
+    "category": "状態・定義",
+    "level": "Core",
+    "priority": "★★★★★",
+    "note": "定義・言い換えの構文。前の発言や事実を受けて「つまり〜だ」と意味づけする。That means... は会話の接続に最頻出。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "str-02",
+    "en": "What matters is X.",
+    "ja": "大事なのはXだ（状態・定義）",
+    "examples": [
+      { "en": "What matters is speed.", "ja": "大事なのはスピードです。" },
+      { "en": "What matters is how we use the data.", "ja": "大事なのは、データをどう使うかです。" },
+      { "en": "What matters most is the customer's experience.", "ja": "何より大事なのは顧客の体験です。" },
+      { "en": "What matters here is a clear owner for each task.", "ja": "ここで大事なのは、各タスクの担当が明確なことです。" },
+      { "en": "What matters is not the tool but the process.", "ja": "大事なのはツールではなくプロセスです。" }
+    ],
+    "type": "Structure",
+    "category": "状態・定義",
+    "level": "Core",
+    "priority": "★★★★★",
+    "note": "焦点を当てる構文。「何について話すか」を文頭で宣言できるので、議論の整理・優先順位づけに強い。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "str-03",
+    "en": "X affects Y.",
+    "ja": "XはYに影響する（行為・影響）",
+    "examples": [
+      { "en": "This change affects the whole team.", "ja": "この変更はチーム全体に影響します。" },
+      { "en": "The new policy affects how we report our results.", "ja": "新しい方針は、結果の報告のしかたに影響します。" },
+      { "en": "Long meetings affect our focus.", "ja": "長い会議は集中力に影響します。" },
+      { "en": "The system outage affected our delivery schedule.", "ja": "システム障害が納品スケジュールに影響しました。" },
+      { "en": "Small delays affect the entire project.", "ja": "小さな遅れがプロジェクト全体に影響します。" }
+    ],
+    "type": "Structure",
+    "category": "行為・影響",
+    "level": "Core",
+    "priority": "★★★★☆",
+    "note": "影響を述べる最短の構文。主語に「物・事」を置く練習に最適（日本語の「〜のせいで」を主語化する）。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "str-04",
+    "en": "X makes it difficult for Y to Z.",
+    "ja": "Xのせいで、YがZしにくい（行為・影響）",
+    "examples": [
+      { "en": "The lack of data makes it difficult for us to make decisions.", "ja": "データ不足のせいで、私たちは意思決定がしにくいです。" },
+      { "en": "Long meetings make it difficult for the team to stay focused.", "ja": "長い会議のせいで、チームは集中を保ちにくいです。" },
+      { "en": "Unclear roles make it difficult for managers to delegate work.", "ja": "役割が不明確なせいで、管理職は仕事を任せにくいです。" },
+      { "en": "The current process makes it difficult for managers to respond quickly.", "ja": "今のプロセスのせいで、管理職は素早く対応しにくいです。" },
+      { "en": "Too many priorities make it difficult for everyone to focus on one goal.", "ja": "優先事項が多すぎて、全員が一つの目標に集中しにくいです。" }
+    ],
+    "type": "Structure",
+    "category": "行為・影響",
+    "level": "Core",
+    "priority": "★★★★★",
+    "note": "原因を主語に置く英語らしい構文の代表格。日本語の「〜のせいで…できない」はこの型に流し込む。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "str-05",
+    "en": "There is a problem with X.",
+    "ja": "Xに問題がある（存在・発生）",
+    "examples": [
+      { "en": "There is a problem with the current process.", "ja": "今のプロセスには問題があります。" },
+      { "en": "There is a gap between the plan and the actual results.", "ja": "計画と実際の結果の間にはギャップがあります。" },
+      { "en": "There is growing pressure to reduce costs.", "ja": "コスト削減への圧力が強まっています。" },
+      { "en": "There are too many steps in this workflow.", "ja": "このワークフローには工程が多すぎます。" },
+      { "en": "There is no clear owner for this task.", "ja": "このタスクには明確な担当者がいません。" }
+    ],
+    "type": "Structure",
+    "category": "存在・発生",
+    "level": "Core",
+    "priority": "★★★★★",
+    "note": "主語を決めずに「ある・ない」から話し始められる構文。主語選びに詰まったときの脱出口としても使える。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "str-06",
+    "en": "X happens when Y.",
+    "ja": "Yのとき、Xが起こる（存在・発生）",
+    "examples": [
+      { "en": "Errors happen when we skip the review step.", "ja": "レビュー工程を飛ばすと、エラーが起こります。" },
+      { "en": "Delays happen when the requirements are not clear.", "ja": "要件が不明確だと、遅延が起こります。" },
+      { "en": "Miscommunication happens when we rely only on chat.", "ja": "チャットだけに頼ると、行き違いが起こります。" },
+      { "en": "Real progress happens when the whole team shares one goal.", "ja": "本当の前進は、チーム全体が一つの目標を共有したときに起こります。" },
+      { "en": "Problems happen when nobody owns the process.", "ja": "誰もプロセスに責任を持たないと、問題が起こります。" }
+    ],
+    "type": "Structure",
+    "category": "存在・発生",
+    "level": "Core",
+    "priority": "★★★★☆",
+    "note": "発生条件を述べる構文。「〜すると…になる」という因果の観察を、if を使わず軽く言える。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "str-07",
+    "en": "I think (that) X.",
+    "ja": "Xだと思う（認識・意見）",
+    "examples": [
+      { "en": "I think we should start small.", "ja": "小さく始めるべきだと思います。" },
+      { "en": "I think this approach has a clear advantage.", "ja": "このアプローチには明確な利点があると思います。" },
+      { "en": "I don't think we need another meeting.", "ja": "もう一度会議をする必要はないと思います。" },
+      { "en": "I think the real issue is the schedule, not the budget.", "ja": "本当の問題は予算ではなくスケジュールだと思います。" },
+      { "en": "Personally, I think we are moving in the right direction.", "ja": "個人的には、正しい方向に進んでいると思います。" }
+    ],
+    "type": "Structure",
+    "category": "認識・意見",
+    "level": "Basic",
+    "priority": "★★★★★",
+    "note": "意見表明の基本構文。否定は I don't think + 肯定文 の形にする（× I think we don't need）。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "str-08",
+    "en": "It seems (to me) that X.",
+    "ja": "Xのようだ・Xに見える（認識・意見）",
+    "examples": [
+      { "en": "It seems that the team is overloaded.", "ja": "チームは仕事を抱えすぎているようです。" },
+      { "en": "It seems that the new tool is working well.", "ja": "新しいツールはうまく機能しているようです。" },
+      { "en": "It seems to me that we are solving the wrong problem.", "ja": "私たちは違う問題を解こうとしている気がします。" },
+      { "en": "It seems like the customers want something simpler.", "ja": "顧客はもっとシンプルなものを求めているようです。" },
+      { "en": "It seemed that everyone agreed, but nobody acted.", "ja": "全員が同意したように見えましたが、誰も動きませんでした。" }
+    ],
+    "type": "Structure",
+    "category": "認識・意見",
+    "level": "Core",
+    "priority": "★★★★☆",
+    "note": "断定を避けて観察を述べる構文。I think より一歩引いた言い方で、指摘や懸念を角を立てずに出せる。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "str-09",
+    "en": "We need to X.",
+    "ja": "Xする必要がある（必要・提案）",
+    "examples": [
+      { "en": "We need to change the process.", "ja": "プロセスを変える必要があります。" },
+      { "en": "We need to decide this today.", "ja": "これは今日決める必要があります。" },
+      { "en": "We need to take a step back and look at the whole picture.", "ja": "一歩下がって全体像を見る必要があります。" },
+      { "en": "We don't need to solve everything at once.", "ja": "すべてを一度に解決する必要はありません。" },
+      { "en": "We may need to ask for more resources.", "ja": "リソースの追加をお願いする必要があるかもしれません。" }
+    ],
+    "type": "Structure",
+    "category": "必要・提案",
+    "level": "Basic",
+    "priority": "★★★★★",
+    "note": "必要性の基本構文。may / don't を差すだけで強度を調整できる。会議での次アクション提示の定番。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "str-10",
+    "en": "What we need is X.",
+    "ja": "必要なのはXだ（必要・提案）",
+    "examples": [
+      { "en": "What we need is a better process.", "ja": "必要なのはより良いプロセスです。" },
+      { "en": "What we need is more time, not more people.", "ja": "必要なのは人手ではなく時間です。" },
+      { "en": "What we need is a clear decision from management.", "ja": "必要なのは経営側の明確な決定です。" },
+      { "en": "What we need is a simple way to share progress.", "ja": "必要なのは進捗を共有するシンプルな方法です。" },
+      { "en": "What we need now is one clear priority.", "ja": "今必要なのは、明確な優先事項を一つに絞ることです。" }
+    ],
+    "type": "Structure",
+    "category": "必要・提案",
+    "level": "Core",
+    "priority": "★★★★★",
+    "note": "We need to X の強調形。「他ではなくこれが必要だ」と焦点を絞って提案できる。not A but B と相性が良い。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "str-11",
+    "en": "The problem is that X.",
+    "ja": "問題は、Xということだ（問題・原因）",
+    "examples": [
+      { "en": "The problem is that the data is incomplete.", "ja": "問題は、データが不完全なことです。" },
+      { "en": "The problem is that the team has no clear target.", "ja": "問題は、チームに明確な目標がないことです。" },
+      { "en": "The problem is that we are trying to solve too many issues at once.", "ja": "問題は、一度に多くの課題を解決しようとしていることです。" },
+      { "en": "The problem was that nobody owned the process.", "ja": "問題は、誰もプロセスに責任を持っていなかったことでした。" },
+      { "en": "The problem may be that the current KPI measures the wrong thing.", "ja": "問題は、今のKPIが測るべきでないものを測っていることかもしれません。" }
+    ],
+    "type": "Structure",
+    "category": "問題・原因",
+    "level": "Core",
+    "priority": "★★★★★",
+    "note": "問題提起の代表構文。that 以下に完全な文を置く練習で「節を流し込む」感覚を作る。時制・may で強度も変わる。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "str-12",
+    "en": "X comes from Y.",
+    "ja": "XはYから生じている（問題・原因）",
+    "examples": [
+      { "en": "The problem comes from the current process.", "ja": "その問題は今のプロセスから生じています。" },
+      { "en": "Most delays come from unclear requirements.", "ja": "遅延の多くは要件の不明確さから生じています。" },
+      { "en": "The confusion comes from having two different plans.", "ja": "混乱は、計画が二つ存在することから生じています。" },
+      { "en": "This error comes from an old version of the data.", "ja": "このエラーは古いバージョンのデータが原因です。" },
+      { "en": "Our strength comes from the way the team works together.", "ja": "私たちの強みは、チームの連携のしかたから生まれています。" }
+    ],
+    "type": "Structure",
+    "category": "問題・原因",
+    "level": "Core",
+    "priority": "★★★★☆",
+    "note": "原因を「出どころ」として述べる構文。is caused by より軽く、ポジティブな由来（強みの源泉）にも使える。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "str-13",
+    "en": "We are moving from A to B.",
+    "ja": "AからBへ移行しつつある（変化）",
+    "examples": [
+      { "en": "We are moving from paper forms to a digital workflow.", "ja": "紙の帳票からデジタルのワークフローへ移行しつつあります。" },
+      { "en": "We are moving from monthly reports to real-time dashboards.", "ja": "月次レポートからリアルタイムのダッシュボードへ移行しつつあります。" },
+      { "en": "The team is moving from firefighting to prevention.", "ja": "チームは火消し対応から予防へと移りつつあります。" },
+      { "en": "The market is moving from ownership to subscription.", "ja": "市場は所有からサブスクリプションへと移りつつあります。" },
+      { "en": "We are slowly moving from talk to action.", "ja": "私たちは少しずつ、議論から実行へと移りつつあります。" }
+    ],
+    "type": "Structure",
+    "category": "変化",
+    "level": "Core",
+    "priority": "★★★★☆",
+    "note": "変革を1文で語れる構文。ビジネス変革の文脈で最も汎用性が高い。from/to に名詞・動名詞を入れる。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "str-14",
+    "en": "X used to Y, but now Z.",
+    "ja": "以前はYだったが、今はZだ（変化）",
+    "examples": [
+      { "en": "I used to translate everything in my head, but now I start with the structure.", "ja": "以前は頭の中で全部翻訳していましたが、今は構造から始めています。" },
+      { "en": "We used to spend hours on reports, but now the system does it.", "ja": "以前はレポートに何時間もかけていましたが、今はシステムがやってくれます。" },
+      { "en": "This process used to take a week, but now it takes a day.", "ja": "このプロセスは以前は1週間かかりましたが、今は1日です。" },
+      { "en": "The team used to work separately, but now we share one backlog.", "ja": "チームは以前バラバラに動いていましたが、今は一つのバックログを共有しています。" },
+      { "en": "Customers used to call us, but now they expect chat support.", "ja": "顧客は以前は電話をかけてきましたが、今はチャットサポートを期待しています。" }
+    ],
+    "type": "Structure",
+    "category": "変化",
+    "level": "Core",
+    "priority": "★★★★☆",
+    "note": "ビフォーアフターの対比構文。過去と現在を1文で並べられるので、改善報告・自己紹介・振り返りに強い。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "str-15",
+    "en": "X. As a result, Y.",
+    "ja": "Xだ。その結果、Yだ（因果・対比）",
+    "examples": [
+      { "en": "The process is unclear. As a result, decisions take too long.", "ja": "プロセスが不明確です。その結果、意思決定に時間がかかりすぎています。" },
+      { "en": "Managers do not get enough information. As a result, they cannot act quickly.", "ja": "管理職に十分な情報が届いていません。その結果、素早く動けません。" },
+      { "en": "We reduced the number of meetings. As a result, we have more focus time.", "ja": "会議の数を減らしました。その結果、集中できる時間が増えました。" },
+      { "en": "Nobody owned the task. As a result, it was never finished.", "ja": "誰もそのタスクに責任を持ちませんでした。その結果、最後まで終わりませんでした。" },
+      { "en": "We standardized the workflow. As a result, errors dropped sharply.", "ja": "ワークフローを標準化しました。その結果、エラーが大幅に減りました。" }
+    ],
+    "type": "Structure",
+    "category": "因果・対比",
+    "level": "Core",
+    "priority": "★★★★★",
+    "note": "因果を2つの短い独立節でつなぐ構文。1文に詰め込まず「小さな節の連鎖」で話す英語の呼吸を体得する。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "str-16",
+    "en": "X, but Y.",
+    "ja": "Xだが、Yだ（因果・対比）",
+    "examples": [
+      { "en": "The idea is good, but the timing is wrong.", "ja": "アイデアは良いのですが、タイミングが悪いです。" },
+      { "en": "We have enough data, but we are not using it.", "ja": "データは十分にあるのに、活用できていません。" },
+      { "en": "I can remember individual phrases, but I still struggle to combine them.", "ja": "個々のフレーズは思い出せるのですが、組み合わせるのにまだ苦労しています。" },
+      { "en": "The plan looks fine on paper, but the reality is different.", "ja": "計画は紙の上では問題なさそうですが、現実は違います。" },
+      { "en": "Sales are growing, but our costs are growing faster.", "ja": "売上は伸びていますが、コストの方が速く伸びています。" }
+    ],
+    "type": "Structure",
+    "category": "因果・対比",
+    "level": "Basic",
+    "priority": "★★★★★",
+    "note": "対比の基本構文。評価→留保の順に並べると柔らかい反論になる（良い、しかし…）。前後どちらも完全な文にする。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "msg-01",
+    "en": "The project is mostly on track.\nAbout eighty percent of the main tasks are done.\nThe only remaining part is the data migration.",
+    "ja": "主張: プロジェクトは概ね順調\n根拠: 主要タスクの約8割が完了\n補足: 残りはデータ移行のみ",
+    "examples": [],
+    "type": "Message",
+    "category": "進捗報告",
+    "level": "Core",
+    "priority": "★★★★★",
+    "note": "結論→数字の根拠→残タスクの順。日本語で完成文を作らず、ノードごとに主語と動詞を置く。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "msg-02",
+    "en": "The main problem is slow decision-making.\nManagers do not get the information they need.\nAs a result, our responses always come too late.",
+    "ja": "問題: 意思決定が遅い\n原因: 必要な情報が管理職に届いていない\n影響: 対応がいつも後手に回る",
+    "examples": [],
+    "type": "Message",
+    "category": "問題報告",
+    "level": "Core",
+    "priority": "★★★★★",
+    "note": "The main problem is... → 原因の平叙文 → As a result, ... の3節連鎖。問題報告の最重要テンプレート。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "msg-03",
+    "en": "I suggest that we cut our meetings in half.\nThe team does not have enough time for focused work.\nThis change should improve our productivity.",
+    "ja": "提案: 会議を半分に減らす\n理由: 集中して働く時間が足りない\n期待: 生産性が上がるはず",
+    "examples": [],
+    "type": "Message",
+    "category": "提案",
+    "level": "Core",
+    "priority": "★★★★★",
+    "note": "提案→理由→期待効果。効果は should（〜なるはず）で控えめに断定するのがビジネスの型。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "msg-04",
+    "en": "I don't feel that I'm making real progress.\nSentence structure has not become automatic yet.\nWhat I need is a different way to practice.",
+    "ja": "評価: 本当に進歩している感じがしない\n原因: 文の構造がまだ自動化されていない\n必要: 練習のやり方を変えること",
+    "examples": [],
+    "type": "Message",
+    "category": "振り返り",
+    "level": "Core",
+    "priority": "★★★★☆",
+    "note": "自己評価→原因分析→必要なこと。I don't feel that... / What I need is... の実戦投入例。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "msg-05",
+    "en": "I'm in favor of introducing the new tool.\nIt will reduce a lot of manual work.\nHowever, we will need a transition period.",
+    "ja": "意見: 新ツールの導入に賛成\n理由: 手作業が大きく減る\n条件: 移行期間が必要",
+    "examples": [],
+    "type": "Message",
+    "category": "意見表明",
+    "level": "Core",
+    "priority": "★★★★☆",
+    "note": "賛成→理由→条件。賛成でも However で条件を1つ付けると、考えた上での意見として伝わる。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "msg-06",
+    "en": "Customer inquiries have increased sharply.\nThe main reason is that the spec change was not announced well.\nWe are now updating the FAQ to cover it.",
+    "ja": "状況: 顧客からの問い合わせが急増\n原因: 仕様変更の告知が不十分だった\n対応: 現在FAQを更新中",
+    "examples": [],
+    "type": "Message",
+    "category": "状況説明",
+    "level": "Core",
+    "priority": "★★★★☆",
+    "note": "事実→ The main reason is that... → 現在進行形の対応。状況報告は「もうやっている」で締めると安心感が出る。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "msg-07",
+    "en": "Could you review the document by the end of this week?\nWe are planning to release it next week.\nIt should take about thirty minutes.",
+    "ja": "依頼: 今週中に文書のレビューをお願いしたい\n理由: 来週リリースを予定している\n補足: 30分ほどで終わる見込み",
+    "examples": [],
+    "type": "Message",
+    "category": "依頼",
+    "level": "Basic",
+    "priority": "★★★★★",
+    "note": "Could you...? → 背景 → 負担の見積もり。相手のコストを先に伝えると依頼が通りやすい。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "msg-08",
+    "en": "Plan B looks better than Plan A.\nIt costs only half as much.\nThe concern is that it takes longer to implement.",
+    "ja": "比較: A案よりB案が良さそう\n根拠: コストが半分で済む\n懸念: 導入に時間がかかる",
+    "examples": [],
+    "type": "Message",
+    "category": "比較・評価",
+    "level": "Core",
+    "priority": "★★★★☆",
+    "note": "結論→決め手の1点→残る懸念。The concern is that... で懸念も構文に載せる。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "msg-09",
+    "en": "The way we work has changed a lot.\nRemote work has become the standard.\nAs a result, how we design communication matters more than ever.",
+    "ja": "変化: 働き方が大きく変わった\n具体: リモートワークが標準になった\n影響: コミュニケーションの設計がこれまで以上に重要に",
+    "examples": [],
+    "type": "Message",
+    "category": "変化の説明",
+    "level": "Core",
+    "priority": "★★★★☆",
+    "note": "抽象的な変化→具体例→帰結。The way we... / how we... の名詞節をアンカーに使う練習。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "msg-10",
+    "en": "My goal is to join meetings in English within six months.\nRight now I catch about sixty percent of what I hear.\nMy plan is to practice sentence structures every day.",
+    "ja": "目標: 半年以内に英語で会議に参加する\n現状: 聞き取れるのは6割ほど\n計画: 毎日、構文の練習を続ける",
+    "examples": [],
+    "type": "Message",
+    "category": "目標共有",
+    "level": "Basic",
+    "priority": "★★★★☆",
+    "note": "目標→現在地→計画。My goal is to... / My plan is to... の平行構造で話すと聞き手が追いやすい。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "msg-11",
+    "en": "I'd like to pass on this one for now.\nWe have a higher-priority project at the moment.\nWe could take it on next month instead.",
+    "ja": "結論: 今回は見送りたい\n理由: いま優先度の高い案件がある\n代替: 来月なら引き受けられる",
+    "examples": [],
+    "type": "Message",
+    "category": "断る",
+    "level": "Core",
+    "priority": "★★★★☆",
+    "note": "丁寧な辞退→理由→代替案。I'd like to pass on... と could の控えめ提案で角を立てずに断る。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  },
+  {
+    "id": "msg-12",
+    "en": "We made three decisions today.\nWe approved the budget, assigned owners, and set the next meeting date.\nI will share the minutes later today.",
+    "ja": "まとめ: 今日の決定事項は3つ\n内容: 予算の承認・担当者の決定・次回日程の設定\n次: 今日中に議事録を共有する",
+    "examples": [],
+    "type": "Message",
+    "category": "まとめ",
+    "level": "Basic",
+    "priority": "★★★★☆",
+    "note": "数を宣言→3点の並列→次アクション。並列は動詞から始めて A, B, and C で揃える。",
+    "status": "進行中",
+    "createdTime": "2026-07-20T00:00:00.000Z"
+  }
+]

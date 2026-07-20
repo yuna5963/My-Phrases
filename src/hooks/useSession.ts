@@ -4,6 +4,7 @@ import { useDeck } from '../store/useDeck'
 import { useSettings } from '../store/useSettings'
 import { buildSession, clusterByTypeCategory } from '../lib/session'
 import { isLongReading } from '../lib/longReading'
+import { isSentenceEngine } from '../lib/sentenceEngine'
 import type { PracticeMode } from '../lib/events'
 
 function shuffle<T>(arr: T[]): T[] {
@@ -62,10 +63,13 @@ export function useSession(options: SessionOptions = {}) {
   const includeStatuses = useSettings((s) => s.includeStatuses)
   const sessionSize = useSettings((s) => s.sessionSize)
 
-  // 長文音読は専用モードでのみ扱うので、通常の練習プールからは常に除外する。
+  // 長文音読・Sentence Engine（構文/意味ノード）は専用モードでのみ扱う。
+  // ただし構文ドリル等は filter に isStructure などを渡して「あえて」出題する。
+  // そのため base では長文音読だけを常時除外し、Sentence Engine は
+  // filter 未指定（＝通常の既定プール）のときだけ除外する。
   const pool = useMemo(() => {
     const base = phrases.filter((p) => !isLongReading(p))
-    return filter ? base.filter(filter) : base
+    return filter ? base.filter(filter) : base.filter((p) => !isSentenceEngine(p))
   }, [phrases, filter])
 
   const phraseById = useMemo(
@@ -120,10 +124,10 @@ export function useSession(options: SessionOptions = {}) {
   const goPrev = () => setPos((p) => Math.max(0, p - 1))
   const goNext = () => setPos((p) => Math.min(queue.length - 1, p + 1))
 
-  async function answer(g: Grade) {
+  async function answer(g: Grade, latencyMs?: number) {
     const id = queue[pos]
     if (!id) return
-    await grade(id, g, mode)
+    await grade(id, g, mode, latencyMs)
     setTally((t) => ({ ...t, [g]: t[g] + 1 }))
     if (g !== 'good') setQueue((q) => [...q, id]) // re-show weak cards
     setPos((p) => p + 1)

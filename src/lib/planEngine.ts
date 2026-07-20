@@ -21,7 +21,7 @@ export interface PlanItem {
   detail: string
   route: string
   /** 実施済み判定に使う種別（当日の学習ログと突き合わせる）。 */
-  kind: 'play' | 'daily' | 'chat' | 'compose'
+  kind: 'play' | 'daily' | 'chat' | 'compose' | 'structure' | 'message'
 }
 
 export interface DailyPlan {
@@ -60,43 +60,63 @@ function playItem(): PlanItem {
   }
 }
 
-function chatOrComposeItem(hasChatKey: boolean): PlanItem {
-  return hasChatKey
-    ? {
-        id: 'chat',
-        icon: '💬',
-        label: 'チャット練習を1本',
-        detail: '覚えたチャンクを会話で実際に使う',
-        route: '/chat',
-        kind: 'chat',
-      }
-    : {
-        id: 'compose',
-        icon: '⚡',
-        label: '瞬間英作文',
-        detail: '日本語→英語で即アウトプット（チャットはAPIキー設定後）',
-        route: '/compose',
-        kind: 'compose',
-      }
+function structureItem(): PlanItem {
+  return {
+    id: 'structure',
+    icon: '🧱',
+    label: '構文ドリル',
+    detail: '構造の反射化。まず組立ラインから',
+    route: '/structure',
+    kind: 'structure',
+  }
+}
+
+function messageItem(): PlanItem {
+  return {
+    id: 'message',
+    icon: '🧠',
+    label: '意味ノード生成',
+    detail: '意味の骨子から英文を組み立てる',
+    route: '/message',
+    kind: 'message',
+  }
+}
+
+function chatItem(): PlanItem {
+  return {
+    id: 'chat',
+    icon: '💬',
+    label: 'チャット練習を1本',
+    detail: '覚えたチャンクを会話で実際に使う',
+    route: '/chat',
+    kind: 'chat',
+  }
 }
 
 /**
- * 体調から当日メニューを編成する。
+ * 体調から当日メニューを編成する（Sentence Engine 導入後は「構造優先」に）。
  * - tired: 流し聞きだけ（ゼロの日を作らせない最低ライン）
- * - normal: 今日の練習
- * - fresh: 今日の練習 ＋ 会話（キーが無ければ瞬間英作文）
+ * - normal: 構文ドリル → 今日の練習（まず型の反射化、そのあと期日ぶん）
+ * - fresh: 構文ドリル → 今日の練習 → 意味ノード生成 →（キーあれば）会話
+ *   キー無しの fresh は意味ノード生成までの3項目。
  */
 export function buildPlan(energy: Energy, ctx: PlanContext): DailyPlan {
   if (energy === 'tired') {
     return { energy, note: '今日は無理しない日。これだけでも続いています。', items: [playItem()] }
   }
   if (energy === 'normal') {
-    return { energy, note: '今日の期日ぶんをこなしましょう。', items: [dailyItem(ctx.due)] }
+    return {
+      energy,
+      note: 'まず構文の反射化から。そのあと期日ぶんを。',
+      items: [structureItem(), dailyItem(ctx.due)],
+    }
   }
+  const items = [structureItem(), dailyItem(ctx.due), messageItem()]
+  if (ctx.hasChatKey) items.push(chatItem())
   return {
     energy,
-    note: '余裕がある日。アウトプットまで一気に。',
-    items: [dailyItem(ctx.due), chatOrComposeItem(ctx.hasChatKey)],
+    note: '余裕がある日。構造から意味の組み立て、実戦投入まで一気に。',
+    items,
   }
 }
 
@@ -111,6 +131,10 @@ export function planItemDone(kind: PlanItem['kind'], todayEvents: LearningEvent[
       return todayEvents.some((e) => e.type === 'grade' && e.mode === 'daily')
     case 'compose':
       return todayEvents.some((e) => e.type === 'grade' && e.mode === 'compose')
+    case 'structure':
+      return todayEvents.some((e) => e.type === 'grade' && e.mode === 'structure')
+    case 'message':
+      return todayEvents.some((e) => e.type === 'grade' && e.mode === 'message')
     case 'chat':
       return todayEvents.some((e) => e.type === 'chat')
     case 'play':

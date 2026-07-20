@@ -85,6 +85,23 @@ export function minimumLineMet(dayEvents: LearningEvent[]): boolean {
   return active || playSeconds(dayEvents) >= MIN_LINE_PLAY_SECONDS
 }
 
+/**
+ * 起動レイテンシ（Clause launch latency）の中央値ms。
+ * latencyMs を持つ grade イベント（Sentence Engine の2ドリルが記録）の
+ * latencyMs 群の中央値。偶数個なら中央2値の平均。1件も無ければ null。
+ * 「和訳を見た瞬間に英語の骨格へ飛び込めるか」の反応速度を測る材料。
+ */
+export function launchLatencyMedian(events: LearningEvent[]): number | null {
+  const xs: number[] = []
+  for (const e of events) {
+    if (e.type === 'grade' && typeof e.latencyMs === 'number') xs.push(e.latencyMs)
+  }
+  if (xs.length === 0) return null
+  xs.sort((a, b) => a - b)
+  const mid = Math.floor(xs.length / 2)
+  return xs.length % 2 === 0 ? (xs[mid - 1] + xs[mid]) / 2 : xs[mid]
+}
+
 export interface DailySummary {
   date: string
   graded: number
@@ -92,6 +109,8 @@ export interface DailySummary {
   playSeconds: number
   retained: number
   minimumMet: boolean
+  /** 当日の起動レイテンシ中央値ms（計測付き採点が無ければ null）。 */
+  latencyMedianMs: number | null
 }
 
 /** ホーム「今日のあゆみ」用の日次サマリー。 */
@@ -104,6 +123,7 @@ export function computeDailySummary(events: LearningEvent[], date: string = toda
     playSeconds: playSeconds(today),
     retained: retainedPromotions(today),
     minimumMet: minimumLineMet(today),
+    latencyMedianMs: launchLatencyMedian(today),
   }
 }
 

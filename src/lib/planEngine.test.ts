@@ -8,26 +8,28 @@ describe('buildPlan', () => {
     expect(p.items.map((i) => i.kind)).toEqual(['play'])
   })
 
-  it('normal = 今日の練習のみ、期日件数を文面に反映', () => {
+  it('normal = 構文ドリル → 今日の練習（構造優先）、期日件数を文面に反映', () => {
     const p = buildPlan('normal', { due: 8, hasChatKey: true })
-    expect(p.items.map((i) => i.kind)).toEqual(['daily'])
-    expect(p.items[0].detail).toContain('8枚')
+    expect(p.items.map((i) => i.kind)).toEqual(['structure', 'daily'])
+    expect(p.items[0].route).toBe('/structure')
+    expect(p.items[1].detail).toContain('8枚')
   })
 
   it('期日0なら今日の練習は追加練習の案内に切り替わる', () => {
     const p = buildPlan('normal', { due: 0, hasChatKey: true })
-    expect(p.items[0].detail).toContain('追加練習')
+    const daily = p.items.find((i) => i.kind === 'daily')!
+    expect(daily.detail).toContain('追加練習')
   })
 
-  it('fresh = 今日の練習＋チャット（キーあり）', () => {
+  it('fresh = 構文ドリル → 今日の練習 → 意味ノード生成 → チャット（キーあり）', () => {
     const p = buildPlan('fresh', { due: 5, hasChatKey: true })
-    expect(p.items.map((i) => i.kind)).toEqual(['daily', 'chat'])
+    expect(p.items.map((i) => i.kind)).toEqual(['structure', 'daily', 'message', 'chat'])
   })
 
-  it('fresh でキー未設定なら会話の代わりに瞬間英作文', () => {
+  it('fresh でキー未設定なら意味ノード生成まで（3項目・チャット無し）', () => {
     const p = buildPlan('fresh', { due: 5, hasChatKey: false })
-    expect(p.items.map((i) => i.kind)).toEqual(['daily', 'compose'])
-    expect(p.items[1].route).toBe('/compose')
+    expect(p.items.map((i) => i.kind)).toEqual(['structure', 'daily', 'message'])
+    expect(p.items[2].route).toBe('/message')
   })
 })
 
@@ -44,6 +46,16 @@ describe('planItemDone', () => {
     { chunkId: 'b', grade: 'good', boxFrom: 0, boxTo: 1, mode: 'compose' },
     D('2026-07-19'),
   )
+  const gradeStructure = makeEvent(
+    'grade',
+    { chunkId: 'str-01', grade: 'good', boxFrom: 0, boxTo: 1, mode: 'structure' },
+    D('2026-07-19'),
+  )
+  const gradeMessage = makeEvent(
+    'grade',
+    { chunkId: 'msg-01', grade: 'good', boxFrom: 0, boxTo: 1, mode: 'message' },
+    D('2026-07-19'),
+  )
   const chat = makeEvent(
     'chat',
     { targetChunkIds: ['a'], usedChunkIds: ['a'], userMessageCount: 3 },
@@ -58,6 +70,15 @@ describe('planItemDone', () => {
     expect(planItemDone('compose', [gradeCompose])).toBe(true)
     expect(planItemDone('daily', [gradeCompose])).toBe(false)
     expect(planItemDone('daily', [])).toBe(false)
+  })
+
+  it('structure/message は該当モードの採点だけで達成（相互に独立）', () => {
+    expect(planItemDone('structure', [gradeStructure])).toBe(true)
+    expect(planItemDone('structure', [gradeMessage])).toBe(false)
+    expect(planItemDone('structure', [gradeDaily])).toBe(false)
+    expect(planItemDone('message', [gradeMessage])).toBe(true)
+    expect(planItemDone('message', [gradeStructure])).toBe(false)
+    expect(planItemDone('message', [])).toBe(false)
   })
 
   it('chat は会話完了イベントがあれば達成', () => {

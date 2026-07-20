@@ -36,6 +36,8 @@ export default function ReproCard({
   meta,
   accentClass = 'text-carbon-blue dark:text-carbon-blue-40',
   onStep,
+  speakJa = true,
+  revealNote,
 }: {
   items: ReproItem[]
   /** カード上部に表示する補足（メタ情報チップなど）。 */
@@ -44,6 +46,10 @@ export default function ReproCard({
   accentClass?: string
   /** 進行状態（現在の項目・英文公開済みか）の変化を親へ通知する。 */
   onStep?: (st: { idx: number; revealed: boolean }) => void
+  /** 和訳面を TTS で読み上げるか（既定 true）。意味ノードは日本語を読まないので false。 */
+  speakJa?: boolean
+  /** 開示面の英文の下に小さく表示する注記（例: 参考出力の断り書き）。未指定なら非表示。 */
+  revealNote?: string
 }) {
   const voiceURI = useSettings((s) => s.voiceURI)
   const rate = useSettings((s) => s.rate)
@@ -97,7 +103,7 @@ export default function ReproCard({
     stopSpeaking()
     tracker.stop()
     if (!st.revealed) {
-      if (it.ja) speak(it.ja, { voiceURI, rate, lang: 'ja-JP' })
+      if (it.ja && speakJa) speak(it.ja, { voiceURI, rate, lang: 'ja-JP' })
     } else {
       if (it.en) speakEn(it.en)
     }
@@ -106,7 +112,7 @@ export default function ReproCard({
       tracker.stop()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [st.idx, st.revealed, items, voiceURI, rate])
+  }, [st.idx, st.revealed, items, voiceURI, rate, speakJa])
 
   if (!items.length) return null
   const it = items[st.idx]
@@ -128,13 +134,14 @@ export default function ReproCard({
         {st.idx + 1} / {items.length}
       </p>
       {meta}
-      <p className="mt-3 text-lg font-medium leading-relaxed">{it.ja}</p>
+      <p className="mt-3 whitespace-pre-line text-lg font-medium leading-relaxed">{it.ja}</p>
       {st.revealed ? (
         <div className="mt-4 border-t border-carbon-hairline pt-4 dark:border-carbon-line-dark">
-          <p className={`text-xl font-semibold leading-relaxed ${accentClass}`}>
+          <p className={`whitespace-pre-line text-xl font-semibold leading-relaxed ${accentClass}`}>
             <SpokenText text={it.en} current={tracker.current} />
           </p>
           <KanaLine kana={it.kana} />
+          {revealNote && <p className="t-subtle mt-2 text-xs">{revealNote}</p>}
           <button
             onClick={(e) => {
               e.stopPropagation()

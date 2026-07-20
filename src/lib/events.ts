@@ -7,7 +7,7 @@ import type { Grade } from '../types'
 export type EventType = 'grade' | 'chat' | 'play' | 'materialize'
 
 /** 採点が発生したモード（瞬間英作文・穴埋め等の内訳把握用）。 */
-export type PracticeMode = 'daily' | 'compose' | 'cloze' | 'repro'
+export type PracticeMode = 'daily' | 'compose' | 'cloze' | 'repro' | 'structure' | 'message'
 
 interface BaseEvent {
   /** 一意ID（衝突しないランダム）。 */
@@ -29,6 +29,9 @@ export interface GradeEvent extends BaseEvent {
   boxTo: number
   /** どのモードでの採点か（分からなければ省略）。 */
   mode?: PracticeMode
+  /** 和訳表示→英文開示の中央値ms。Sentence Engine の起動レイテンシKPI
+   *  （Clause launch latency）の材料。計測できた採点のみ持つ。 */
+  latencyMs?: number
 }
 
 /** チャット練習を1セッション終えた（usedChunkIds はここで初めて永続化される）。 */
