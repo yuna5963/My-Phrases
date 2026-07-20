@@ -20,6 +20,7 @@ import { makeEvent, type LearningEvent, type PracticeMode } from '../lib/events'
 import { eventsOn, minimumLineMet } from '../lib/kpi'
 import type { Energy } from '../lib/planEngine'
 import { mergePhrases, parsePhrasesFromFiles } from '../lib/import'
+import { filterSentenceEngineImport, loadSentenceEngineSeed } from '../lib/sentenceEngine'
 
 export type DeckSource = 'imported' | 'sample'
 export type ImportMode = 'merge' | 'replace'
@@ -62,6 +63,12 @@ interface DeckState {
   setLearned: (id: string, learned: boolean) => Promise<void>
   reset: () => Promise<void>
   importFiles: (files: File[], mode?: ImportMode) => Promise<ImportSummary>
+  /** Sentence Engine 教材（構文・意味ノード）をチャンクCSVとは別系統で取り込む（マージ・ID一致は上書き）。 */
+  importSentenceEngine: (
+    files: File[],
+  ) => Promise<{ added: number; updated: number; total: number; rejected: number }>
+  /** 内蔵の Sentence Engine デッキ（構文16・意味ノード50）を取込・更新する（旧版からの更新にも使える）。 */
+  importBuiltinSentenceEngine: () => Promise<{ added: number; updated: number }>
   /** アプリ内で作った教材（教材化・AI長文・手動追加）をデッキへ追記する。 */
   addPhrases: (newPhrases: Phrase[]) => Promise<number>
   /** 教材1件を上書き保存する（チャンク編集）。 */
@@ -251,6 +258,35 @@ export const useDeck = create<DeckState>((set, get) => ({
     }
     await get().load()
     return summary
+  },
+
+  importSentenceEngine: async (files) => {
+    const parsed = await parsePhrasesFromFiles(files)
+    const { cards, rejected } = filterSentenceEngineImport(parsed)
+    if (!cards.length) {
+      throw new Error(
+        'Structure / Message の行が見つかりませんでした。Type列を確認してください。',
+      )
+    }
+    await ensurePersisted(get)
+    // ID一致は上書き（SRS進捗は別ストアなので保持される）。added/updated は既存IDとの突き合わせ。
+    const existingIds = new Set((await getAllPhrases()).map((p) => p.id))
+    let added = 0
+    for (const c of cards) if (!existingIds.has(c.id)) added++
+    await putPhrases(cards)
+    await get().load()
+    return { added, updated: cards.length - added, total: parsed.length, rejected }
+  },
+
+  importBuiltinSentenceEngine: async () => {
+    const seed = await loadSentenceEngineSeed()
+    await ensurePersisted(get)
+    const existingIds = new Set((await getAllPhrases()).map((p) => p.id))
+    let added = 0
+    for (const c of seed) if (!existingIds.has(c.id)) added++
+    await putPhrases(seed)
+    await get().load()
+    return { added, updated: seed.length - added }
   },
 
   addPhrases: async (newPhrases) => {

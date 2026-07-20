@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { loadSentenceEngineSeed } from '../lib/sentenceEngine'
 import { useDeck } from '../store/useDeck'
 
 /**
- * Sentence Engine の内蔵デッキ（構文16・意味ノード12）を1タップで取り込むためのロジック。
+ * Sentence Engine の内蔵デッキ（構文16・意味ノード50）を1タップで取り込むためのロジック。
  * 取り込み後は渡された `restart` を呼んで useSession のキューを組み直し、
  * そのまま出題が始まるようにする（addPhrases → デッキ更新 → 次レンダーで restart）。
  *
@@ -29,8 +28,7 @@ export function useSeedDeck(restart: () => void) {
     setSeeding(true)
     setSeedError(null)
     try {
-      const seed = await loadSentenceEngineSeed()
-      await useDeck.getState().addPhrases(seed)
+      await useDeck.getState().importBuiltinSentenceEngine()
       pending.current = true
     } catch (e) {
       setSeedError(e instanceof Error ? e.message : String(e))
@@ -67,7 +65,7 @@ export default function SeedDeckEmpty({
         disabled={seeding}
         className="btn-primary px-5 py-3 font-medium disabled:opacity-60"
       >
-        {seeding ? '追加中…' : '📦 内蔵デッキを追加（構文16・意味ノード12）'}
+        {seeding ? '追加中…' : '📦 内蔵デッキを追加（構文16・意味ノード50）'}
       </button>
       {seedError && (
         <p className="text-sm text-carbon-error">追加に失敗しました: {seedError}</p>

@@ -31,6 +31,40 @@ export function excludeSentenceEngine(phrases: Phrase[]): Phrase[] {
 }
 
 /**
+ * CSV/ファイルから取り込んだ行のうち、Sentence Engine 教材として受理できるものだけを
+ * 抽出する純関数。取込口をチャンクCSVと分けるためのフィルタ。
+ *
+ * - `type` が Structure / Message 以外の行は受理せず rejected にカウントする。
+ * - **Structure**: 当てはめ例文（`examples`）が en/ja とも非空のものを1件以上持つ必要がある。
+ *   持たない行は「型として使えない」ため rejected 扱いにする。en/ja 揃った例文だけを残す。
+ * - **Message**: 意味ノードカードは examples を持たない設計なので、CSV の例文列に何か
+ *   入っていても捨てて空配列に正規化する。
+ * - `status` は CSV でユーザーが明示した値をそのまま尊重する（補正しない）。
+ */
+export function filterSentenceEngineImport(parsed: Phrase[]): {
+  cards: Phrase[]
+  rejected: number
+} {
+  const cards: Phrase[] = []
+  let rejected = 0
+  for (const p of parsed) {
+    if (isStructure(p)) {
+      const examples = p.examples.filter((e) => e.en.trim() !== '' && e.ja.trim() !== '')
+      if (examples.length === 0) {
+        rejected++
+        continue
+      }
+      cards.push({ ...p, examples })
+    } else if (isMessage(p)) {
+      cards.push({ ...p, examples: [] })
+    } else {
+      rejected++
+    }
+  }
+  return { cards, rejected }
+}
+
+/**
  * Sentence Engine の seed 教材（public/data/sentence-engine.json）を読み込む。
  * BASE_URL を尊重するので dev でも静的ホストでも動く。useDeck.loadSample() と同じ流儀。
  * 失敗時は throw する（呼び出し側でエラー表示する）。

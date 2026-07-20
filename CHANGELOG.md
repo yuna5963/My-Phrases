@@ -9,6 +9,31 @@
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-07-20
+
+**意味ノード50場面への拡充と、Sentence Engine デッキの別系統インポート/エクスポート。**
+構文カード・意味ノードカードを、チャンク（Notion往復用CSV）とは**別データ**として
+取り込み・書き出しできるようにした。
+
+### 追加
+- **内蔵デッキを66枚に拡充**（`public/data/sentence-engine.json`＝構文16・意味ノード**50**）。
+  意味ノードは12→50場面へ増やし、ビジネス・マーケティング中心に**38場面を追加**
+- **Sentence Engine デッキの別系統インポート/エクスポート**（設定「🧱 Sentence Engine デッキ
+  （構文・意味ノード）」）。取込は `type` が `Structure`／`Message` の行だけを受理する
+  マージ（ID一致は上書き・SRS進捗は保持）。CSVの列はチャンクCSVと同一で、判別は `Type` 列で行う
+  - **📥 CSVを取り込む**: `filterSentenceEngineImport`（純関数）で Structure/Message 以外を除外。
+    Structure は en/ja の揃った例文が1件以上必要、Message は examples を空配列に正規化
+  - **📤 CSVを書き出す**: Sentence Engine カードだけを `phrasesToCsv` で出力（`csvFilename('sentence-engine')`）
+  - **📦 内蔵デッキを取込・更新（構文16・意味ノード50）**: 内蔵の見本デッキを取込。旧28枚版
+    （構文16・意味ノード12）から50場面版への**更新導線**にもなる
+
+### 変更
+- **チャンクCSVの書き出しから Sentence Engine 教材を除外**（`excludeSentenceEngine`）。
+  構文・意味ノードの教材が Notion 往復用CSVに混ざらないようにした
+- `SeedDeckEmpty`（内蔵デッキの空表示）の取込ロジックを `importBuiltinSentenceEngine` に一本化
+  （文言も「構文16・意味ノード50」に更新。挙動は不変＝取込後そのまま出題）
+- ユニットテスト拡充（`filterSentenceEngineImport` の受理／型・examples 検証、seed 66枚検証。全240件）
+
 ## [1.3.0] - 2026-07-20
 
 **Sentence Engine（三層学習構造）— 学習OS化フェーズ2。** 「単語→文」ではなく
