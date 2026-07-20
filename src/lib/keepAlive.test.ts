@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   generateKeepAliveWav,
   isKeepAliveActive,
@@ -64,6 +64,82 @@ describe('generateKeepAliveWav', () => {
     }
     check(undefined)
     check({ freqHz: 50, seconds: 2 })
+  })
+})
+
+/** <audio> と Blob URL の最小スタブ。生成した要素を返す。 */
+function stubAudio() {
+  const listeners: Record<string, (() => void)[]> = {}
+  const el = {
+    loop: false,
+    volume: 0,
+    currentTime: 0,
+    playCount: 0,
+    play: vi.fn(async () => {
+      el.playCount++
+    }),
+    pause: vi.fn(() => {}),
+    addEventListener: (type: string, fn: () => void) => {
+      ;(listeners[type] ??= []).push(fn)
+    },
+    /** ブラウザ側の都合（音声フォーカス喪失など）で止まった状況を再現する。 */
+    firePause: () => listeners.pause?.forEach((fn) => fn()),
+  }
+  vi.stubGlobal(
+    'Audio',
+    class {
+      constructor() {
+        return el as unknown as HTMLAudioElement
+      }
+    },
+  )
+  vi.stubGlobal('URL', { ...URL, createObjectURL: () => 'blob:stub' })
+  vi.stubGlobal('MediaMetadata', class {})
+  return el
+}
+
+describe('ネイティブ用オプション', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.resetModules()
+  })
+
+  it('resilient: 外から止められても再生全体は止めず、鳴らし直す', async () => {
+    const el = stubAudio()
+    vi.resetModules()
+    const m = await import('./keepAlive')
+    const onExternalPause = vi.fn()
+    expect(await m.startKeepAlive({ title: 't', resilient: true, onExternalPause })).toBe(true)
+    expect(el.playCount).toBe(1)
+
+    el.firePause()
+    expect(onExternalPause).not.toHaveBeenCalled()
+    expect(m.isKeepAliveActive()).toBe(true)
+    expect(el.playCount).toBe(2)
+  })
+
+  it('resilient なし（Web）: 外から止められたら再生全体を止める', async () => {
+    const el = stubAudio()
+    vi.resetModules()
+    const m = await import('./keepAlive')
+    const onExternalPause = vi.fn()
+    expect(await m.startKeepAlive({ title: 't', onExternalPause })).toBe(true)
+
+    el.firePause()
+    expect(onExternalPause).toHaveBeenCalledTimes(1)
+    expect(m.isKeepAliveActive()).toBe(false)
+  })
+
+  it('useMediaSession: false のとき Media Session を触らない', async () => {
+    stubAudio()
+    const mediaSession = { playbackState: 'none', metadata: null, setActionHandler: vi.fn() }
+    vi.stubGlobal('navigator', { mediaSession })
+    vi.resetModules()
+    const m = await import('./keepAlive')
+    await m.startKeepAlive({ title: 't', resilient: true, useMediaSession: false })
+    expect(mediaSession.setActionHandler).not.toHaveBeenCalled()
+    expect(mediaSession.playbackState).toBe('none')
+    expect(mediaSession.metadata).toBe(null)
   })
 })
 
