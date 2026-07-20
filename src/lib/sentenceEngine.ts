@@ -1,0 +1,98 @@
+import type { Phrase } from '../types'
+
+/**
+ * Sentence Engine 専用の Type 値。長文音読（Long Reading）と同じ発想で、
+ * 「特殊 type は通常の練習プール・一覧・集計から除外し、専用モードでだけ扱う」。
+ *
+ * - Structure（構文カード）: 意味の骨格になる型（"X means that Y." など）。
+ *   examples に 1〜5 個の当てはめ例文を持つ。
+ * - Message（意味ノードカード）: 主張→根拠→補足のような複数ノードを改行で並べた
+ *   ミニ・メッセージ。en/ja とも改行区切りのノード列で、examples は持たない（空配列）。
+ */
+export const STRUCTURE_TYPE = 'Structure'
+export const MESSAGE_TYPE = 'Message'
+
+export function isStructure(p: Phrase): boolean {
+  return p.type === STRUCTURE_TYPE
+}
+
+export function isMessage(p: Phrase): boolean {
+  return p.type === MESSAGE_TYPE
+}
+
+/** Sentence Engine 教材（構文カード or 意味ノードカード）かどうか。 */
+export function isSentenceEngine(p: Phrase): boolean {
+  return isStructure(p) || isMessage(p)
+}
+
+/** Sentence Engine 以外で扱う通常フレーズ（Structure/Message を除外）。 */
+export function excludeSentenceEngine(phrases: Phrase[]): Phrase[] {
+  return phrases.filter((p) => !isSentenceEngine(p))
+}
+
+/**
+ * Sentence Engine の seed 教材（public/data/sentence-engine.json）を読み込む。
+ * BASE_URL を尊重するので dev でも静的ホストでも動く。useDeck.loadSample() と同じ流儀。
+ * 失敗時は throw する（呼び出し側でエラー表示する）。
+ */
+export async function loadSentenceEngineSeed(): Promise<Phrase[]> {
+  const url = `${import.meta.env.BASE_URL}data/sentence-engine.json`
+  const res = await fetch(url, { cache: 'no-cache' })
+  if (!res.ok) throw new Error(`sentence-engine.json ${res.status}`)
+  return (await res.json()) as Phrase[]
+}
+
+/**
+ * 起動レイテンシ（和訳表示→英文開示までの時間）の計測器。
+ *
+ * Sentence Engine の狙いは「日本語で完成文を作らず、和訳を見た瞬間に英語の骨格へ
+ * 飛び込めるか」。その反応速度＝ Clause launch latency を KPI の材料として測る。
+ *
+ * 使い方: 新しい和訳が表示されたら shown()、ユーザーが英文を開示したら revealed()。
+ * 直前の shown→revealed の区間だけを1件として記録する。次カードへ移る時は reset()。
+ * 純粋（副作用は内部状態のみ）なのでテストしやすい。now は省略時 performance.now()。
+ */
+export interface LatencyMeter {
+  /** 新しい項目（和訳）が表示された。 */
+  shown(now?: number): void
+  /** 英文が開示された（直前の shown からの区間を記録）。 */
+  revealed(now?: number): void
+  /** 記録済み区間の中央値ms（0件なら undefined）。 */
+  median(): number | undefined
+  /** 次のカードへ（区間リストを空に）。 */
+  reset(): void
+}
+
+function nowMs(now?: number): number {
+  return now ?? performance.now()
+}
+
+export function createLatencyMeter(): LatencyMeter {
+  // 直近の shown 時刻（未表示なら null）。開示せずに再度 shown が来たら上書き＝前の計測は破棄。
+  let shownAt: number | null = null
+  // 記録済みの区間（ms）。
+  const spans: number[] = []
+
+  return {
+    shown(now?: number) {
+      shownAt = nowMs(now)
+    },
+    revealed(now?: number) {
+      // shown を経ていない開示（初期状態や、開示後にもう一度 revealed）は無視する。
+      if (shownAt === null) return
+      spans.push(nowMs(now) - shownAt)
+      shownAt = null
+    },
+    median() {
+      if (spans.length === 0) return undefined
+      const sorted = [...spans].sort((a, b) => a - b)
+      const mid = Math.floor(sorted.length / 2)
+      // 偶数個なら中央2値の平均、奇数個なら中央の1値。
+      return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid]
+    },
+    reset() {
+      shownAt = null
+      spans.length = 0
+    },
+  }
+}

@@ -58,7 +58,7 @@ interface DeckState {
   notePlayback: (seconds: number) => Promise<void>
   /** チャット練習の完了（まとめ）を学習ログに記録する。完了＝当日の最低ライン達成でストリークを維持する。 */
   noteChatComplete: (targetChunkIds: string[], usedChunkIds: string[], userMessageCount: number) => Promise<void>
-  grade: (id: string, g: Grade, mode?: PracticeMode) => Promise<void>
+  grade: (id: string, g: Grade, mode?: PracticeMode, latencyMs?: number) => Promise<void>
   setLearned: (id: string, learned: boolean) => Promise<void>
   reset: () => Promise<void>
   importFiles: (files: File[], mode?: ImportMode) => Promise<ImportSummary>
@@ -279,7 +279,7 @@ export const useDeck = create<DeckState>((set, get) => ({
     await get().load()
   },
 
-  grade: async (id, g, mode) => {
+  grade: async (id, g, mode, latencyMs) => {
     const current = get().progress[id]
     if (!current) return
     const updated = applyGrade(current, g)
@@ -292,6 +292,7 @@ export const useDeck = create<DeckState>((set, get) => ({
       boxFrom: current.box,
       boxTo: updated.box,
       ...(mode ? { mode } : {}),
+      ...(latencyMs !== undefined ? { latencyMs: Math.round(latencyMs) } : {}),
     })
     let logged = false
     try {

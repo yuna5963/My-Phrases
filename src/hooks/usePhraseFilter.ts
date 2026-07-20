@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useDeck } from '../store/useDeck'
 import { isLongReading } from '../lib/longReading'
+import { isSentenceEngine } from '../lib/sentenceEngine'
 import type { Phrase } from '../types'
 
 export type FacetKey = 'type' | 'category' | 'level' | 'priority'
@@ -45,8 +46,11 @@ export interface PhraseFilter {
 export function usePhraseFilter(phrases: Phrase[]): PhraseFilter {
   const progress = useDeck((s) => s.progress)
 
-  // 長文音読は一覧（チャンク一覧・例文一覧）にもタイプ絞り込みにも出さない。
-  const base = useMemo(() => phrases.filter((p) => !isLongReading(p)), [phrases])
+  // 長文音読・Sentence Engine は一覧（チャンク一覧・例文一覧）にもタイプ絞り込みにも出さない。
+  const base = useMemo(
+    () => phrases.filter((p) => !isLongReading(p) && !isSentenceEngine(p)),
+    [phrases],
+  )
 
   const [q, setQ] = useState('')
   const [unsure, setUnsure] = useState(false)

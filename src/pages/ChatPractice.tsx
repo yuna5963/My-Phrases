@@ -6,6 +6,7 @@ import { useSettings } from '../store/useSettings'
 import { useChat } from '../store/useChat'
 import { buildSession } from '../lib/session'
 import { isLongReading } from '../lib/longReading'
+import { isSentenceEngine } from '../lib/sentenceEngine'
 import { stripThoughts } from '../lib/chatApi'
 import type { ChatFocus } from '../lib/coachPrompt'
 import { stockKey, useStock } from '../store/useStock'
@@ -57,6 +58,7 @@ export default function ChatPractice() {
     const pool = phrases.filter(
       (p) =>
         !isLongReading(p) &&
+        !isSentenceEngine(p) &&
         (includeStatuses.length === 0 || includeStatuses.includes(p.status)),
     )
     const progress = useDeck.getState().progress
