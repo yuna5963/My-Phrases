@@ -13,6 +13,7 @@ import {
   type TtsVoice,
 } from '../lib/tts'
 import { csvFilename, phrasesToCsv } from '../lib/export'
+import { excludeSentenceEngine, isSentenceEngine } from '../lib/sentenceEngine'
 import { shareOrDownloadCsv, shareOrDownloadText } from '../lib/share'
 import {
   backupFilename,
@@ -33,10 +34,13 @@ export default function Settings() {
   const s = useSettings()
   const reset = useDeck((d) => d.reset)
   const importFiles = useDeck((d) => d.importFiles)
+  const importSentenceEngine = useDeck((d) => d.importSentenceEngine)
+  const importBuiltinSentenceEngine = useDeck((d) => d.importBuiltinSentenceEngine)
   const clearImported = useDeck((d) => d.clearImported)
   const source = useDeck((d) => d.source)
   const phrases = useDeck((d) => d.phrases)
   const phraseCount = phrases.length
+  const seCount = phrases.filter(isSentenceEngine).length
   const [voices, setVoices] = useState<TtsVoice[]>([])
   const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const [exportMsg, setExportMsg] = useState<string | null>(null)
@@ -50,7 +54,12 @@ export default function Settings() {
   const [voiceStatus, setVoiceStatus] = useState(getVoiceStatus())
   const [testMsg, setTestMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const [backupMsg, setBackupMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [seImportMsg, setSeImportMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [seExportMsg, setSeExportMsg] = useState<string | null>(null)
+  const [seSeedMsg, setSeSeedMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [seBusy, setSeBusy] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const seFileRef = useRef<HTMLInputElement>(null)
   const backupRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -116,11 +125,60 @@ export default function Settings() {
 
   const exportDeck = async () => {
     setExportMsg(null)
-    const outcome = await shareOrDownloadCsv(csvFilename('deck'), phrasesToCsv(phrases))
+    // Sentence Engine 教材（構文・意味ノード）はチャンクCSVに混ぜない（Notion往復を汚さない）。
+    const outcome = await shareOrDownloadCsv(
+      csvFilename('deck'),
+      phrasesToCsv(excludeSentenceEngine(phrases)),
+    )
     if (outcome === 'shared') setExportMsg('✓ 共有しました。')
     else if (outcome === 'downloaded') setExportMsg('✓ CSVをダウンロードしました。')
     else if (outcome === 'saved') setExportMsg('✓ スマホの Documents フォルダに保存しました。')
     else if (outcome === 'failed') setExportMsg('⚠ 保存に失敗しました。もう一度お試しください。')
+  }
+
+  const onPickSeFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    setSeBusy(true)
+    setSeImportMsg(null)
+    try {
+      const r = await importSentenceEngine(Array.from(files))
+      setSeImportMsg({
+        ok: true,
+        text:
+          `✓ 追加 ${r.added}件・更新 ${r.updated}件` +
+          (r.rejected > 0 ? `（対象外の行 ${r.rejected}件はスキップ）` : ''),
+      })
+    } catch (e) {
+      setSeImportMsg({ ok: false, text: (e as Error).message })
+    } finally {
+      setSeBusy(false)
+      if (seFileRef.current) seFileRef.current.value = ''
+    }
+  }
+
+  const exportSentenceEngine = async () => {
+    setSeExportMsg(null)
+    const outcome = await shareOrDownloadCsv(
+      csvFilename('sentence-engine'),
+      phrasesToCsv(phrases.filter(isSentenceEngine)),
+    )
+    if (outcome === 'shared') setSeExportMsg('✓ 共有しました。')
+    else if (outcome === 'downloaded') setSeExportMsg('✓ CSVをダウンロードしました。')
+    else if (outcome === 'saved') setSeExportMsg('✓ スマホの Documents フォルダに保存しました。')
+    else if (outcome === 'failed') setSeExportMsg('⚠ 保存に失敗しました。もう一度お試しください。')
+  }
+
+  const addBuiltinSe = async () => {
+    setSeBusy(true)
+    setSeSeedMsg(null)
+    try {
+      const r = await importBuiltinSentenceEngine()
+      setSeSeedMsg({ ok: true, text: `✓ 追加 ${r.added}件・更新 ${r.updated}件` })
+    } catch (e) {
+      setSeSeedMsg({ ok: false, text: (e as Error).message })
+    } finally {
+      setSeBusy(false)
+    }
   }
 
   const exportFullBackup = async () => {
@@ -470,10 +528,11 @@ export default function Settings() {
           onClick={exportDeck}
           className="btn-tertiary w-full px-4 py-2.5 text-sm font-medium"
         >
-          📤 デッキをCSVでバックアップ（{phraseCount}件）
+          📤 デッキをCSVでバックアップ（{phraseCount - seCount}件）
         </button>
         <p className="text-xs t-subtle">
           ステータスやカナも含めた全列を出力します。このCSVはそのまま再取り込みできます。
+          構文・意味ノード（Sentence Engine）はこのチャンクCSVには含めません（下の専用セクションで書き出し）。
         </p>
         {exportMsg && <p className="text-sm text-carbon-success">{exportMsg}</p>}
 
@@ -488,6 +547,67 @@ export default function Settings() {
           >
             取り込みデータを消去してサンプルに戻す
           </button>
+        )}
+      </Section>
+
+      <Section title="🧱 Sentence Engine デッキ（構文・意味ノード）">
+        <p className="text-sm t-muted">
+          構文ドリル・意味ノード生成の教材は、チャンク（Notion往復用CSV）とは
+          <strong>別データとして管理</strong>します。取り込みは<strong>マージ</strong>
+          （ID一致は上書き・SRS進捗は保持）。CSVの列はチャンクCSVと同じで、
+          <code className="rounded-none bg-carbon-surface px-1 dark:bg-carbon-line-dark">Type</code>
+          列が
+          <code className="rounded-none bg-carbon-surface px-1 dark:bg-carbon-line-dark">Structure</code>
+          /
+          <code className="rounded-none bg-carbon-surface px-1 dark:bg-carbon-line-dark">Message</code>
+          の行だけを取り込みます（現在 {seCount}件）。
+        </p>
+
+        <input
+          ref={seFileRef}
+          type="file"
+          accept=".zip,.csv,.md,.markdown,.txt"
+          multiple
+          className="hidden"
+          onChange={(e) => onPickSeFiles(e.target.files)}
+        />
+        <button
+          disabled={seBusy}
+          onClick={() => seFileRef.current?.click()}
+          className="btn-primary w-full px-4 py-3 font-medium"
+        >
+          {seBusy ? '取り込み中…' : '📥 CSVを取り込む（.csv / .zip）'}
+        </button>
+        {seImportMsg && (
+          <p className={`text-sm ${seImportMsg.ok ? 'text-carbon-success' : 'text-carbon-error'}`}>
+            {seImportMsg.text}
+          </p>
+        )}
+
+        <button
+          onClick={exportSentenceEngine}
+          disabled={seCount === 0}
+          className="btn-tertiary w-full px-4 py-2.5 text-sm font-medium disabled:opacity-60"
+        >
+          📤 CSVを書き出す（{seCount}件）
+        </button>
+        {seExportMsg && <p className="text-sm text-carbon-success">{seExportMsg}</p>}
+
+        <button
+          disabled={seBusy}
+          onClick={addBuiltinSe}
+          className="btn-tertiary w-full px-4 py-2.5 text-sm font-medium disabled:opacity-60"
+        >
+          📦 内蔵デッキを取込・更新（構文16・意味ノード50）
+        </button>
+        <p className="text-xs t-subtle">
+          内蔵の見本デッキを取り込みます。旧28枚版（構文16・意味ノード12）から
+          50場面版へ更新するときもこのボタンで上書きできます。
+        </p>
+        {seSeedMsg && (
+          <p className={`text-sm ${seSeedMsg.ok ? 'text-carbon-success' : 'text-carbon-error'}`}>
+            {seSeedMsg.text}
+          </p>
         )}
       </Section>
 

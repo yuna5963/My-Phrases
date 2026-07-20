@@ -64,6 +64,6 @@ export function stockToCsv(items: StockItem[]): string {
   ])
 }
 
-export function csvFilename(kind: 'deck' | 'stock'): string {
+export function csvFilename(kind: 'deck' | 'stock' | 'sentence-engine'): string {
   return `my-phrases-${kind}-${todayStr().replace(/-/g, '')}.csv`
 }

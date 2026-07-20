@@ -1,9 +1,31 @@
 import { describe, expect, it } from 'vitest'
-import { createLatencyMeter, STRUCTURE_TYPE, MESSAGE_TYPE } from './sentenceEngine'
+import {
+  createLatencyMeter,
+  filterSentenceEngineImport,
+  STRUCTURE_TYPE,
+  MESSAGE_TYPE,
+} from './sentenceEngine'
 import seedData from '../../public/data/sentence-engine.json'
-import type { Phrase } from '../types'
+import type { Example, Phrase } from '../types'
 
 const seed = seedData as unknown as Phrase[]
+
+/** テスト用に最小限の Phrase を作る（未指定列は空でよい）。 */
+function phrase(over: Partial<Phrase> & Pick<Phrase, 'type'>): Phrase {
+  return {
+    id: over.id ?? 'p_test',
+    en: over.en ?? 'en',
+    ja: over.ja ?? 'ja',
+    examples: over.examples ?? ([] as Example[]),
+    type: over.type,
+    category: over.category ?? '',
+    level: over.level ?? '',
+    priority: over.priority ?? '',
+    note: over.note ?? '',
+    status: over.status ?? '未着手',
+    createdTime: over.createdTime ?? '',
+  }
+}
 
 describe('createLatencyMeter', () => {
   it('shown→revealed の各区間から中央値を出す（奇数個）', () => {
@@ -64,18 +86,69 @@ describe('createLatencyMeter', () => {
   })
 })
 
+describe('filterSentenceEngineImport', () => {
+  it('Structure / Message の行だけ受理し、他の type は rejected', () => {
+    const { cards, rejected } = filterSentenceEngineImport([
+      phrase({ type: 'Structure', id: 's1', examples: [{ en: 'A', ja: 'あ' }] }),
+      phrase({ type: 'Message', id: 'm1' }),
+      phrase({ type: 'Chunk', id: 'c1' }),
+      phrase({ type: '', id: 'x1' }),
+    ])
+    expect(cards.map((c) => c.id)).toEqual(['s1', 'm1'])
+    expect(rejected).toBe(2)
+  })
+
+  it('Structure は en/ja の揃った example が1件以上必要（無ければ rejected）', () => {
+    const { cards, rejected } = filterSentenceEngineImport([
+      phrase({ type: 'Structure', id: 'ok', examples: [{ en: 'A', ja: 'あ' }] }),
+      phrase({ type: 'Structure', id: 'noex', examples: [] }),
+      phrase({ type: 'Structure', id: 'jaonly', examples: [{ en: '', ja: 'あ' }] }),
+    ])
+    expect(cards.map((c) => c.id)).toEqual(['ok'])
+    expect(rejected).toBe(2)
+  })
+
+  it('Structure は en/ja の揃わない example を捨てて残りを保持する', () => {
+    const { cards } = filterSentenceEngineImport([
+      phrase({
+        type: 'Structure',
+        id: 's',
+        examples: [
+          { en: 'A', ja: 'あ' },
+          { en: 'B', ja: '' }, // ja 空 → 捨てる
+        ],
+      }),
+    ])
+    expect(cards[0].examples).toEqual([{ en: 'A', ja: 'あ' }])
+  })
+
+  it('Message は examples を空配列に正規化する（列に何か入っていても捨てる）', () => {
+    const { cards } = filterSentenceEngineImport([
+      phrase({ type: 'Message', id: 'm', examples: [{ en: 'A', ja: 'あ' }] }),
+    ])
+    expect(cards[0].examples).toEqual([])
+  })
+
+  it('status は CSV の値をそのまま尊重する（補正しない）', () => {
+    const { cards } = filterSentenceEngineImport([
+      phrase({ type: 'Message', id: 'm', status: '未着手' }),
+    ])
+    expect(cards[0].status).toBe('未着手')
+  })
+})
+
 describe('sentence-engine.json（seed 教材）', () => {
-  it('全28枚・IDは一意', () => {
-    expect(seed).toHaveLength(28)
+  it('全66枚・IDは一意', () => {
+    expect(seed).toHaveLength(66)
     const ids = seed.map((p) => p.id)
     expect(new Set(ids).size).toBe(ids.length)
   })
 
-  it('type は Structure / Message のみ・内訳は 16 / 12', () => {
+  it('type は Structure / Message のみ・内訳は 16 / 50', () => {
     const structures = seed.filter((p) => p.type === STRUCTURE_TYPE)
     const messages = seed.filter((p) => p.type === MESSAGE_TYPE)
     expect(structures).toHaveLength(16)
-    expect(messages).toHaveLength(12)
+    expect(messages).toHaveLength(50)
     // Structure/Message 以外の type は存在しない
     expect(structures.length + messages.length).toBe(seed.length)
   })
@@ -100,11 +173,17 @@ describe('sentence-engine.json（seed 教材）', () => {
     }
   })
 
-  it('Message: id は msg-NN 形式・examples は空配列', () => {
+  it('Message: id は msg-01〜msg-50 の連番・examples は空配列・en/ja は2行以上のノード列', () => {
     const messages = seed.filter((p) => p.type === MESSAGE_TYPE)
+    const ids = messages.map((p) => p.id)
+    const expected = Array.from({ length: 50 }, (_, i) => `msg-${String(i + 1).padStart(2, '0')}`)
+    expect([...ids].sort()).toEqual(expected)
     for (const p of messages) {
       expect(p.id).toMatch(/^msg-\d{2}$/)
       expect(p.examples).toEqual([])
+      // 意味ノードカードは改行区切りのノード列（主張→根拠→補足…）なので en/ja とも2行以上。
+      expect(p.en.split('\n').length).toBeGreaterThanOrEqual(2)
+      expect(p.ja.split('\n').length).toBeGreaterThanOrEqual(2)
     }
   })
 })
