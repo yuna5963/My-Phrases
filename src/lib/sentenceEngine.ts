@@ -67,6 +67,14 @@ function nowMs(now?: number): number {
   return now ?? performance.now()
 }
 
+/** 数値配列の中央値（偶数個は中央2値の平均）。空なら undefined。 */
+export function medianMs(values: number[]): number | undefined {
+  if (values.length === 0) return undefined
+  const sorted = [...values].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid]
+}
+
 export function createLatencyMeter(): LatencyMeter {
   // 直近の shown 時刻（未表示なら null）。開示せずに再度 shown が来たら上書き＝前の計測は破棄。
   let shownAt: number | null = null
@@ -84,11 +92,8 @@ export function createLatencyMeter(): LatencyMeter {
       shownAt = null
     },
     median() {
-      if (spans.length === 0) return undefined
-      const sorted = [...spans].sort((a, b) => a - b)
-      const mid = Math.floor(sorted.length / 2)
       // 偶数個なら中央2値の平均、奇数個なら中央の1値。
-      return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid]
+      return medianMs(spans)
     },
     reset() {
       shownAt = null

@@ -8,6 +8,8 @@ import SupportBanner from './components/SupportBanner'
 import Home from './pages/Home'
 import Daily from './pages/Daily'
 import Compose from './pages/Compose'
+import StructureDrill from './pages/StructureDrill'
+import MessageDrill from './pages/MessageDrill'
 import LongReading from './pages/LongReading'
 import LongReadingCreate from './pages/LongReadingCreate'
 import Cloze from './pages/Cloze'
@@ -83,6 +85,8 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/daily" element={<Daily />} />
             <Route path="/compose" element={<Compose />} />
+            <Route path="/structure" element={<StructureDrill />} />
+            <Route path="/message" element={<MessageDrill />} />
             <Route path="/long-reading" element={<LongReading />} />
             <Route path="/long-reading/new" element={<LongReadingCreate />} />
             <Route path="/cloze" element={<Cloze />} />

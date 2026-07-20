@@ -4,9 +4,19 @@ import type { Tally } from '../hooks/useSession'
 interface Props {
   tally: Tally
   onRestart: () => void
+  /** 起動レイテンシ（和訳表示→英文開示の中央値ms）。Sentence Engine の2ドリルのみ渡す。 */
+  latencyMedianMs?: number
 }
 
-export default function SessionSummary({ tally, onRestart }: Props) {
+/** 起動レイテンシの目安（◎3秒以内 / ○5秒以内 / それ以外は目安5秒）。 */
+function latencyHint(ms: number): string {
+  const sec = ms / 1000
+  if (sec <= 3) return '◎ 3秒以内'
+  if (sec <= 5) return '○ 5秒以内'
+  return '目安は5秒'
+}
+
+export default function SessionSummary({ tally, onRestart, latencyMedianMs }: Props) {
   const navigate = useNavigate()
   const total = tally.good + tally.vague + tally.bad
   return (
@@ -14,6 +24,12 @@ export default function SessionSummary({ tally, onRestart }: Props) {
       <div className="text-5xl">🎉</div>
       <h2 className="text-xl font-normal">セッション完了！</h2>
       <p className="t-muted text-sm">{total} 回採点しました</p>
+      {latencyMedianMs != null && (
+        <p className="t-muted text-sm">
+          ⚡ 起動 {(latencyMedianMs / 1000).toFixed(1)}秒
+          <span className="t-subtle"> ／ {latencyHint(latencyMedianMs)}</span>
+        </p>
+      )}
       <div className="grid w-full grid-cols-3 gap-3">
         <div className="tile p-4">
           <div className="display text-2xl text-carbon-success">{tally.good}</div>

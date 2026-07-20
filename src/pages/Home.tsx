@@ -108,6 +108,11 @@ export default function Home() {
             <div className="t-muted mt-0.5 text-xs">定着した</div>
           </div>
         </div>
+        {today.latencyMedianMs != null && (
+          <p className="t-subtle mt-3 text-center text-xs">
+            ⚡ 英文起動の速さ（中央値） {(today.latencyMedianMs / 1000).toFixed(1)}秒 / 目標5秒→3秒
+          </p>
+        )}
       </section>
 
       <section className="grid grid-cols-3 gap-3">
@@ -136,6 +141,18 @@ export default function Home() {
       </section>
 
       <section className="space-y-3">
+        <ModeCard
+          emoji="🧱"
+          title="構文ドリル"
+          desc="一つの構文を変形して反射化する"
+          onClick={() => navigate('/structure')}
+        />
+        <ModeCard
+          emoji="🧠"
+          title="意味ノード生成"
+          desc="意味の骨子から英文を組み立てる"
+          onClick={() => navigate('/message')}
+        />
         <ModeCard
           emoji="⚡"
           title="瞬間英作文"

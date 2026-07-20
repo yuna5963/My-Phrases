@@ -7,6 +7,7 @@ import {
   eventsInRange,
   eventsOn,
   gradeCount,
+  launchLatencyMedian,
   minimumLineMet,
   outputCount,
   playSeconds,
@@ -17,6 +18,13 @@ const D = (s: string) => new Date(`${s}T09:00:00`)
 
 function grade(date: string, chunkId: string, boxFrom: number, boxTo: number): LearningEvent {
   return makeEvent('grade', { chunkId, grade: 'good', boxFrom, boxTo }, D(date))
+}
+function gradeLatency(date: string, chunkId: string, latencyMs: number): LearningEvent {
+  return makeEvent(
+    'grade',
+    { chunkId, grade: 'good', boxFrom: 0, boxTo: 1, mode: 'structure', latencyMs },
+    D(date),
+  )
 }
 function chat(date: string, targets: string[], used: string[], msgs: number): LearningEvent {
   return makeEvent(
@@ -101,20 +109,55 @@ describe('minimumLineMet', () => {
   })
 })
 
+describe('launchLatencyMedian', () => {
+  it('returns null when there are no latency-tagged grades', () => {
+    expect(launchLatencyMedian([])).toBeNull()
+    // latencyMs の無い grade は対象外
+    expect(launchLatencyMedian([grade('2026-07-17', 'a', 0, 1)])).toBeNull()
+  })
+  it('takes the middle value for an odd count', () => {
+    const evs = [
+      gradeLatency('2026-07-17', 'a', 5000),
+      gradeLatency('2026-07-17', 'b', 2000),
+      gradeLatency('2026-07-17', 'c', 3000),
+    ]
+    expect(launchLatencyMedian(evs)).toBe(3000)
+  })
+  it('averages the middle two for an even count', () => {
+    const evs = [
+      gradeLatency('2026-07-17', 'a', 2000),
+      gradeLatency('2026-07-17', 'b', 4000),
+      gradeLatency('2026-07-17', 'c', 6000),
+      gradeLatency('2026-07-17', 'd', 8000),
+    ]
+    expect(launchLatencyMedian(evs)).toBe(5000) // (4000+6000)/2
+  })
+  it('ignores grades without latencyMs mixed in', () => {
+    const evs = [
+      grade('2026-07-17', 'x', 0, 1), // latencyMs 無し → 除外
+      gradeLatency('2026-07-17', 'a', 3000),
+      gradeLatency('2026-07-17', 'b', 5000),
+    ]
+    expect(launchLatencyMedian(evs)).toBe(4000) // (3000+5000)/2、除外後は2件
+  })
+})
+
 describe('computeDailySummary', () => {
   it('summarizes a single day', () => {
     const evs = [
       grade('2026-07-17', 'a', 3, 4),
       chat('2026-07-17', ['a'], ['a'], 2),
       play('2026-07-17', 60),
+      gradeLatency('2026-07-17', 'q', 4000),
       grade('2026-07-16', 'z', 0, 1), // other day, ignored
     ]
     const s = computeDailySummary(evs, '2026-07-17')
-    expect(s.graded).toBe(1)
-    expect(s.outputs).toBe(1 + 2)
+    expect(s.graded).toBe(2) // grade + gradeLatency
+    expect(s.outputs).toBe(2 + 2)
     expect(s.playSeconds).toBe(60)
     expect(s.retained).toBe(1)
     expect(s.minimumMet).toBe(true)
+    expect(s.latencyMedianMs).toBe(4000)
   })
 })
 
