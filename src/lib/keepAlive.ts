@@ -63,6 +63,17 @@ export interface KeepAliveMeta {
 export interface KeepAliveOptions extends KeepAliveMeta {
   /** 通知の⏸・イヤホン抜去・他アプリの音声フォーカス奪取などで止められたとき。 */
   onExternalPause?: () => void
+  /**
+   * ネイティブアプリ用。外からキープアライブ音声だけが止められても再生全体は
+   * 止めず、鳴らし直して凍結防止を続ける（停止操作はFGSの通知ではなくアプリ内の
+   * ⏸で行うため。Webでは通知の⏸＝停止なので false のまま）。
+   */
+  resilient?: boolean
+  /**
+   * Media Session（通知/ロック画面の表示）を使うか。ネイティブアプリでは
+   * フォアグラウンドサービスの通知が同じ役目を持つので false。
+   */
+  useMediaSession?: boolean
 }
 
 let audio: HTMLAudioElement | null = null
@@ -70,9 +81,15 @@ let blobUrl: string | null = null
 let active = false
 let stoppingInternally = false
 let externalPauseHandler: (() => void) | undefined
+let resilient = false
+let useMediaSession = true
+// resilient モードの鳴らし直し回数。鳴らせない状況（音声出力の喪失など）で
+// 無限リトライにならないよう上限を置く。
+let resumeAttempts = 0
+const MAX_RESUME_ATTEMPTS = 10
 
 function mediaSessionOf(): MediaSession | null {
-  return typeof navigator !== 'undefined' && 'mediaSession' in navigator
+  return useMediaSession && typeof navigator !== 'undefined' && 'mediaSession' in navigator
     ? navigator.mediaSession
     : null
 }
@@ -139,6 +156,9 @@ function teardownMediaSession() {
 export async function startKeepAlive(opts: KeepAliveOptions): Promise<boolean> {
   if (typeof Audio === 'undefined') return false
   externalPauseHandler = opts.onExternalPause
+  resilient = opts.resilient ?? false
+  useMediaSession = opts.useMediaSession ?? true
+  resumeAttempts = 0
   if (active && audio) {
     setMetadata(opts)
     return true
@@ -153,12 +173,16 @@ export async function startKeepAlive(opts: KeepAliveOptions): Promise<boolean> {
     // 「無音タブ」と判定されてハックが無効になる恐れがある）。
     audio.volume = 1
     audio.addEventListener('pause', () => {
-      if (active && !stoppingInternally) {
-        // 通知の⏸・イヤホン抜去・音声フォーカス喪失など外からの停止。
-        const handler = externalPauseHandler
-        stopKeepAlive()
-        handler?.()
+      if (!active || stoppingInternally) return
+      if (resilient) {
+        // ネイティブ: キープアライブが止まると凍結防止が静かに失われるので鳴らし直す。
+        if (resumeAttempts++ < MAX_RESUME_ATTEMPTS) void audio?.play().catch(() => {})
+        return
       }
+      // 通知の⏸・イヤホン抜去・音声フォーカス喪失など外からの停止。
+      const handler = externalPauseHandler
+      stopKeepAlive()
+      handler?.()
     })
   }
   try {
@@ -191,7 +215,10 @@ export function stopKeepAlive(): void {
   active = false
   stoppingInternally = false
   externalPauseHandler = undefined
+  resilient = false
+  resumeAttempts = 0
   teardownMediaSession()
+  useMediaSession = true
 }
 
 export function isKeepAliveActive(): boolean {
