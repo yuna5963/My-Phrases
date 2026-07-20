@@ -31,12 +31,19 @@ export function chatMessageCount(events: LearningEvent[]): number {
   return n
 }
 
+/** 意味ノード英語思考で組み立てた英文の総数。 */
+export function thinkSentenceCount(events: LearningEvent[]): number {
+  let n = 0
+  for (const e of events) if (e.type === 'think') n += e.sentenceCount
+  return n
+}
+
 /**
- * アウトプット数 = 採点回答数 ＋ チャット送信数。
+ * アウトプット数 = 採点回答数 ＋ チャット送信数 ＋ 英語思考の英文数。
  * 「実際に発話した数」はマイク無しで測れないため、能動的に英語を作った回数の代理指標。
  */
 export function outputCount(events: LearningEvent[]): number {
-  return gradeCount(events) + chatMessageCount(events)
+  return gradeCount(events) + chatMessageCount(events) + thinkSentenceCount(events)
 }
 
 /** 連続再生の合計秒数。 */
@@ -78,10 +85,12 @@ export function chatUsedRate(events: LearningEvent[]): { used: number; target: n
 
 /**
  * その日が「最低ライン」を満たしたか（ゼロの日を作らせないストリーク判定）。
- * 採点・チャットが1件でもあれば達成。無くても連続再生が5分を超えていれば達成。
+ * 採点・チャット・英語思考が1件でもあれば達成。無くても連続再生が5分を超えていれば達成。
  */
 export function minimumLineMet(dayEvents: LearningEvent[]): boolean {
-  const active = dayEvents.some((e) => e.type === 'grade' || e.type === 'chat')
+  const active = dayEvents.some(
+    (e) => e.type === 'grade' || e.type === 'chat' || e.type === 'think',
+  )
   return active || playSeconds(dayEvents) >= MIN_LINE_PLAY_SECONDS
 }
 

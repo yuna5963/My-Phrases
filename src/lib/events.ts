@@ -4,7 +4,7 @@
 import type { Grade } from '../types'
 
 /** 記録するアクションの種類。 */
-export type EventType = 'grade' | 'chat' | 'play' | 'materialize'
+export type EventType = 'grade' | 'chat' | 'play' | 'materialize' | 'think'
 
 /** 採点が発生したモード（瞬間英作文・穴埋め等の内訳把握用）。 */
 export type PracticeMode = 'daily' | 'compose' | 'cloze' | 'repro' | 'structure' | 'message'
@@ -56,7 +56,18 @@ export interface MaterializeEvent extends BaseEvent {
   addedCount: number
 }
 
-export type LearningEvent = GradeEvent | ChatEvent | PlayEvent | MaterializeEvent
+/** 意味ノード英語思考（/think）を1本やり切った（Step4の英文チェック完了）。 */
+export interface ThinkEvent extends BaseEvent {
+  type: 'think'
+  /** 確定した意味ノード数。 */
+  nodeCount: number
+  /** 学習者が組み立てた英文数（能動的に英語を作った量の代理指標）。 */
+  sentenceCount: number
+  /** 意味ノードカードとしてデッキ保存したか。 */
+  savedCard: boolean
+}
+
+export type LearningEvent = GradeEvent | ChatEvent | PlayEvent | MaterializeEvent | ThinkEvent
 
 /** ランダムID（crypto.randomUUID があれば使い、無ければフォールバック）。 */
 function newId(): string {

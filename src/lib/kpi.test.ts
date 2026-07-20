@@ -36,6 +36,9 @@ function chat(date: string, targets: string[], used: string[], msgs: number): Le
 function play(date: string, seconds: number): LearningEvent {
   return makeEvent('play', { seconds }, D(date))
 }
+function think(date: string, nodeCount: number, sentenceCount: number, savedCard: boolean): LearningEvent {
+  return makeEvent('think', { nodeCount, sentenceCount, savedCard }, D(date))
+}
 
 describe('eventsOn / eventsInRange', () => {
   const evs = [grade('2026-07-15', 'a', 0, 1), grade('2026-07-17', 'b', 0, 1)]
@@ -60,6 +63,10 @@ describe('counts', () => {
   })
   it('outputCount = grades + chat messages', () => {
     expect(outputCount(evs)).toBe(2 + 4)
+  })
+  it('outputCount also adds think sentence counts', () => {
+    const withThink = [...evs, think('2026-07-17', 3, 3, true)]
+    expect(outputCount(withThink)).toBe(2 + 4 + 3)
   })
   it('playSeconds sums play events', () => {
     expect(playSeconds(evs)).toBe(120)
@@ -97,6 +104,9 @@ describe('minimumLineMet', () => {
   })
   it('met when a chat session was completed (even 0 chunks used)', () => {
     expect(minimumLineMet([chat('2026-07-17', ['a'], [], 1)])).toBe(true)
+  })
+  it('met when an English-thinking session was completed', () => {
+    expect(minimumLineMet([think('2026-07-17', 2, 2, false)])).toBe(true)
   })
   it('met when play >= 5min even without grading', () => {
     expect(minimumLineMet([play('2026-07-17', 300)])).toBe(true)

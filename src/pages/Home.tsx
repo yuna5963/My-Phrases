@@ -154,6 +154,12 @@ export default function Home() {
           onClick={() => navigate('/message')}
         />
         <ModeCard
+          emoji="💭"
+          title="意味ノード英語思考"
+          desc="自分の思考をノードに分解し、AIと英文を磨く"
+          onClick={() => navigate('/think')}
+        />
+        <ModeCard
           emoji="⚡"
           title="瞬間英作文"
           desc="日本語を見てチャンクを即作文＋例文確認"
