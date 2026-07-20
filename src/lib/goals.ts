@@ -1,16 +1,24 @@
 // ゴール設定（北極星＝最終ゴール → 中間ゴールの梯子 → 小さな達成体験）。
 // フェーズ0はアプリ内蔵プリセット。ユーザーはトラックを選ぶだけ。
 // 各ステップの達成度は「今の状態（progress）＋学習ログ（events）」から算出する純粋関数で測る。
+//
+// 設計意図（v1.5.0 で構造優先へ改訂）: ボトルネックはチャンクの「量」でなく構造の「自動化」。
+// よって序盤に構文の反射化（retainedStructures）と英語思考の起動速度（fastLaunchPct）を置き、
+// チャンク量（retainedChunks）は土台として中盤に据える＝「量」から「速さ」への KPI 転換。
 import type { Phrase, Progress } from '../types'
 import type { LearningEvent } from './events'
-import { RETAINED_BOX, chatUsedRate } from './kpi'
-import { isMastered } from './srs'
+import { RETAINED_BOX, chatUsedRate, eventsInRange } from './kpi'
+import { isMastered, addDays, todayStr } from './srs'
+import { isStructure, isSentenceEngine } from './sentenceEngine'
+import { isLongReading } from './longReading'
 
 /** ステップの達成度をどの指標で測るか。 */
 export type GoalMetricKind =
-  | 'retainedChunks' // box>=RETAINED_BOX のチャンク数（無意識に出せる土台）
+  | 'retainedChunks' // box>=RETAINED_BOX の純チャンク数（Sentence Engine・長文音読を除外した土台）
   | 'retainedInCategory' // 特定カテゴリの定着チャンク数（例: Work）
-  | 'masteredChunks' // box=MAX_BOX の習得済みチャンク数
+  | 'retainedStructures' // box>=RETAINED_BOX の構文カード（type='Structure'）数＝反射化した型の数
+  | 'masteredChunks' // box=MAX_BOX の習得済み純チャンク数（Sentence Engine・長文音読を除外）
+  | 'fastLaunchPct' // 直近7日の起動レイテンシ付き採点のうち thresholdMs 以内だった割合（%）
   | 'totalOutputs' // 累計アウトプット数（採点＋チャット送信）
   | 'chatUsedRatePct' // 全チャットの平均実戦投入率（%）
   | 'chatSessions' // 完了したチャットセッション数
@@ -19,6 +27,8 @@ export interface GoalMetric {
   kind: GoalMetricKind
   /** retainedInCategory のときの対象カテゴリ（Phrase.category と一致）。 */
   category?: string
+  /** fastLaunchPct のときの起動レイテンシしきい値（ms）。これ以内を「速い」と数える。 */
+  thresholdMs?: number
 }
 
 export interface GoalStep {
@@ -43,6 +53,7 @@ export interface GoalTrack {
 // 参考分布: Level=Basic 297 / Core 151 / Intermediate 33 / Advanced 7。
 //   ビジネス系カテゴリ= Business transformation 29 / Work 23 / Business 11 / Career・Booth 10 …。
 // retainedInCategory の target は「そのカテゴリの実在数」を超えないこと（超えると到達不能になる）。
+// retainedStructures の target は内蔵 Sentence Engine デッキの構文16枚を超えないこと（同上）。
 export const GOAL_TRACKS: GoalTrack[] = [
   {
     id: 'business',
@@ -51,6 +62,20 @@ export const GOAL_TRACKS: GoalTrack[] = [
     northStar: 'ビジネスの場で、詰まらず自然に会話ができる',
     steps: [
       {
+        id: 'biz-structure',
+        title: '構文を反射で組み立てる',
+        desc: '8系統の生成構文が考えずに出るようになった（16枚中12枚定着）',
+        metric: { kind: 'retainedStructures' },
+        target: 12,
+      },
+      {
+        id: 'biz-launch5',
+        title: '英語思考を5秒で起動',
+        desc: '和訳や意味の骨子を見て5秒以内に英文を起動できた（直近7日の7割）',
+        metric: { kind: 'fastLaunchPct', thresholdMs: 5000 },
+        target: 70,
+      },
+      {
         id: 'biz-foundation',
         title: 'チャンクを無意識に組み立てる土台',
         desc: '考えなくても口から出るチャンクが50個そろった',
@@ -58,11 +83,11 @@ export const GOAL_TRACKS: GoalTrack[] = [
         target: 50,
       },
       {
-        id: 'biz-output',
-        title: '瞬間英作文で止まらない',
-        desc: '英語を能動的に組み立てた回数が300回を超えた',
-        metric: { kind: 'totalOutputs' },
-        target: 300,
+        id: 'biz-launch3',
+        title: '反射を3秒に縮める',
+        desc: '起動3秒以内が直近7日の6割に達した',
+        metric: { kind: 'fastLaunchPct', thresholdMs: 3000 },
+        target: 60,
       },
       {
         id: 'biz-chat',
@@ -88,18 +113,25 @@ export const GOAL_TRACKS: GoalTrack[] = [
     northStar: '留学先で授業・生活の英語に不自由しない',
     steps: [
       {
+        id: 'study-structure',
+        title: '構文を反射で組み立てる',
+        desc: '考えずに出る生成構文が10枚定着した',
+        metric: { kind: 'retainedStructures' },
+        target: 10,
+      },
+      {
+        id: 'study-launch5',
+        title: '英語思考を5秒で起動',
+        desc: '和訳を見て5秒以内に英文を起動できた（直近7日の6割）',
+        metric: { kind: 'fastLaunchPct', thresholdMs: 5000 },
+        target: 60,
+      },
+      {
         id: 'study-foundation',
         title: 'チャンクを無意識に組み立てる土台',
         desc: '考えなくても口から出るチャンクが50個そろった',
         metric: { kind: 'retainedChunks' },
         target: 50,
-      },
-      {
-        id: 'study-output',
-        title: '言いたいことを英語にできる',
-        desc: '英語を能動的に組み立てた回数が250回を超えた',
-        metric: { kind: 'totalOutputs' },
-        target: 250,
       },
       {
         id: 'study-chat',
@@ -124,18 +156,25 @@ export const GOAL_TRACKS: GoalTrack[] = [
     northStar: '日常のやりとりを気負わず英語でこなせる',
     steps: [
       {
+        id: 'daily-structure',
+        title: '基本の構文を反射で組み立てる',
+        desc: '基本の生成構文が8枚定着した',
+        metric: { kind: 'retainedStructures' },
+        target: 8,
+      },
+      {
+        id: 'daily-launch5',
+        title: '英語思考を5秒で起動',
+        desc: '和訳を見て5秒以内に英文を起動できた（直近7日の6割）',
+        metric: { kind: 'fastLaunchPct', thresholdMs: 5000 },
+        target: 60,
+      },
+      {
         id: 'daily-foundation',
         title: 'よく使うチャンクが口をつく',
         desc: '考えなくても出るチャンクが30個そろった',
         metric: { kind: 'retainedChunks' },
         target: 30,
-      },
-      {
-        id: 'daily-output',
-        title: '短い文をどんどん作れる',
-        desc: '英語を能動的に組み立てた回数が150回を超えた',
-        metric: { kind: 'totalOutputs' },
-        target: 150,
       },
       {
         id: 'daily-chat',
@@ -159,13 +198,40 @@ export function measureStep(
 ): number {
   const { phrases, progress, events } = ctx
   switch (metric.kind) {
-    case 'retainedChunks':
-      return Object.values(progress).filter((p) => p.box >= RETAINED_BOX).length
-    case 'masteredChunks':
-      return Object.values(progress).filter((p) => isMastered(p)).length
+    case 'retainedChunks': {
+      // 純チャンクのみ（Sentence Engine の構文/意味ノード・長文音読を除外）。
+      const ids = new Set(
+        phrases.filter((p) => !isSentenceEngine(p) && !isLongReading(p)).map((p) => p.id),
+      )
+      return Object.values(progress).filter((p) => ids.has(p.id) && p.box >= RETAINED_BOX).length
+    }
+    case 'masteredChunks': {
+      const ids = new Set(
+        phrases.filter((p) => !isSentenceEngine(p) && !isLongReading(p)).map((p) => p.id),
+      )
+      return Object.values(progress).filter((p) => ids.has(p.id) && isMastered(p)).length
+    }
+    case 'retainedStructures': {
+      const ids = new Set(phrases.filter(isStructure).map((p) => p.id))
+      return Object.values(progress).filter((p) => ids.has(p.id) && p.box >= RETAINED_BOX).length
+    }
     case 'retainedInCategory': {
       const ids = new Set(phrases.filter((p) => p.category === metric.category).map((p) => p.id))
       return Object.values(progress).filter((p) => ids.has(p.id) && p.box >= RETAINED_BOX).length
+    }
+    case 'fastLaunchPct': {
+      // 直近7日（今日を含む）の、起動レイテンシを測れた採点のうち threshold 以内の割合。
+      const threshold = metric.thresholdMs
+      if (threshold === undefined) return 0
+      const to = todayStr()
+      const window = eventsInRange(events, addDays(to, -6), to)
+      const lats: number[] = []
+      for (const e of window) {
+        if (e.type === 'grade' && typeof e.latencyMs === 'number') lats.push(e.latencyMs)
+      }
+      if (lats.length === 0) return 0
+      const fast = lats.filter((ms) => ms <= threshold).length
+      return Math.round((fast / lats.length) * 100)
     }
     case 'totalOutputs':
       return events.reduce(

@@ -59,6 +59,8 @@ interface DeckState {
   notePlayback: (seconds: number) => Promise<void>
   /** チャット練習の完了（まとめ）を学習ログに記録する。完了＝当日の最低ライン達成でストリークを維持する。 */
   noteChatComplete: (targetChunkIds: string[], usedChunkIds: string[], userMessageCount: number) => Promise<void>
+  /** 意味ノード英語思考の完了（英文チェック）を学習ログに記録する。完了＝当日の最低ライン達成でストリークを維持する。 */
+  noteThinkComplete: (nodeCount: number, sentenceCount: number, savedCard: boolean) => Promise<void>
   grade: (id: string, g: Grade, mode?: PracticeMode, latencyMs?: number) => Promise<void>
   setLearned: (id: string, learned: boolean) => Promise<void>
   reset: () => Promise<void>
@@ -229,6 +231,16 @@ export const useDeck = create<DeckState>((set, get) => ({
       get,
       set,
       makeEvent('chat', { targetChunkIds, usedChunkIds, userMessageCount }),
+    )
+  },
+
+  noteThinkComplete: async (nodeCount, sentenceCount, savedCard) => {
+    // 意味ノード英語思考を1本やり切ったことを1セッションとして記録し、最低ライン達成でストリークを維持する
+    // （noteChatComplete と同じ logAndMaybeStreak 経由）。
+    await logAndMaybeStreak(
+      get,
+      set,
+      makeEvent('think', { nodeCount, sentenceCount, savedCard }),
     )
   },
 

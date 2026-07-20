@@ -14,6 +14,7 @@ import LongReading from './pages/LongReading'
 import LongReadingCreate from './pages/LongReadingCreate'
 import Cloze from './pages/Cloze'
 import ChatPractice from './pages/ChatPractice'
+import ThinkPractice from './pages/ThinkPractice'
 import ExpressionStock from './pages/ExpressionStock'
 import StockEnrich from './pages/StockEnrich'
 import Browse from './pages/Browse'
@@ -91,6 +92,7 @@ export default function App() {
             <Route path="/long-reading/new" element={<LongReadingCreate />} />
             <Route path="/cloze" element={<Cloze />} />
             <Route path="/chat" element={<ChatPractice />} />
+            <Route path="/think" element={<ThinkPractice />} />
             <Route path="/stock" element={<ExpressionStock />} />
             <Route path="/stock/enrich" element={<StockEnrich />} />
             <Route path="/browse" element={<Browse />} />
