@@ -22,15 +22,10 @@
   を出す。`prefers-reduced-motion` では演出を止め、同じ情報を静止画面で見せる。
   `useSession` に `setSize`（1セットの枚数）と `requeueWeak`（弱いカードを列末尾へ積み直すか）を追加
 - **意味ノード英語思考の STEP1・STEP2 に日本語の音声入力**（`hooks/useSpeechInput.ts`・
-  `components/VoiceInput.tsx`・`lib/speechText.ts`）。
+  `components/VoiceInput.tsx`・`lib/speechText.ts`）。Web Speech API によるディクテーションで、
   STEP1（思考の自由記述）は空白区切り、STEP2（意味ノード）は **1発話=1ノード（1行）** として追記する。
-  どちらのエンジンも使えない環境でのみボタンを隠す
-- **音声認識のエンジンアダプタ**（`lib/speech/`）。`lib/tts/` と同じ作法で、Web は Web Speech API、
-  ネイティブアプリは **Android の音声認識**（`@capacitor-community/speech-recognition`）に差し替える。
-  **Android の WebView は Web Speech API の認識を実装しておらず**、`webkitSpeechRecognition` は
-  存在するのに start すると必ず失敗する（`speechSynthesis` が無いのと同じ構図）。
-  `AndroidManifest.xml` に `RECORD_AUDIO` を宣言し、初回タップで権限ダイアログを出す。
-  Android の音声認識は無音でひとりでに終了するため、停止するまで自動で再開して連続入力を保つ
+  対応していない端末ではボタンを出さない（Android の WebView では使えないことが多い）
+  → **ネイティブアプリでは動作せず、v1.6.1 で修正した**
 - **ゴールの青枠に「次のステップに進むには」**（`lib/goals.ts` の `nextActions()`・
   `components/GoalProgress.tsx`）。`0/12` が何をすれば進むのかを、指標ごとに具体的な回数へ翻訳する。
   例:「🧱 構文ドリルで「できた」をあと 18 回」「🧱 構文ドリルで5秒以内の起動をあと 7 回」
@@ -47,6 +42,23 @@
 ### 削除
 - **ホームの数値パネル3枚**（今日のあゆみ／今日の出題・新規・習得済み／今日やった・登録フレーズ）。
   ホームの主役をゴールと今日のプランに戻す。登録件数は各一覧のタイトルへ移した
+
+## [1.6.1] - 2026-07-21
+
+**ネイティブアプリで音声入力が動かない問題の修正。** v1.6.0 で追加した音声入力は Web でしか
+動かず、Android アプリでは「マイクの使用が許可されていません」で止まっていた。
+
+### 修正
+- **音声認識のエンジンアダプタ**（`lib/speech/`）。`lib/tts/` と同じ作法で、Web は Web Speech API、
+  ネイティブアプリは **Android の音声認識**（`@capacitor-community/speech-recognition`）に差し替える。
+  プラグインの import は `isNativeApp` 判定の dynamic import に閉じ込め、Web バンドルへ混入させない
+- **`AndroidManifest.xml` に `RECORD_AUDIO` を宣言**。初回タップで権限ダイアログを出し、
+  以後アプリが Android の権限マネージャに載る
+- **対応判定を非同期の `isAvailable()` に変更**。`webkitSpeechRecognition` は WebView にも
+  「オブジェクトとしては」存在するため、同期の有無判定ではすり抜けていた
+- Android の音声認識は無音でひとりでに終了するため、**停止を押すまで自動で再開**して連続入力を保つ。
+  区切られた1発話を確定テキストとして扱う（STEP2 の「1発話=1ノード」と噛み合う）。
+  無音のまま3回続けて再開したら諦める（再開ループの暴走防止）
 
 ### 技術メモ: 「オブジェクトはあるのに動かない」WebViewの罠
 
