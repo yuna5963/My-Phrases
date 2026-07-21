@@ -37,6 +37,8 @@ export interface PhraseFilter {
   facetValues: Record<FacetKey, string[]>
   /** Phrases passing the search query, 自信なし toggle and facet chips. */
   filtered: Phrase[]
+  /** 一覧の母数＝長文音読・Sentence Engine を除いた全チャンク（絞り込み前）。 */
+  base: Phrase[]
 }
 
 /**
@@ -93,5 +95,5 @@ export function usePhraseFilter(phrases: Phrase[]): PhraseFilter {
   const toggleFacet = (key: FacetKey, value: string) =>
     setSel((cur) => ({ ...cur, [key]: cur[key] === value ? null : value }))
 
-  return { q, setQ, unsure, toggleUnsure, sel, toggleFacet, facetValues, filtered }
+  return { q, setQ, unsure, toggleUnsure, sel, toggleFacet, facetValues, filtered, base }
 }

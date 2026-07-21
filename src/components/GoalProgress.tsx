@@ -2,8 +2,9 @@
 // 「最終ゴールに近づいている実感」と「次の小さな達成」を1枚で見せるのが狙い。
 // 見た目は Carbon の cta-banner: 青ソリッド・直角・白文字（DESIGN.md）。
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useDeck } from '../store/useDeck'
-import { GOAL_TRACKS, computeTrackProgress, getTrack } from '../lib/goals'
+import { GOAL_TRACKS, computeTrackProgress, getTrack, nextActions } from '../lib/goals'
 
 function TrackPicker({ onPick }: { onPick: (id: string) => void }) {
   return (
@@ -33,6 +34,7 @@ function TrackPicker({ onPick }: { onPick: (id: string) => void }) {
 }
 
 export default function GoalProgress() {
+  const navigate = useNavigate()
   const phrases = useDeck((s) => s.phrases)
   const progress = useDeck((s) => s.progress)
   const events = useDeck((s) => s.events)
@@ -44,6 +46,15 @@ export default function GoalProgress() {
   const tp = useMemo(
     () => (track ? computeTrackProgress(track, { phrases, progress, events }) : null),
     [track, phrases, progress, events],
+  )
+
+  // 進捗バーの数字だけでは次に何をすればいいか分からないので、具体的な一手を出す。
+  const actions = useMemo(
+    () =>
+      tp?.currentStep
+        ? nextActions(tp.currentStep.step, { phrases, progress, events })
+        : [],
+    [tp, phrases, progress, events],
   )
 
   if (!track || !tp) return <TrackPicker onPick={setGoalTrack} />
@@ -107,6 +118,23 @@ export default function GoalProgress() {
             </li>
           ))}
         </ul>
+      )}
+
+      {step && actions.length > 0 && (
+        <div className="mt-3 space-y-1.5">
+          <p className="text-xs text-white/80">次のステップに進むには</p>
+          {actions.map((a) => (
+            <button
+              key={a.label}
+              onClick={() => navigate(a.to)}
+              className="flex w-full items-center gap-2 border border-white/40 px-3 py-2 text-left text-sm active:bg-white/10"
+            >
+              <span className="shrink-0">{a.emoji}</span>
+              <span className="min-w-0 flex-1">{a.label}</span>
+              <span className="shrink-0 text-white/70">→</span>
+            </button>
+          ))}
+        </div>
       )}
     </section>
   )

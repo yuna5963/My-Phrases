@@ -7,17 +7,24 @@ import ReproCard, { type ReproItem } from '../components/ReproCard'
 import GradeButtons from '../components/GradeButtons'
 import StepNav from '../components/StepNav'
 import SeedDeckEmpty, { useSeedDeck } from '../components/SeedDeckEmpty'
-import { createLatencyMeter, isStructure, medianMs } from '../lib/sentenceEngine'
+import { createLatencyMeter, DRILL_SET_SIZE, isStructure, medianMs } from '../lib/sentenceEngine'
 import type { Grade } from '../types'
 
 /**
  * 🧱 構文ドリル（Sentence Engine の第2層 Structure）。
  * 一つの構文パターンを常時見せながら、その変形例を「日本語 → 声に出して英作文 →
  * タッチで答え合わせ」で連続反復し、型を反射化する。瞬間英作文（Compose）の骨格を踏襲。
+ * 出題はセット制のランダム順（DRILL_SET_SIZE 枚＝1セット）で、やりきった区切りを作る。
  * 起動レイテンシ（和訳表示→英文開示の中央値）を採点ログに記録する。
  */
 export default function StructureDrill() {
-  const s = useSession({ filter: isStructure, mode: 'structure', clusterByFacet: true })
+  const s = useSession({
+    filter: isStructure,
+    mode: 'structure',
+    shuffle: true,
+    setSize: DRILL_SET_SIZE,
+    requeueWeak: false,
+  })
   const navigate = useNavigate()
   const { addSeed, seeding, seedError } = useSeedDeck(s.restart)
 
@@ -27,11 +34,14 @@ export default function StructureDrill() {
   // 採点したカードごとの中央値を貯め、セッション完了画面の中央値に使う。
   const sessionLatRef = useRef<number[]>([])
 
-  // 最後の項目まで開示したら採点ボタンを出す。
-  const [atEnd, setAtEnd] = useState(false)
+  // 英文を一度でも開示したら採点できる（最後の例文まで進まないと採点できない詰まりを解消）。
+  const [canGrade, setCanGrade] = useState(false)
   useEffect(() => {
-    setAtEnd(false)
+    setCanGrade(false)
   }, [s.pos])
+
+  // 何セットやりきったか（完了画面に「セットN」を出すため）。
+  const [setsDone, setSetsDone] = useState(0)
 
   const c = s.current
   // チャンク本体は含めず、構文の変形例だけを出題列にする（Compose との違い）。
@@ -57,9 +67,11 @@ export default function StructureDrill() {
         onRestart={() => {
           meter.reset()
           sessionLatRef.current = []
+          setSetsDone((n) => n + 1)
           s.restart()
         }}
         latencyMedianMs={medianMs(sessionLatRef.current)}
+        setNumber={setsDone + 1}
       />
     )
 
@@ -93,7 +105,7 @@ export default function StructureDrill() {
           onStep={(st) => {
             if (st.revealed) meter.revealed()
             else meter.shown()
-            setAtEnd(st.revealed && st.idx === items.length - 1)
+            setCanGrade(st.revealed)
           }}
         />
         <p className="text-center text-sm t-subtle">
@@ -101,7 +113,7 @@ export default function StructureDrill() {
         </p>
       </div>
 
-      {atEnd && <GradeButtons onGrade={grade} />}
+      {canGrade && <GradeButtons onGrade={grade} />}
 
       <StepNav
         onPrev={() => {

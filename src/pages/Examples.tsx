@@ -54,9 +54,11 @@ export default function Examples() {
   const rate = useSettings((s) => s.rate)
 
   const filter = usePhraseFilter(phrases)
-  const { filtered } = filter
+  const { filtered, base } = filter
 
   const rows = useMemo(() => flattenExamples(filtered), [filtered])
+  // 一覧の母数＝絞り込み前の全チャンクが持つ例文の総数。
+  const totalExamples = useMemo(() => flattenExamples(base).length, [base])
   const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE))
 
   const [page, setPage] = useState(0)
@@ -74,11 +76,14 @@ export default function Examples() {
 
   return (
     <div className="space-y-3">
-      <h1 className="text-xl font-bold">例文一覧</h1>
+      <h1 className="text-xl font-bold">例文一覧（{totalExamples}件登録）</h1>
 
       <FacetFilters filter={filter} />
 
-      <p className="text-xs t-subtle">{rows.length} 件</p>
+      {/* 全件表示のときは件数がタイトルと重複するので、実際に絞り込まれたときだけ出す。 */}
+      {rows.length !== totalExamples && (
+        <p className="text-xs t-subtle">絞り込み {rows.length} 件</p>
+      )}
 
       <ul className="space-y-2">
         {pageRows.map((r) => (

@@ -19,7 +19,7 @@ export default function Browse() {
   const rate = useSettings((s) => s.rate)
 
   const filter = usePhraseFilter(phrases)
-  const { filtered } = filter
+  const { filtered, base } = filter
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const [page, setPage] = useState(0)
@@ -35,7 +35,7 @@ export default function Browse() {
   return (
     <div className="space-y-3">
       <div className="flex items-baseline justify-between">
-        <h1 className="text-xl font-bold">チャンク一覧</h1>
+        <h1 className="text-xl font-bold">チャンク一覧（{base.length}件登録）</h1>
         <button
           onClick={() => navigate('/chunk/new')}
           className="text-sm font-medium link"
@@ -46,7 +46,10 @@ export default function Browse() {
 
       <FacetFilters filter={filter} />
 
-      <p className="text-xs t-subtle">{filtered.length} 件</p>
+      {/* 全件表示のときは件数がタイトルと重複するので、実際に絞り込まれたときだけ出す。 */}
+      {filtered.length !== base.length && (
+        <p className="text-xs t-subtle">絞り込み {filtered.length} 件</p>
+      )}
 
       <ul className="space-y-2">
         {pageItems.map((p) => {

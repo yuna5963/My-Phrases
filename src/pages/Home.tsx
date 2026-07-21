@@ -4,18 +4,8 @@ import { useDeck } from '../store/useDeck'
 import { useSettings } from '../store/useSettings'
 import { useStock } from '../store/useStock'
 import { computeStats } from '../lib/session'
-import { computeDailySummary } from '../lib/kpi'
 import GoalProgress from '../components/GoalProgress'
 import TodayPlan from '../components/TodayPlan'
-
-function Stat({ value, label, accent }: { value: number; label: string; accent?: string }) {
-  return (
-    <div className="tile p-4 text-center">
-      <div className={`display text-2xl ${accent ?? ''}`}>{value}</div>
-      <div className="t-muted mt-0.5 text-xs">{label}</div>
-    </div>
-  )
-}
 
 /** モード一覧の行: 白タイル＋ヘアライン。アクセントは青の矢印のみ（Carbon product-card）。 */
 function ModeCard({
@@ -57,7 +47,6 @@ export default function Home() {
   const progress = useDeck((s) => s.progress)
   const streak = useDeck((s) => s.streak)
   const source = useDeck((s) => s.source)
-  const events = useDeck((s) => s.events)
   const includeStatuses = useSettings((s) => s.includeStatuses)
   const stockCount = useStock((s) => s.items.length)
 
@@ -65,7 +54,6 @@ export default function Home() {
     () => computeStats(phrases, progress, includeStatuses),
     [phrases, progress, includeStatuses],
   )
-  const today = useMemo(() => computeDailySummary(events), [events])
 
   return (
     <div className="space-y-6">
@@ -86,44 +74,6 @@ export default function Home() {
       <GoalProgress />
 
       <TodayPlan />
-
-      <section className="tile p-4">
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="text-sm font-semibold">今日のあゆみ</h2>
-          <span className="t-subtle text-xs">
-            {today.minimumMet ? '✓ 今日の最低ラインは達成' : '5分の連続再生だけでもOK'}
-          </span>
-        </div>
-        <div className="grid grid-cols-3 gap-3 text-center">
-          <div>
-            <div className="display text-2xl">{today.graded}</div>
-            <div className="t-muted mt-0.5 text-xs">採点した</div>
-          </div>
-          <div>
-            <div className="display text-2xl">{today.outputs}</div>
-            <div className="t-muted mt-0.5 text-xs">アウトプット</div>
-          </div>
-          <div>
-            <div className="display text-2xl text-carbon-success">{today.retained}</div>
-            <div className="t-muted mt-0.5 text-xs">定着した</div>
-          </div>
-        </div>
-        {today.latencyMedianMs != null && (
-          <p className="t-subtle mt-3 text-center text-xs">
-            ⚡ 英文起動の速さ（中央値） {(today.latencyMedianMs / 1000).toFixed(1)}秒 / 目標5秒→3秒
-          </p>
-        )}
-      </section>
-
-      <section className="grid grid-cols-3 gap-3">
-        <Stat value={stats.due} label="今日の出題" accent="text-carbon-blue dark:text-carbon-blue-40" />
-        <Stat value={stats.newCount} label="新規" />
-        <Stat value={stats.mastered} label="習得済み" accent="text-carbon-success" />
-      </section>
-      <section className="grid grid-cols-2 gap-3">
-        <Stat value={stats.studiedToday} label="今日やった" />
-        <Stat value={stats.total} label="登録フレーズ" />
-      </section>
 
       <section className="pt-2">
         {/* 主導線だけ青ソリッド（cta-banner）。他は白タイルでアクセントを絞る */}

@@ -12,6 +12,9 @@ import type { Phrase } from '../types'
 export const STRUCTURE_TYPE = 'Structure'
 export const MESSAGE_TYPE = 'Message'
 
+/** セット制ドリルの1セット枚数。10枚=1セットで「やりきった」区切りを作る。 */
+export const DRILL_SET_SIZE = 10
+
 export function isStructure(p: Phrase): boolean {
   return p.type === STRUCTURE_TYPE
 }
