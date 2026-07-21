@@ -21,6 +21,8 @@ export interface SettingsState {
   chatModel: string // OpenAI互換エンドポイントに渡すモデル名
   chatFeedbackJa: boolean // コーチの解説・フィードバックを日本語にする
   chatTargetCount: number // 1セッションで狙うチャンク数
+  /** ネイティブアプリで、アプリ内の🎤ボタンを使う（既定 false＝キーボードのマイクを案内する）。 */
+  inAppMic: boolean
   setVoiceURI: (v: string | null) => void
   setRate: (r: number) => void
   setAutoPlay: (b: boolean) => void
@@ -37,6 +39,7 @@ export interface SettingsState {
   setChatModel: (v: string) => void
   setChatFeedbackJa: (b: boolean) => void
   setChatTargetCount: (n: number) => void
+  setInAppMic: (b: boolean) => void
 }
 
 export const ALL_STATUSES = ['未着手', '進行中', '完了']
@@ -60,6 +63,7 @@ export const useSettings = create<SettingsState>()(
       chatModel: 'gemma-4-31b-it',
       chatFeedbackJa: true,
       chatTargetCount: 4,
+      inAppMic: false,
       setVoiceURI: (voiceURI) => set({ voiceURI }),
       setRate: (rate) => set({ rate }),
       setAutoPlay: (autoPlay) => set({ autoPlay }),
@@ -81,6 +85,7 @@ export const useSettings = create<SettingsState>()(
       setChatModel: (chatModel) => set({ chatModel }),
       setChatFeedbackJa: (chatFeedbackJa) => set({ chatFeedbackJa }),
       setChatTargetCount: (chatTargetCount) => set({ chatTargetCount }),
+      setInAppMic: (inAppMic) => set({ inAppMic }),
     }),
     { name: 'my-phrases-settings' },
   ),

@@ -348,6 +348,21 @@ export default function Settings() {
         </details>
       </Section>
 
+      {isNativeApp && (
+        <Section title="🎤 音声入力">
+          <Row label="アプリ内のマイクボタンを使う">
+            <Toggle checked={s.inAppMic} onChange={s.setInAppMic} />
+          </Row>
+          <p className="text-xs t-subtle">
+            🎤 意味ノード英語思考で<strong>日本語を音声入力</strong>するときの設定です。Android
+            の音声認識は<strong>少し黙ると自動で区切れる</strong>ので、長い文だと途中で切れて
+            しまいます。長文を話すときは<strong>テキスト欄をタップしてキーボードのマイクキー</strong>
+            を使うほうが快適です（途切れずに続けて入力できます）。この設定をONにすると、
+            アプリ内の🎤ボタンも表示できます。
+          </p>
+        </Section>
+      )}
+
       <Section title="セッション">
         <Row label={`1回の出題数 ${s.sessionSize}枚`}>
           <input
