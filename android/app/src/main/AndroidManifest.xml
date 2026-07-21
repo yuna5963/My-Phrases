@@ -43,6 +43,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 意味ノード英語思考（STEP1/STEP2）の音声入力用マイク権限 -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- CSV/バックアップの公開 Documents フォルダ保存用。Android 11+ は権限不要のため ≤10 に限定 -->
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"

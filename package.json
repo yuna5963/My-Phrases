@@ -1,7 +1,7 @@
 {
   "name": "my-phrases",
   "private": true,
-  "version": "1.6.0",
+  "version": "1.6.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,6 +13,7 @@
     "bump:major": "npm version major --no-git-tag-version"
   },
   "dependencies": {
+    "@capacitor-community/speech-recognition": "^7.0.1",
     "@capacitor-community/text-to-speech": "^8.0.2",
     "@capacitor/app": "^8.1.1",
     "@capacitor/core": "^8.4.2",
