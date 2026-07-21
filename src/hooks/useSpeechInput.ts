@@ -1,65 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-
-/**
- * Web Speech API の最小型定義。プロジェクトの TS 設定には SpeechRecognition の
- * 環境型が無いため、使う分だけここで宣言する（@types 追加や any を避ける）。
- */
-interface SpeechRecognitionAlternativeLike {
-  transcript: string
-}
-interface SpeechRecognitionResultLike {
-  isFinal: boolean
-  readonly length: number
-  [index: number]: SpeechRecognitionAlternativeLike
-}
-interface SpeechRecognitionResultListLike {
-  readonly length: number
-  [index: number]: SpeechRecognitionResultLike
-}
-interface SpeechRecognitionEventLike {
-  resultIndex: number
-  results: SpeechRecognitionResultListLike
-}
-interface SpeechRecognitionErrorEventLike {
-  error: string
-}
-interface SpeechRecognitionLike {
-  lang: string
-  continuous: boolean
-  interimResults: boolean
-  start: () => void
-  stop: () => void
-  abort: () => void
-  onresult: ((e: SpeechRecognitionEventLike) => void) | null
-  onerror: ((e: SpeechRecognitionErrorEventLike) => void) | null
-  onend: (() => void) | null
-}
-type SpeechRecognitionCtor = new () => SpeechRecognitionLike
-type SpeechWindow = Window & {
-  SpeechRecognition?: SpeechRecognitionCtor
-  webkitSpeechRecognition?: SpeechRecognitionCtor
-}
-
-function getCtor(): SpeechRecognitionCtor | null {
-  if (typeof window === 'undefined') return null
-  const w = window as SpeechWindow
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null
-}
-
-/** 認識エラーコードを、利用者が次の行動を取れる日本語にする。 */
-function messageFor(code: string): string {
-  switch (code) {
-    case 'not-allowed':
-    case 'service-not-allowed':
-      return 'マイクの使用が許可されていません。端末の設定を確認してください'
-    case 'no-speech':
-      return '音声が聞き取れませんでした'
-    case 'audio-capture':
-      return 'マイクが見つかりませんでした'
-    default:
-      return '音声入力でエラーが発生しました'
-  }
-}
+import { engineReady, speechEngine } from '../lib/speech'
+import type { SpeechListeners } from '../lib/speech'
 
 export interface SpeechInput {
   /** この端末・ブラウザで音声認識を使えるか。false のときUIは出さない。 */
@@ -73,11 +14,12 @@ export interface SpeechInput {
 }
 
 /**
- * Web Speech API による日本語ディクテーション。
+ * 日本語ディクテーション。
  *
- * Android の WebView（Capacitor ネイティブアプリ）では Web Speech API が使えないことが
- * 多い。その場合は supported=false になり、呼び出し側はボタンを静かに隠す設計にしている
- * （使えない端末でエラーを見せない）。
+ * Web は Web Speech API、ネイティブアプリ（Capacitor）は Android の音声認識を
+ * Capacitor プラグイン経由で使う（Android の WebView は Web Speech API の認識を
+ * 実装していないため）。どちらも使えない環境でのみ supported=false になり、
+ * 呼び出し側はボタンを静かに隠す。
  */
 export function useSpeechInput(opts: {
   lang?: string
@@ -85,71 +27,70 @@ export function useSpeechInput(opts: {
   onFinal: (text: string) => void
 }): SpeechInput {
   const { lang = 'ja-JP' } = opts
-  const [supported] = useState(() => getCtor() != null)
+  const [supported, setSupported] = useState(false)
   const [listening, setListening] = useState(false)
   const [interim, setInterim] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  // 親の再レンダーごとに認識インスタンスを作り直さないよう、コールバックは ref 経由で読む。
+  // 親の再レンダーごとにエンジンへ渡すコールバックを作り直さないよう、ref 経由で読む。
   const onFinalRef = useRef(opts.onFinal)
   onFinalRef.current = opts.onFinal
-  const recRef = useRef<SpeechRecognitionLike | null>(null)
 
+  // ネイティブはプラグイン照会が要るので、対応可否は非同期に決まる。
   useEffect(() => {
-    const Ctor = getCtor()
-    if (!Ctor) return
-    const rec = new Ctor()
-    rec.lang = lang
-    rec.continuous = true
-    rec.interimResults = true
-    rec.onresult = (e) => {
-      let pending = ''
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const r = e.results[i]
-        const text = r[0]?.transcript ?? ''
-        if (r.isFinal) onFinalRef.current(text)
-        else pending += text
-      }
-      setInterim(pending)
-    }
-    rec.onerror = (e) => {
-      setError(messageFor(e.error))
-      setListening(false)
-    }
-    rec.onend = () => {
-      setListening(false)
-      setInterim('')
-    }
-    recRef.current = rec
+    let alive = true
+    void engineReady
+      .then(() => speechEngine().isAvailable())
+      .then((ok) => {
+        if (alive) setSupported(ok)
+      })
+      .catch(() => {
+        /* 判定できない場合は非対応扱い（ボタンを出さない） */
+      })
     return () => {
-      rec.onresult = null
-      rec.onerror = null
-      rec.onend = null
-      try {
-        rec.abort()
-      } catch {
-        // 開始前の abort は無視してよい
-      }
-      recRef.current = null
+      alive = false
     }
-  }, [lang])
+  }, [])
+
+  // アンマウント時に聞き取りを止める（画面を離れてもマイクが残らないように）。
+  useEffect(() => {
+    return () => {
+      void engineReady.then(() => speechEngine().stop())
+    }
+  }, [])
 
   const start = () => {
-    const rec = recRef.current
-    if (!rec || listening) return
+    if (listening) return
     setError(null)
     setInterim('')
-    try {
-      rec.start()
+    void (async () => {
+      await engineReady
+      const engine = speechEngine()
+      const allowed = await engine.ensurePermission()
+      if (!allowed) {
+        setError('マイクの使用が許可されていません。端末の設定を確認してください')
+        return
+      }
+      const listeners: SpeechListeners = {
+        onPartial: (text) => setInterim(text),
+        onFinal: (text) => onFinalRef.current(text),
+        onError: (message) => {
+          setError(message)
+          setListening(false)
+        },
+        onEnd: () => {
+          setListening(false)
+          setInterim('')
+        },
+      }
       setListening(true)
-    } catch {
-      // すでに開始済みのときに throw する実装があるため握りつぶす
-    }
+      await engine.start(lang, listeners)
+    })()
   }
 
   const stop = () => {
-    recRef.current?.stop()
     setListening(false)
+    void engineReady.then(() => speechEngine().stop())
   }
 
   return { supported, listening, interim, error, start, stop }
