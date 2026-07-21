@@ -8,7 +8,7 @@
 import type { Phrase, Progress } from '../types'
 import type { LearningEvent } from './events'
 import { RETAINED_BOX, chatUsedRate, eventsInRange } from './kpi'
-import { isMastered, addDays, todayStr } from './srs'
+import { isMastered, addDays, todayStr, MAX_BOX } from './srs'
 import { isStructure, isSentenceEngine } from './sentenceEngine'
 import { isLongReading } from './longReading'
 
@@ -191,6 +191,21 @@ export function getTrack(id: string): GoalTrack | undefined {
   return GOAL_TRACKS.find((t) => t.id === id)
 }
 
+/**
+ * 直近7日（今日を含む）の、起動レイテンシを測れた採点のレイテンシ列。
+ * fastLaunchPct の実測（measureStep）と次の一手の見積り（nextActions）で
+ * 窓の定義がずれないよう、1か所に寄せている。
+ */
+export function recentLatencies(events: LearningEvent[]): number[] {
+  const to = todayStr()
+  const window = eventsInRange(events, addDays(to, -6), to)
+  const lats: number[] = []
+  for (const e of window) {
+    if (e.type === 'grade' && typeof e.latencyMs === 'number') lats.push(e.latencyMs)
+  }
+  return lats
+}
+
 /** 1ステップの実測値を、現状（progress）と学習ログ（events）から算出する。 */
 export function measureStep(
   metric: GoalMetric,
@@ -223,12 +238,7 @@ export function measureStep(
       // 直近7日（今日を含む）の、起動レイテンシを測れた採点のうち threshold 以内の割合。
       const threshold = metric.thresholdMs
       if (threshold === undefined) return 0
-      const to = todayStr()
-      const window = eventsInRange(events, addDays(to, -6), to)
-      const lats: number[] = []
-      for (const e of window) {
-        if (e.type === 'grade' && typeof e.latencyMs === 'number') lats.push(e.latencyMs)
-      }
+      const lats = recentLatencies(events)
       if (lats.length === 0) return 0
       const fast = lats.filter((ms) => ms <= threshold).length
       return Math.round((fast / lats.length) * 100)
@@ -283,4 +293,135 @@ export function computeTrackProgress(
     : 0
   const ratio = steps.length === 0 ? 0 : (doneCount + partial) / steps.length
   return { track, steps, currentStep, doneCount, ratio }
+}
+
+export interface NextAction {
+  emoji: string
+  /** 「構文ドリルで『できた』をあと18回」のような、いま押せる具体的な一手。 */
+  label: string
+  /** 遷移先ルート。 */
+  to: string
+}
+
+/**
+ * 「あと何回『できた』を積めば、目標枚数だけ定着（box>=threshold）するか」の見積り。
+ * 定着に近いカードから埋めるほうが現実的なので box の高い順に needCards 枚を選ぶ。
+ * デッキに足りない分は満額（threshold）かかる想定で上乗せする。
+ */
+export function gradesToRetain(
+  ids: Set<string>,
+  progress: Record<string, Progress>,
+  needCards: number,
+  threshold: number = RETAINED_BOX,
+): number {
+  if (needCards <= 0) return 0
+  const boxes: number[] = []
+  for (const id of ids) {
+    // progress 未登録＝一度も採点していない＝box 0 とみなす。
+    const box = progress[id]?.box ?? 0
+    if (box < threshold) boxes.push(box)
+  }
+  boxes.sort((a, b) => b - a)
+  const picked = boxes.slice(0, needCards)
+  const sum = picked.reduce((n, box) => n + (threshold - box), 0)
+  const missing = needCards - picked.length
+  return Math.max(needCards, sum + missing * threshold)
+}
+
+/**
+ * 直近7日の「速い採点 fast / 計測できた採点 total」から、目標割合に届くまでに
+ * あと何回速い採点を積めばよいかを求める。分母も一緒に増える点を織り込んだ式。
+ * 測定データが無い（total=0）／目標100%以上のときは見積り不能で null。
+ */
+export function fastLaunchGradesNeeded(
+  fast: number,
+  total: number,
+  targetPct: number,
+): number | null {
+  if (total === 0 || targetPct >= 100) return null
+  if (total > 0 && (fast / total) * 100 >= targetPct) return 0
+  const n = Math.ceil((targetPct * total - 100 * fast) / (100 - targetPct))
+  return Math.max(1, n)
+}
+
+/**
+ * 挑戦中のステップを進めるために「どの練習を何回やればいいか」を具体化する。
+ * 進捗バーの数字（0/12）だけでは次の行動が分からないので、ホームの青枠の一番下に出す。
+ */
+export function nextActions(
+  step: GoalStep,
+  ctx: { phrases: Phrase[]; progress: Record<string, Progress>; events: LearningEvent[] },
+): NextAction[] {
+  const { phrases, progress, events } = ctx
+  const metric = step.metric
+  const current = measureStep(metric, ctx)
+  const remaining = step.target - current
+  if (remaining <= 0) return []
+
+  // 純チャンク＝Sentence Engine・長文音読を除いた土台（measureStep と同じ集合）。
+  const pureChunkIds = () =>
+    new Set(phrases.filter((p) => !isSentenceEngine(p) && !isLongReading(p)).map((p) => p.id))
+
+  switch (metric.kind) {
+    case 'retainedStructures': {
+      const ids = new Set(phrases.filter(isStructure).map((p) => p.id))
+      const n = gradesToRetain(ids, progress, remaining)
+      return [{ emoji: '🧱', label: `構文ドリルで「できた」をあと ${n} 回`, to: '/structure' }]
+    }
+    case 'retainedChunks': {
+      const n = gradesToRetain(pureChunkIds(), progress, remaining)
+      return [
+        { emoji: '▶', label: `「今日の練習」で「できた」をあと ${n} 回`, to: '/daily' },
+        { emoji: '⚡', label: '瞬間英作文でも同じチャンクを進められます', to: '/compose' },
+      ]
+    }
+    case 'masteredChunks': {
+      const n = gradesToRetain(pureChunkIds(), progress, remaining, MAX_BOX)
+      return [{ emoji: '▶', label: `「今日の練習」で「できた」をあと ${n} 回`, to: '/daily' }]
+    }
+    case 'retainedInCategory': {
+      const ids = new Set(phrases.filter((p) => p.category === metric.category).map((p) => p.id))
+      const n = gradesToRetain(ids, progress, remaining)
+      return [
+        {
+          emoji: '⚡',
+          label: `${metric.category} のチャンクを瞬間英作文であと ${n} 回`,
+          to: '/compose',
+        },
+      ]
+    }
+    case 'fastLaunchPct': {
+      const thresholdMs = metric.thresholdMs ?? 5000
+      const sec = thresholdMs / 1000
+      const lats = recentLatencies(events)
+      const n = fastLaunchGradesNeeded(
+        lats.filter((ms) => ms <= thresholdMs).length,
+        lats.length,
+        step.target,
+      )
+      if (n === null)
+        return [
+          { emoji: '🧱', label: '構文ドリルで時間を測って練習（まずは10回）', to: '/structure' },
+          { emoji: '🧠', label: '意味ノード生成でも計測されます', to: '/message' },
+        ]
+      return [
+        { emoji: '🧱', label: `構文ドリルで${sec}秒以内の起動をあと ${n} 回`, to: '/structure' },
+        { emoji: '🧠', label: '意味ノード生成でも同じくカウントされます', to: '/message' },
+      ]
+    }
+    case 'chatSessions':
+      return [{ emoji: '💬', label: `チャット練習をあと ${remaining} セッション`, to: '/chat' }]
+    case 'chatUsedRatePct':
+      return [
+        {
+          emoji: '💬',
+          label: `チャット練習で狙ったチャンクを使う（いま ${current}% → 目標 ${step.target}%）`,
+          to: '/chat',
+        },
+      ]
+    case 'totalOutputs':
+      return [{ emoji: '▶', label: `アウトプットをあと ${remaining} 回`, to: '/daily' }]
+    default:
+      return []
+  }
 }

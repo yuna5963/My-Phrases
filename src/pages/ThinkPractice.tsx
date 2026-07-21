@@ -19,6 +19,8 @@ import { stableId } from '../lib/import'
 import { MESSAGE_TYPE } from '../lib/sentenceEngine'
 import { todayStr } from '../lib/srs'
 import UsageBadge from '../components/UsageBadge'
+import VoiceInput from '../components/VoiceInput'
+import { appendSpoken } from '../lib/speechText'
 
 const TOTAL_STEPS = 5
 const STEP_TITLES = ['思考を書く', 'ノードに分解', '英文にする', 'AIチェック', '保存']
@@ -213,6 +215,7 @@ export default function ThinkPractice() {
           <section className="space-y-3">
             <p className="text-sm t-muted">
               まず、伝えたいことを日本語で書き出してみましょう。ここは自由記述でOKです。
+              キーボードでも、🎤 音声入力で話しながらでもかまいません。
             </p>
             <textarea
               value={thought}
@@ -221,6 +224,7 @@ export default function ThinkPractice() {
               rows={6}
               className="input w-full resize-none text-sm"
             />
+            <VoiceInput onText={(t) => setThought((v) => appendSpoken(v, t))} />
           </section>
         )}
 
@@ -229,6 +233,7 @@ export default function ThinkPractice() {
             <p className="text-sm t-muted">
               1行に1ノード。「ラベル: 内容」の形で、日本語の完成文ではなく骨子で書きます
               （例: <span className="font-medium">主張: 会議を減らすべき</span>）。2〜5行が目安です。
+              🎤 音声で足す場合は、1発話が1ノード（1行）になります。
             </p>
             <div className="tile-muted p-3 text-xs t-subtle whitespace-pre-wrap">{thought}</div>
             <textarea
@@ -237,6 +242,10 @@ export default function ThinkPractice() {
               placeholder={'主張: 会議を減らすべき\n根拠: 集中できる時間が減る\n提案: 会議は週2回に'}
               rows={5}
               className="input w-full resize-none text-sm"
+            />
+            <VoiceInput
+              onText={(t) => setNodesText((v) => appendSpoken(v, t, { newline: true }))}
+              label="🎤 音声でノードを足す"
             />
             <button
               onClick={runDecompose}

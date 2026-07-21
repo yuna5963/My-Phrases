@@ -7,7 +7,7 @@ import ReproCard, { type ReproItem } from '../components/ReproCard'
 import GradeButtons from '../components/GradeButtons'
 import StepNav from '../components/StepNav'
 import SeedDeckEmpty, { useSeedDeck } from '../components/SeedDeckEmpty'
-import { createLatencyMeter, isMessage, medianMs } from '../lib/sentenceEngine'
+import { createLatencyMeter, DRILL_SET_SIZE, isMessage, medianMs } from '../lib/sentenceEngine'
 import type { Grade } from '../types'
 
 /**
@@ -17,7 +17,13 @@ import type { Grade } from '../types'
  * 起動レイテンシ（骨子表示→英文開示）を採点ログに記録する。
  */
 export default function MessageDrill() {
-  const s = useSession({ filter: isMessage, mode: 'message', shuffle: true })
+  const s = useSession({
+    filter: isMessage,
+    mode: 'message',
+    shuffle: true,
+    setSize: DRILL_SET_SIZE,
+    requeueWeak: false,
+  })
   const navigate = useNavigate()
   const { addSeed, seeding, seedError } = useSeedDeck(s.restart)
 
@@ -26,10 +32,14 @@ export default function MessageDrill() {
   // 採点したカードごとの中央値を貯め、セッション完了画面の中央値に使う。
   const sessionLatRef = useRef<number[]>([])
 
-  const [atEnd, setAtEnd] = useState(false)
+  // 英文（参考出力）を開示したら採点できる。
+  const [canGrade, setCanGrade] = useState(false)
   useEffect(() => {
-    setAtEnd(false)
+    setCanGrade(false)
   }, [s.pos])
+
+  // 何セットやりきったか（完了画面に「セットN」を出すため）。
+  const [setsDone, setSetsDone] = useState(0)
 
   const c = s.current
   // 意味ノードは1枚を1項目として扱う（骨子ja → 参考出力en）。
@@ -55,9 +65,11 @@ export default function MessageDrill() {
         onRestart={() => {
           meter.reset()
           sessionLatRef.current = []
+          setSetsDone((n) => n + 1)
           s.restart()
         }}
         latencyMedianMs={medianMs(sessionLatRef.current)}
+        setNumber={setsDone + 1}
       />
     )
 
@@ -91,7 +103,7 @@ export default function MessageDrill() {
           onStep={(st) => {
             if (st.revealed) meter.revealed()
             else meter.shown()
-            setAtEnd(st.revealed && st.idx === items.length - 1)
+            setCanGrade(st.revealed)
           }}
         />
         <p className="text-center text-sm t-subtle">
@@ -99,7 +111,7 @@ export default function MessageDrill() {
         </p>
       </div>
 
-      {atEnd && <GradeButtons onGrade={grade} />}
+      {canGrade && <GradeButtons onGrade={grade} />}
 
       <StepNav
         onPrev={() => {

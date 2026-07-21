@@ -1,7 +1,16 @@
 import { describe, it, expect } from 'vitest'
 import type { Phrase, Progress } from '../types'
 import { makeEvent, type LearningEvent } from './events'
-import { GOAL_TRACKS, computeTrackProgress, getTrack, measureStep } from './goals'
+import {
+  GOAL_TRACKS,
+  computeTrackProgress,
+  fastLaunchGradesNeeded,
+  getTrack,
+  gradesToRetain,
+  measureStep,
+  nextActions,
+  type GoalStep,
+} from './goals'
 import { addDays, newProgress, todayStr } from './srs'
 
 function phrase(id: string, category: string, type: string = 'Chunk'): Phrase {
@@ -225,6 +234,117 @@ describe('computeTrackProgress', () => {
     expect(tp.steps[1].current).toBe(30)
     // 1 done of 4 steps + 30/60 partial = (1 + 0.5)/4 = 0.375
     expect(tp.ratio).toBeCloseTo(0.375)
+  })
+})
+
+describe('gradesToRetain', () => {
+  it('定着に近いカードから埋める（box3は1回、未着手は4回）', () => {
+    const progress = toMap([prog('a', 3)])
+    const ids = new Set(['a', 'b']) // b は progress 無し＝box 0
+    expect(gradesToRetain(ids, progress, 1)).toBe(1) // box3 の a を選ぶ
+    expect(gradesToRetain(ids, progress, 2)).toBe(1 + 4) // a と b
+  })
+  it('デッキに足りない分は満額（RETAINED_BOX）で見積もる', () => {
+    expect(gradesToRetain(new Set(), {}, 3)).toBe(12)
+  })
+  it('必要枚数0以下なら0', () => {
+    expect(gradesToRetain(new Set(['a']), {}, 0)).toBe(0)
+    expect(gradesToRetain(new Set(['a']), {}, -5)).toBe(0)
+  })
+})
+
+describe('fastLaunchGradesNeeded', () => {
+  it('測定データが無ければ見積もれない', () => {
+    expect(fastLaunchGradesNeeded(0, 0, 60)).toBeNull()
+  })
+  it('目標100%以上は到達不能なので null', () => {
+    expect(fastLaunchGradesNeeded(3, 10, 100)).toBeNull()
+  })
+  it('すでに目標以上なら0', () => {
+    expect(fastLaunchGradesNeeded(7, 10, 60)).toBe(0)
+  })
+  it('分母も増える前提の切り上げ計算', () => {
+    // (60*10 - 100*3) / (100-60) = 7.5 → 8
+    expect(fastLaunchGradesNeeded(3, 10, 60)).toBe(8)
+  })
+})
+
+describe('nextActions', () => {
+  const step = (metric: GoalStep['metric'], target: number): GoalStep => ({
+    id: 'x',
+    title: 't',
+    desc: 'd',
+    metric,
+    target,
+  })
+
+  it('retainedStructures: 残り枚数を「できた」回数に換算して構文ドリルへ導く', () => {
+    // s3 は定着済み（current=1）。target 3 → 残り2枚を box3 と box2 から埋める＝1+2=3回。
+    const phrases = [
+      phrase('s0', 'Work', 'Structure'),
+      phrase('s1', 'Work', 'Structure'),
+      phrase('s2', 'Work', 'Structure'),
+      phrase('s3', 'Work', 'Structure'),
+    ]
+    const progress = toMap([prog('s0', 3), prog('s1', 2), prog('s2', 0), prog('s3', 4)])
+    const acts = nextActions(step({ kind: 'retainedStructures' }, 3), {
+      phrases,
+      progress,
+      events: [],
+    })
+    expect(acts).toHaveLength(1)
+    expect(acts[0].to).toBe('/structure')
+    expect(acts[0].label).toBe('構文ドリルで「できた」をあと 3 回')
+  })
+
+  it('fastLaunchPct: 計測データ0件なら「まずは10回」に誘導する', () => {
+    const acts = nextActions(step({ kind: 'fastLaunchPct', thresholdMs: 5000 }, 60), {
+      phrases: [],
+      progress: {},
+      events: [],
+    })
+    expect(acts.map((a) => a.to)).toEqual(['/structure', '/message'])
+    expect(acts[0].label).toBe('構文ドリルで時間を測って練習（まずは10回）')
+  })
+
+  it('fastLaunchPct: 実測サンプルからあと何回速く起動すればよいか出す', () => {
+    // 直近10件中3件が5秒以内→30%。目標60%まで あと8回。
+    const events: LearningEvent[] = Array.from({ length: 10 }, (_, i) =>
+      makeEvent('grade', {
+        chunkId: 'x',
+        grade: 'good',
+        boxFrom: 0,
+        boxTo: 1,
+        latencyMs: i < 3 ? 2000 : 8000,
+      }),
+    )
+    const acts = nextActions(step({ kind: 'fastLaunchPct', thresholdMs: 5000 }, 60), {
+      phrases: [],
+      progress: {},
+      events,
+    })
+    // 秒は整数のまま（5秒であって5.0秒ではない）。
+    expect(acts[0].label).toBe('構文ドリルで5秒以内の起動をあと 8 回')
+    expect(acts[1].to).toBe('/message')
+  })
+
+  it('達成済みのステップには次の一手を出さない', () => {
+    const phrases = [phrase('s0', 'Work', 'Structure')]
+    const progress = toMap([prog('s0', 5)])
+    expect(
+      nextActions(step({ kind: 'retainedStructures' }, 1), { phrases, progress, events: [] }),
+    ).toEqual([])
+  })
+
+  it('chatSessions は残りセッション数をそのまま出す', () => {
+    const acts = nextActions(step({ kind: 'chatSessions' }, 10), {
+      phrases: [],
+      progress: {},
+      events: [makeEvent('chat', { targetChunkIds: [], usedChunkIds: [], userMessageCount: 3 })],
+    })
+    expect(acts).toEqual([
+      { emoji: '💬', label: 'チャット練習をあと 9 セッション', to: '/chat' },
+    ])
   })
 })
 

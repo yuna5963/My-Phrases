@@ -41,6 +41,16 @@ export interface SessionOptions {
   clusterByFacet?: boolean
   /** 採点ログに残す練習モード（KPIの内訳把握用）。 */
   mode?: PracticeMode
+  /**
+   * 1セットの出題数。指定するとこの枚数ちょうど（プールが足りなければ全部）で列を作る。
+   * 未指定なら従来どおり設定の sessionSize に従う。
+   */
+  setSize?: number
+  /**
+   * 弱かったカードを列末尾へ積み直すか（既定 true）。
+   * セット制ドリルでは false にして枚数を固定する（弱いカードはSRSが当日再出題する）。
+   */
+  requeueWeak?: boolean
 }
 
 /**
@@ -57,6 +67,8 @@ export function useSession(options: SessionOptions = {}) {
     noFallback = false,
     clusterByFacet = false,
     mode,
+    setSize,
+    requeueWeak = true,
   } = options
   const phrases = useDeck((s) => s.phrases)
   const grade = useDeck((s) => s.grade)
@@ -79,7 +91,9 @@ export function useSession(options: SessionOptions = {}) {
 
   const buildQueue = () => {
     const progress = useDeck.getState().progress
-    let picked = buildSession(pool, progress, includeStatuses, sessionSize, {
+    // セット制ドリルは setSize ちょうどで区切る（設定の sessionSize より優先）。
+    const size = setSize ?? sessionSize
+    let picked = buildSession(pool, progress, includeStatuses, size, {
       onlyUnsure,
     })
     if (picked.length === 0 && !noFallback) {
@@ -88,12 +102,24 @@ export function useSession(options: SessionOptions = {}) {
           (includeStatuses.length === 0 || includeStatuses.includes(p.status)) &&
           (!onlyUnsure || !progress[p.id]?.learned),
       )
-      picked = shuffle(fallback).slice(0, sessionSize)
+      picked = shuffle(fallback).slice(0, size)
+    }
+    // セット制は「毎回きっちり setSize 枚」が達成感の土台。期日到来だけでは足りない
+    // ときも、まだ選ばれていないカードからランダムに埋めて1セットの枚数を揃える。
+    if (setSize != null && picked.length < size) {
+      const chosen = new Set(picked.map((p) => p.id))
+      const rest = pool.filter(
+        (p) =>
+          !chosen.has(p.id) &&
+          (includeStatuses.length === 0 || includeStatuses.includes(p.status)) &&
+          (!onlyUnsure || !progress[p.id]?.learned),
+      )
+      picked = [...picked, ...shuffle(rest).slice(0, size - picked.length)]
     }
     if (clusterByFacet) picked = clusterByTypeCategory(picked)
     let ids = picked.map((p) => p.id)
     if (shuffleOpt) ids = shuffle(ids)
-    return ids
+    return ids.slice(0, size)
   }
 
   const [queue, setQueue] = useState<string[]>(buildQueue)
@@ -129,7 +155,8 @@ export function useSession(options: SessionOptions = {}) {
     if (!id) return
     await grade(id, g, mode, latencyMs)
     setTally((t) => ({ ...t, [g]: t[g] + 1 }))
-    if (g !== 'good') setQueue((q) => [...q, id]) // re-show weak cards
+    // re-show weak cards（セット制ドリルでは積み直さず、枚数を固定したままセットを終える）
+    if (g !== 'good' && requeueWeak) setQueue((q) => [...q, id])
     setPos((p) => p + 1)
   }
 
