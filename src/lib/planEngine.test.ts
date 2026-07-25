@@ -64,11 +64,9 @@ describe('planItemDone', () => {
   const play4 = makeEvent('play', { seconds: 240 }, D('2026-07-19'))
   const play6 = makeEvent('play', { seconds: 360 }, D('2026-07-19'))
 
-  it('daily/compose は該当モードの採点だけで達成（相互に独立）', () => {
+  it('daily は該当モードの採点だけで達成（他モードでは未達成のまま）', () => {
     expect(planItemDone('daily', [gradeDaily])).toBe(true)
-    expect(planItemDone('compose', [gradeDaily])).toBe(false) // 今日の練習だけでは瞬間英作文は未達成
-    expect(planItemDone('compose', [gradeCompose])).toBe(true)
-    expect(planItemDone('daily', [gradeCompose])).toBe(false)
+    expect(planItemDone('daily', [gradeCompose])).toBe(false) // 他モードの採点では未達成のまま
     expect(planItemDone('daily', [])).toBe(false)
   })
 

@@ -110,28 +110,10 @@ export default function Home() {
           onClick={() => navigate('/think')}
         />
         <ModeCard
-          emoji="⚡"
-          title="瞬間英作文"
-          desc="日本語を見てチャンクを即作文＋例文確認"
-          onClick={() => navigate('/compose')}
-        />
-        <ModeCard
-          emoji="🧩"
-          title="文脈穴埋め"
-          desc="例文の穴からチャンクを思い出す"
-          onClick={() => navigate('/cloze')}
-        />
-        <ModeCard
           emoji="📖"
           title="長文音読"
           desc="長文をお手本に続けて音読"
           onClick={() => navigate('/long-reading')}
-        />
-        <ModeCard
-          emoji="💬"
-          title="チャット練習"
-          desc="AIコーチと会話して覚えたチャンクを使う"
-          onClick={() => navigate('/chat')}
         />
         <ModeCard
           emoji="🗂"

@@ -21,7 +21,7 @@ export interface PlanItem {
   detail: string
   route: string
   /** 実施済み判定に使う種別（当日の学習ログと突き合わせる）。 */
-  kind: 'play' | 'daily' | 'chat' | 'compose' | 'structure' | 'message'
+  kind: 'play' | 'daily' | 'chat' | 'structure' | 'message'
 }
 
 export interface DailyPlan {
@@ -122,15 +122,13 @@ export function buildPlan(energy: Energy, ctx: PlanContext): DailyPlan {
 
 /**
  * プラン項目が「今日すでに実施済み」か（当日の学習ログから判定）。
- * daily / compose は**そのモードでの採点**が1件でもあれば達成（採点ログの mode で区別する。
- * 今日の練習だけをやっても瞬間英作文は未達成のまま）。chat は会話完了、play は再生5分以上。
+ * daily / structure / message は**そのモードでの採点**が1件でもあれば達成
+ * （採点ログの mode で区別する）。chat は会話完了、play は再生5分以上。
  */
 export function planItemDone(kind: PlanItem['kind'], todayEvents: LearningEvent[]): boolean {
   switch (kind) {
     case 'daily':
       return todayEvents.some((e) => e.type === 'grade' && e.mode === 'daily')
-    case 'compose':
-      return todayEvents.some((e) => e.type === 'grade' && e.mode === 'compose')
     case 'structure':
       return todayEvents.some((e) => e.type === 'grade' && e.mode === 'structure')
     case 'message':

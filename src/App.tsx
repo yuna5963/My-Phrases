@@ -12,7 +12,6 @@ import StructureDrill from './pages/StructureDrill'
 import MessageDrill from './pages/MessageDrill'
 import LongReading from './pages/LongReading'
 import LongReadingCreate from './pages/LongReadingCreate'
-import Cloze from './pages/Cloze'
 import ChatPractice from './pages/ChatPractice'
 import ThinkPractice from './pages/ThinkPractice'
 import ExpressionStock from './pages/ExpressionStock'
@@ -90,7 +89,6 @@ export default function App() {
             <Route path="/message" element={<MessageDrill />} />
             <Route path="/long-reading" element={<LongReading />} />
             <Route path="/long-reading/new" element={<LongReadingCreate />} />
-            <Route path="/cloze" element={<Cloze />} />
             <Route path="/chat" element={<ChatPractice />} />
             <Route path="/think" element={<ThinkPractice />} />
             <Route path="/stock" element={<ExpressionStock />} />
