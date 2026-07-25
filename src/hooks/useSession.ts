@@ -16,6 +16,13 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
+/** 音声モードでのみ付く追加ログ（発話開始までのms・認識テキスト・自動照合）。 */
+export interface GradeExtra {
+  launchMs?: number
+  attempt?: string
+  autoMatch?: 'hit' | 'partial' | 'miss'
+}
+
 export interface Tally {
   good: number
   vague: number
@@ -150,10 +157,10 @@ export function useSession(options: SessionOptions = {}) {
   const goPrev = () => setPos((p) => Math.max(0, p - 1))
   const goNext = () => setPos((p) => Math.min(queue.length - 1, p + 1))
 
-  async function answer(g: Grade, latencyMs?: number, predicted?: 'can' | 'unsure') {
+  async function answer(g: Grade, latencyMs?: number, predicted?: 'can' | 'unsure', extra?: GradeExtra) {
     const id = queue[pos]
     if (!id) return
-    await grade(id, g, mode, latencyMs, predicted)
+    await grade(id, g, mode, latencyMs, predicted, extra)
     setTally((t) => ({ ...t, [g]: t[g] + 1 }))
     // re-show weak cards（セット制ドリルでは積み直さず、枚数を固定したままセットを終える）
     if (g !== 'good' && requeueWeak) setQueue((q) => [...q, id])

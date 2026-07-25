@@ -39,6 +39,16 @@ export interface GradeEvent extends BaseEvent {
    * 開示前の予測と開示後の結果をペアで残す。コミットゲートOFF時は付かない。
    */
   predicted?: 'can' | 'unsure'
+  /**
+   * 和訳表示→**英語を言い始めるまで**のms（音声モードのみ）。
+   * 従来の latencyMs は「開示ボタンを押すまで」で、丁寧に言い直すほど値が悪化する
+   * （＝真面目に練習するほどスコアが下がる）指標だった。launchMs はその利益相反が無い。
+   */
+  launchMs?: number
+  /** 音声認識が拾った実際の発話（音声モードのみ）。後から検証・較正するための証拠。 */
+  attempt?: string
+  /** 期待文との自動照合の結果（音声モードのみ）。加点にのみ使い、減点には使わない。 */
+  autoMatch?: 'hit' | 'partial' | 'miss'
 }
 
 /** チャット練習を1セッション終えた（usedChunkIds はここで初めて永続化される）。 */

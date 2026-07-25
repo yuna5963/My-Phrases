@@ -25,6 +25,8 @@ export interface SettingsState {
   inAppMic: boolean
   /** 開示前に「言えた／あやしい」を申告させる（検索コミットゲート。既定 true）。 */
   commitGate: boolean
+  /** 申告のかわりに英語を声に出して答える（コミットゲートON時のみ。既定 false）。 */
+  voiceAnswer: boolean
   setVoiceURI: (v: string | null) => void
   setRate: (r: number) => void
   setAutoPlay: (b: boolean) => void
@@ -43,6 +45,7 @@ export interface SettingsState {
   setChatTargetCount: (n: number) => void
   setInAppMic: (b: boolean) => void
   setCommitGate: (b: boolean) => void
+  setVoiceAnswer: (b: boolean) => void
 }
 
 export const ALL_STATUSES = ['未着手', '進行中', '完了']
@@ -68,6 +71,7 @@ export const useSettings = create<SettingsState>()(
       chatTargetCount: 4,
       inAppMic: false,
       commitGate: true,
+      voiceAnswer: false,
       setVoiceURI: (voiceURI) => set({ voiceURI }),
       setRate: (rate) => set({ rate }),
       setAutoPlay: (autoPlay) => set({ autoPlay }),
@@ -91,6 +95,7 @@ export const useSettings = create<SettingsState>()(
       setChatTargetCount: (chatTargetCount) => set({ chatTargetCount }),
       setInAppMic: (inAppMic) => set({ inAppMic }),
       setCommitGate: (commitGate) => set({ commitGate }),
+      setVoiceAnswer: (voiceAnswer) => set({ voiceAnswer }),
     }),
     { name: 'my-phrases-settings' },
   ),

@@ -5,6 +5,8 @@ import { useSpokenWordTracker } from '../hooks/useSpokenWordTracker'
 import type { Phrase } from '../types'
 import KanaLine from './KanaLine'
 import SpokenText from './SpokenText'
+import { useSpeechInput } from '../hooks/useSpeechInput'
+import { matchLevel, type MatchLevel } from '../lib/chunkMatch'
 
 export interface ReproItem {
   en: string
@@ -40,6 +42,9 @@ export default function ReproCard({
   revealNote,
   commitGate = false,
   onPredict,
+  voiceAnswer = false,
+  onLaunch,
+  onAttempt,
 }: {
   items: ReproItem[]
   /** カード上部に表示する補足（メタ情報チップなど）。 */
@@ -60,6 +65,16 @@ export default function ReproCard({
   commitGate?: boolean
   /** 開示前の申告を親へ通知する（採点ログに残して過信の度合いを測る）。 */
   onPredict?: (p: 'can' | 'unsure') => void
+  /**
+   * コミットゲートを「宣言ボタン」から**英語の音声入力**に格上げする。
+   * 声に出したことを機械が確認するので、想起が実際に起きたかを検証できる。
+   * 音声認識に対応していない端末では自動的に宣言ボタンへフォールバックする。
+   */
+  voiceAnswer?: boolean
+  /** 英語を言い始めた瞬間（最初の中間結果）。起動レイテンシの終点として使う。 */
+  onLaunch?: () => void
+  /** 認識できた発話と、期待文との自動照合の結果。 */
+  onAttempt?: (a: { text: string; level: MatchLevel }) => void
 }) {
   const voiceURI = useSettings((s) => s.voiceURI)
   const rate = useSettings((s) => s.rate)
@@ -104,6 +119,45 @@ export default function ReproCard({
       onError: done,
     })
   }
+
+  // ---- 声で答えるゲート ----
+  // 認識できた発話と自動照合の結果（開示面に表示する）。項目が変わったら消す。
+  const [attempt, setAttempt] = useState<{ text: string; level: MatchLevel } | null>(null)
+  // onFinal の identity を固定したいので、可変値はすべて ref 経由で読む。
+  const expectedRef = useRef('')
+  expectedRef.current = items[st.idx]?.en ?? ''
+  const onLaunchRef = useRef(onLaunch)
+  onLaunchRef.current = onLaunch
+  const onAttemptRef = useRef(onAttempt)
+  onAttemptRef.current = onAttempt
+  const stopRef = useRef<() => void>(() => {})
+
+  const speech = useSpeechInput({
+    lang: 'en-US',
+    onFinal: (text) => {
+      const level = matchLevel(expectedRef.current, text)
+      setAttempt({ text, level })
+      onAttemptRef.current?.({ text, level })
+      // Web は continuous なので自分で止める（Android は無音で自動終了する）。
+      stopRef.current()
+      setSt((s) => ({ ...s, revealed: true }))
+    },
+  })
+  stopRef.current = speech.stop
+
+  // 音声認識に非対応の端末では、声のゲートは使わず宣言ボタンへ落とす。
+  const voiceGate = commitGate && voiceAnswer && speech.supported
+
+  // 最初の中間結果が出た＝英語を言い始めた瞬間。起動レイテンシの終点として親へ渡す。
+  // 計測器側が項目ごとに1回だけ採るので、何度呼んでも二重計上にならない。
+  useEffect(() => {
+    if (speech.listening && speech.interim.trim() !== '') onLaunchRef.current?.()
+  }, [speech.listening, speech.interim])
+
+  // 項目が変わったら前の発話を消す。
+  useEffect(() => {
+    setAttempt(null)
+  }, [st.idx, items])
 
   // 音声ドライバ: 未公開→和訳を読み上げ、公開後→英文を読み上げる。
   // 次の項目への遷移は自動では行わず、タッチ（onTap）でのみ進む。
@@ -160,6 +214,7 @@ export default function ReproCard({
             <SpokenText text={it.en} current={tracker.current} />
           </p>
           <KanaLine kana={it.kana} />
+          {attempt && <AttemptResult attempt={attempt} />}
           {revealNote && <p className="t-subtle mt-2 text-xs">{revealNote}</p>}
           <button
             onClick={(e) => {
@@ -171,6 +226,46 @@ export default function ReproCard({
           >
             🔊 もう一度
           </button>
+        </div>
+      ) : voiceGate ? (
+        <div
+          className="mt-4 border-t border-carbon-hairline pt-4 dark:border-carbon-line-dark"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {speech.listening ? (
+            <>
+              <button
+                onClick={speech.stop}
+                className="btn-tertiary w-full animate-pulse py-3 text-sm font-medium"
+              >
+                ⏹ 聞き取り中… 終える
+              </button>
+              <p className="t-subtle mt-2 min-h-[1.25rem] text-xs">{speech.interim || '…'}</p>
+            </>
+          ) : (
+            <>
+              <p className="t-subtle text-sm">英語で声に出して答える 👇</p>
+              <button
+                onClick={() => {
+                  // 読み上げ中だとマイクが自分の音を拾うので、必ず止めてから聞き始める。
+                  stopSpeaking()
+                  speech.start()
+                }}
+                className="btn-primary mt-3 w-full py-3 text-sm font-medium"
+              >
+                🎤 話して答える
+              </button>
+              <button
+                onClick={() => setSt((v) => ({ ...v, revealed: true }))}
+                className="mt-2 w-full py-2 text-xs t-subtle active:opacity-80"
+              >
+                声を使わずに開示する
+              </button>
+            </>
+          )}
+          {speech.error && (
+            <p className="mt-2 text-xs text-carbon-error">⚠ {speech.error}</p>
+          )}
         </div>
       ) : commitGate ? (
         <div className="mt-4 border-t border-carbon-hairline pt-4 dark:border-carbon-line-dark">
@@ -201,6 +296,28 @@ export default function ReproCard({
           タッチして英文を表示 👆
         </p>
       )}
+    </div>
+  )
+}
+
+/**
+ * 音声認識が拾った発話と、期待文との重なり具合。
+ * 誤認識で「間違い」と断じないよう、miss でも否定的な言い方はしない
+ * （採点の主導権は最後まで学習者に残す）。
+ */
+function AttemptResult({ attempt }: { attempt: { text: string; level: MatchLevel } }) {
+  const label =
+    attempt.level === 'hit'
+      ? { icon: '◯', text: '言えています', cls: 'text-carbon-success' }
+      : attempt.level === 'partial'
+        ? { icon: '△', text: '一部が一致', cls: '' }
+        : { icon: '—', text: '聞き取れた範囲では一致しませんでした', cls: 't-subtle' }
+  return (
+    <div className="mt-3 border-t border-carbon-hairline pt-3 text-left dark:border-carbon-line-dark">
+      <p className={`text-xs font-medium ${label.cls}`}>
+        {label.icon} {label.text}
+      </p>
+      <p className="t-subtle mt-1 text-xs">聞き取り: {attempt.text}</p>
     </div>
   )
 }

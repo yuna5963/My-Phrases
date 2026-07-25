@@ -192,16 +192,20 @@ export function getTrack(id: string): GoalTrack | undefined {
 }
 
 /**
- * 直近7日（今日を含む）の、起動レイテンシを測れた採点のレイテンシ列。
- * fastLaunchPct の実測（measureStep）と次の一手の見積り（nextActions）で
- * 窓の定義がずれないよう、1か所に寄せている。
+ * 直近7日（今日を含む）の、**発話開始まで**のレイテンシ列（launchMs）。
+ *
+ * v1.9.0 で latencyMs（開示ボタンを押すまで）から launchMs（英語を言い始めるまで）へ
+ * 切り替えた。前者は「丁寧に言い直すほど値が悪化し、諦めて即開示すると良くなる」という
+ * 利益相反を抱えており、速さの指標として使えなかったため。
+ * launchMs は音声モードでのみ記録されるので、音声で答えていない間は0件＝測定不能になる
+ * （その状態は nextActions が「まず計測から」と案内する）。
  */
 export function recentLatencies(events: LearningEvent[]): number[] {
   const to = todayStr()
   const window = eventsInRange(events, addDays(to, -6), to)
   const lats: number[] = []
   for (const e of window) {
-    if (e.type === 'grade' && typeof e.latencyMs === 'number') lats.push(e.latencyMs)
+    if (e.type === 'grade' && typeof e.launchMs === 'number') lats.push(e.launchMs)
   }
   return lats
 }
@@ -401,8 +405,12 @@ export function nextActions(
       )
       if (n === null)
         return [
-          { emoji: '🧱', label: '構文ドリルで時間を測って練習（まずは10回）', to: '/structure' },
-          { emoji: '🧠', label: '意味ノード生成でも計測されます', to: '/message' },
+          {
+            emoji: '🎤',
+            label: '設定で「声で答える」をONにすると、起動の速さを計測できます',
+            to: '/settings',
+          },
+          { emoji: '🧱', label: '構文ドリルで声に出して練習（まずは10回）', to: '/structure' },
         ]
       return [
         { emoji: '🧱', label: `構文ドリルで${sec}秒以内の起動をあと ${n} 回`, to: '/structure' },

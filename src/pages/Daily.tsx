@@ -7,6 +7,7 @@ import { speak, speakSequence, stopSpeaking } from '../lib/tts'
 import { formFor, type DailyForm } from '../lib/dailyForm'
 import { clozeItems } from '../lib/cloze'
 import type { Grade, Phrase } from '../types'
+import type { MatchLevel } from '../lib/chunkMatch'
 import SessionHeader from '../components/SessionHeader'
 import SessionSummary from '../components/SessionSummary'
 import ModelCard, { modelParts } from '../components/ModelCard'
@@ -38,6 +39,7 @@ export default function Daily() {
   const voiceURI = useSettings((x) => x.voiceURI)
   const rate = useSettings((x) => x.rate)
   const commitGate = useSettings((x) => x.commitGate)
+  const voiceAnswer = useSettings((x) => x.voiceAnswer)
   const navigate = useNavigate()
 
   const [revealed, setRevealed] = useState(false) // cloze: 答えを開示したか
@@ -45,6 +47,7 @@ export default function Daily() {
   const [composeEnd, setComposeEnd] = useState(false) // compose: 最後の項目まで開示したか
   // 開示前の申告（コミットゲート）。採点時に一緒に記録して過信の度合いを測る。
   const [predicted, setPredicted] = useState<'can' | 'unsure' | undefined>(undefined)
+  const [attempt, setAttempt] = useState<{ text: string; level: MatchLevel } | undefined>(undefined)
 
   // カード切替時にお手本の連続再生を打ち切るためのトークン。
   const playToken = useRef(0)
@@ -79,6 +82,7 @@ export default function Daily() {
     setReproRevealed(false)
     setComposeEnd(false)
     setPredicted(undefined)
+    setAttempt(undefined)
     stopModel()
     const cur = s.current
     if (autoPlay && cur && formFor(useDeck.getState().progress[cur.id], cur) === 'model') {
@@ -131,7 +135,8 @@ export default function Daily() {
   const meta = FORM_META[form!]
 
   // ReproCard を使う形式（再現・瞬間英作文）は、開示前の申告を採点ログへ一緒に残す。
-  const gradeWithPrediction = (g: Grade) => s.answer(g, undefined, predicted)
+  const gradeWithPrediction = (g: Grade) =>
+    s.answer(g, undefined, predicted, { attempt: attempt?.text, autoMatch: attempt?.level })
 
   // cloze: 開示時に例文全文を（設定に応じて）読み上げる。
   const revealCloze = () => {
@@ -188,6 +193,8 @@ export default function Daily() {
               onStep={(st) => setReproRevealed(st.revealed)}
               commitGate={commitGate}
               onPredict={setPredicted}
+              voiceAnswer={voiceAnswer}
+              onAttempt={setAttempt}
             />
             <p className="text-center text-sm t-subtle">{meta.hint}</p>
           </div>
@@ -208,6 +215,8 @@ export default function Daily() {
               }
               commitGate={commitGate}
               onPredict={setPredicted}
+              voiceAnswer={voiceAnswer}
+              onAttempt={setAttempt}
             />
             <p className="text-center text-sm t-subtle">
               日本語を見て声に出して英作文 → タッチで答え合わせ

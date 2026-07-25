@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useSession } from '../hooks/useSession'
 import { useSettings } from '../store/useSettings'
 import type { Grade } from '../types'
+import type { MatchLevel } from '../lib/chunkMatch'
 import SessionHeader from '../components/SessionHeader'
 import SessionSummary from '../components/SessionSummary'
 import ReproCard, { chunkAndExampleItems } from '../components/ReproCard'
@@ -20,16 +21,19 @@ import StepNav from '../components/StepNav'
 export default function Compose() {
   const s = useSession({ clusterByFacet: true, mode: 'compose' })
   const commitGate = useSettings((x) => x.commitGate)
+  const voiceAnswer = useSettings((x) => x.voiceAnswer)
   const navigate = useNavigate()
 
   // 最後の項目（例文の末尾）の英文まで開示したら採点ボタンを出す。
   const [atEnd, setAtEnd] = useState(false)
   // 開示前の申告（コミットゲート）。採点時に一緒に記録する。
   const [predicted, setPredicted] = useState<'can' | 'unsure' | undefined>(undefined)
+  const [attempt, setAttempt] = useState<{ text: string; level: MatchLevel } | undefined>(undefined)
 
   useEffect(() => {
     setAtEnd(false)
     setPredicted(undefined)
+    setAttempt(undefined)
   }, [s.pos])
 
   const c = s.current
@@ -60,6 +64,8 @@ export default function Compose() {
           onStep={(st) => setAtEnd(st.revealed && st.idx === items.length - 1)}
           commitGate={commitGate}
           onPredict={setPredicted}
+          voiceAnswer={voiceAnswer}
+          onAttempt={setAttempt}
         />
         <p className="text-center text-sm t-subtle">
           日本語を見て声に出して英作文 → タッチで答え合わせ
@@ -67,7 +73,14 @@ export default function Compose() {
       </div>
 
       {atEnd && (
-        <GradeButtons onGrade={(g: Grade) => s.answer(g, undefined, predicted)} />
+        <GradeButtons
+          onGrade={(g: Grade) =>
+            s.answer(g, undefined, predicted, {
+              attempt: attempt?.text,
+              autoMatch: attempt?.level,
+            })
+          }
+        />
       )}
 
       <StepNav
