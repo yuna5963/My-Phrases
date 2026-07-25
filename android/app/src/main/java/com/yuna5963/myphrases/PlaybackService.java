@@ -55,10 +55,33 @@ public class PlaybackService extends Service {
         return START_NOT_STICKY;
     }
 
+    /**
+     * タスク一覧からアプリをスワイプで閉じられたとき。
+     * manifest の stopWithTask=true でシステムが停止してくれるが、
+     * 端末・OSバージョンによる差の保険として明示的にも止める
+     * （ここを取りこぼすと wake lock を握ったままプロセスが残る）。
+     */
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        stopForegroundAndSelf();
+        super.onTaskRemoved(rootIntent);
+    }
+
     @Override
     public void onDestroy() {
-        if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
+        releaseWakeLock();
         super.onDestroy();
+    }
+
+    private void stopForegroundAndSelf() {
+        releaseWakeLock();
+        // STOP_FOREGROUND_REMOVE は API 24 から。minSdk が 24 なので分岐は不要。
+        stopForeground(Service.STOP_FOREGROUND_REMOVE);
+        stopSelf();
+    }
+
+    private void releaseWakeLock() {
+        if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
     }
 
     @Nullable

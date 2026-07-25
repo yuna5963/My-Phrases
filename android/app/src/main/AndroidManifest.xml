@@ -20,10 +20,16 @@
             </intent-filter>
         </activity>
 
-        <!-- 連続再生のバックグラウンド継続用フォアグラウンドサービス -->
+        <!-- 連続再生のバックグラウンド継続用フォアグラウンドサービス。
+             stopWithTask=true は必須: 既定(false)だと、再生中にタスク一覧から
+             アプリをスワイプで閉じてもサービスが生き残り、プロセス常駐と
+             PARTIAL_WAKE_LOCK 保持（＝CPUが眠れない）が続いてしまう。
+             Activity が消えた時点で再生を進める JS も無く、実体のない
+             「再生中」通知だけが残る状態になる。 -->
         <service
             android:name=".PlaybackService"
             android:exported="false"
+            android:stopWithTask="true"
             android:foregroundServiceType="mediaPlayback"
         />
 
