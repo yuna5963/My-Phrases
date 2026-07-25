@@ -161,8 +161,9 @@ describe('measureStep fastLaunchPct', () => {
   // 直近7日の起動レイテンシ付き採点のうち threshold 以内の割合（%）。
   const today = new Date()
   const old = new Date(Date.now() - 10 * 86400000) // 10日前＝窓の外
-  const grade = (latencyMs: number | undefined, when: Date) =>
-    makeEvent('grade', { chunkId: 'x', grade: 'good', boxFrom: 0, boxTo: 1, latencyMs }, when)
+  // fastLaunchPct は v1.9.0 で launchMs（発話開始まで）基準になった。
+  const grade = (launchMs: number | undefined, when: Date) =>
+    makeEvent('grade', { chunkId: 'x', grade: 'good', boxFrom: 0, boxTo: 1, launchMs }, when)
   const events: LearningEvent[] = [
     grade(2000, today),
     grade(4000, today),
@@ -184,7 +185,7 @@ describe('measureStep fastLaunchPct', () => {
       measureStep({ kind: 'fastLaunchPct', thresholdMs: 5000 }, { phrases: [], progress: {}, events: [] }),
     ).toBe(0)
   })
-  it('latencyMs 無しの grade は分母に入らない', () => {
+  it('launchMs 無しの grade は分母に入らない（音声で答えていない採点）', () => {
     // latency 付きは1件（速い）だけ→100%。latency 無しの grade が分母に入るなら 50% になるはず。
     const only: LearningEvent[] = [
       grade(1000, today),
@@ -225,7 +226,7 @@ describe('computeTrackProgress', () => {
         grade: 'good',
         boxFrom: 0,
         boxTo: 1,
-        latencyMs: i < 3 ? 2000 : 8000,
+        launchMs: i < 3 ? 2000 : 8000,
       }),
     )
     const tp = computeTrackProgress(track, { phrases, progress, events })
@@ -297,14 +298,15 @@ describe('nextActions', () => {
     expect(acts[0].label).toBe('構文ドリルで「できた」をあと 3 回')
   })
 
-  it('fastLaunchPct: 計測データ0件なら「まずは10回」に誘導する', () => {
+  it('fastLaunchPct: 計測データ0件なら、まず音声モードをONにするよう誘導する', () => {
+    // launchMs は音声モードでしか記録されないので、0件＝まだ声で答えていない状態。
     const acts = nextActions(step({ kind: 'fastLaunchPct', thresholdMs: 5000 }, 60), {
       phrases: [],
       progress: {},
       events: [],
     })
-    expect(acts.map((a) => a.to)).toEqual(['/structure', '/message'])
-    expect(acts[0].label).toBe('構文ドリルで時間を測って練習（まずは10回）')
+    expect(acts.map((a) => a.to)).toEqual(['/settings', '/structure'])
+    expect(acts[0].label).toBe('設定で「声で答える」をONにすると、起動の速さを計測できます')
   })
 
   it('fastLaunchPct: 実測サンプルからあと何回速く起動すればよいか出す', () => {
@@ -315,7 +317,7 @@ describe('nextActions', () => {
         grade: 'good',
         boxFrom: 0,
         boxTo: 1,
-        latencyMs: i < 3 ? 2000 : 8000,
+        launchMs: i < 3 ? 2000 : 8000,
       }),
     )
     const acts = nextActions(step({ kind: 'fastLaunchPct', thresholdMs: 5000 }, 60), {

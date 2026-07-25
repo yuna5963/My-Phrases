@@ -92,10 +92,18 @@ export async function loadSentenceEngineSeed(): Promise<Phrase[]> {
 export interface LatencyMeter {
   /** 新しい項目（和訳）が表示された。 */
   shown(now?: number): void
+  /**
+   * 英語を**言い始めた**（音声認識の最初の中間結果が出た瞬間）。
+   * これが本来測りたかった Clause launch latency の終点。
+   * 音声モードでのみ発火し、1項目につき最初の1回だけを採る。
+   */
+  launched(now?: number): void
   /** 英文が開示された（直前の shown からの区間を記録）。 */
   revealed(now?: number): void
-  /** 記録済み区間の中央値ms（0件なら undefined）。 */
+  /** 開示までの区間 solveMs の中央値ms（0件なら undefined）。 */
   median(): number | undefined
+  /** 発話開始までの区間 launchMs の中央値ms（0件なら undefined）。 */
+  launchMedian(): number | undefined
   /** 次のカードへ（区間リストを空に）。 */
   reset(): void
 }
@@ -115,12 +123,22 @@ export function medianMs(values: number[]): number | undefined {
 export function createLatencyMeter(): LatencyMeter {
   // 直近の shown 時刻（未表示なら null）。開示せずに再度 shown が来たら上書き＝前の計測は破棄。
   let shownAt: number | null = null
-  // 記録済みの区間（ms）。
+  // 記録済みの区間（ms）。開示まで（solveMs）と発話開始まで（launchMs）を別々に持つ。
   const spans: number[] = []
+  const launchSpans: number[] = []
+  // この項目でもう発話開始を採ったか（中間結果は何度も来るので最初の1回だけ）。
+  let launchedThisItem = false
 
   return {
     shown(now?: number) {
       shownAt = nowMs(now)
+      launchedThisItem = false
+    },
+    launched(now?: number) {
+      // shown を経ていない、または既に採った項目は無視する。
+      if (shownAt === null || launchedThisItem) return
+      launchedThisItem = true
+      launchSpans.push(nowMs(now) - shownAt)
     },
     revealed(now?: number) {
       // shown を経ていない開示（初期状態や、開示後にもう一度 revealed）は無視する。
@@ -132,9 +150,14 @@ export function createLatencyMeter(): LatencyMeter {
       // 偶数個なら中央2値の平均、奇数個なら中央の1値。
       return medianMs(spans)
     },
+    launchMedian() {
+      return medianMs(launchSpans)
+    },
     reset() {
       shownAt = null
+      launchedThisItem = false
       spans.length = 0
+      launchSpans.length = 0
     },
   }
 }

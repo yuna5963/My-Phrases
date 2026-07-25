@@ -10,6 +10,7 @@ import StepNav from '../components/StepNav'
 import SeedDeckEmpty, { useSeedDeck } from '../components/SeedDeckEmpty'
 import { createLatencyMeter, DRILL_SET_SIZE, isStructure, medianMs } from '../lib/sentenceEngine'
 import type { Grade } from '../types'
+import type { MatchLevel } from '../lib/chunkMatch'
 
 /**
  * 🧱 構文ドリル（Sentence Engine の第2層 Structure）。
@@ -27,6 +28,7 @@ export default function StructureDrill() {
     requeueWeak: false,
   })
   const commitGate = useSettings((x) => x.commitGate)
+  const voiceAnswer = useSettings((x) => x.voiceAnswer)
   const navigate = useNavigate()
   const { addSeed, seeding, seedError } = useSeedDeck(s.restart)
 
@@ -41,6 +43,7 @@ export default function StructureDrill() {
   useEffect(() => {
     setCanGrade(false)
     setPredicted(undefined)
+    setAttempt(undefined)
   }, [s.pos])
 
   // 何セットやりきったか（完了画面に「セットN」を出すため）。
@@ -48,6 +51,8 @@ export default function StructureDrill() {
 
   // 開示前の申告（コミットゲート）。採点時に一緒に記録して過信の度合いを測る。
   const [predicted, setPredicted] = useState<'can' | 'unsure' | undefined>(undefined)
+  // 音声モードで拾えた発話と自動照合の結果。
+  const [attempt, setAttempt] = useState<{ text: string; level: MatchLevel } | undefined>(undefined)
 
   const c = s.current
   // チャンク本体は含めず、構文の変形例だけを出題列にする（Compose との違い）。
@@ -84,7 +89,11 @@ export default function StructureDrill() {
   const grade = (g: Grade) => {
     const m = meter.median()
     if (m != null) sessionLatRef.current.push(m)
-    s.answer(g, m, predicted)
+    s.answer(g, m, predicted, {
+      launchMs: meter.launchMedian(),
+      attempt: attempt?.text,
+      autoMatch: attempt?.level,
+    })
     meter.reset()
   }
 
@@ -110,6 +119,9 @@ export default function StructureDrill() {
           accentClass="link"
           commitGate={commitGate}
           onPredict={setPredicted}
+          voiceAnswer={voiceAnswer}
+          onLaunch={() => meter.launched()}
+          onAttempt={setAttempt}
           onStep={(st) => {
             if (st.revealed) meter.revealed()
             else meter.shown()

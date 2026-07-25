@@ -9,6 +9,7 @@ import {
   eventsOn,
   gradeCount,
   launchLatencyMedian,
+  leniency,
   minimumLineMet,
   outputCount,
   playSeconds,
@@ -238,5 +239,38 @@ describe('calibration', () => {
     expect(c.sample).toBe(0)
     expect(c.can.rate).toBe(0)
     expect(c.unsure.rate).toBe(0)
+  })
+})
+
+describe('leniency', () => {
+  const voiced = (
+    autoMatch: 'hit' | 'partial' | 'miss',
+    g: 'good' | 'vague' | 'bad',
+  ): LearningEvent =>
+    makeEvent(
+      'grade',
+      { chunkId: 'c', grade: g, boxFrom: 0, boxTo: 1, autoMatch },
+      D('2026-07-25'),
+    )
+
+  it('miss なのに good を付けた回数を数える', () => {
+    const r = leniency([
+      voiced('miss', 'good'), // 甘い
+      voiced('miss', 'bad'), // 一致せず、自己採点も辛い → 甘くない
+      voiced('hit', 'good'), // 一致 → 甘くない
+      voiced('partial', 'good'), // partial は miss ではない → 甘くない
+    ])
+    expect(r.total).toBe(4)
+    expect(r.lenient).toBe(1)
+    expect(r.rate).toBeCloseTo(0.25)
+  })
+
+  it('autoMatch の無い採点（音声モード以外）は母数に入らない', () => {
+    const r = leniency([grade('2026-07-25', 'a', 0, 1), voiced('miss', 'good')])
+    expect(r.total).toBe(1)
+  })
+
+  it('0件でも NaN を返さない', () => {
+    expect(leniency([]).rate).toBe(0)
   })
 })

@@ -157,6 +157,33 @@ export function calibration(events: LearningEvent[]): Calibration {
   }
 }
 
+/** 音声モードの自動照合と、本人の採点のズレ。 */
+export interface Leniency {
+  /** 自動照合が miss だったのに「できた」を付けた回数。 */
+  lenient: number
+  /** 自動照合つきの採点の総数。 */
+  total: number
+  /** lenient / total（0..1）。total が 0 なら 0。 */
+  rate: number
+}
+
+/**
+ * 甘さ指数。「一致しなかったのに『できた』にした」割合。
+ *
+ * 音声認識には誤認識があるので、この値が高い＝必ずしも不正直ではない
+ * （言えていたのに拾えなかった場合も含む）。断定に使わず、傾向を見る材料にとどめる。
+ */
+export function leniency(events: LearningEvent[]): Leniency {
+  let lenient = 0
+  let total = 0
+  for (const e of events) {
+    if (e.type !== 'grade' || !e.autoMatch) continue
+    total++
+    if (e.autoMatch === 'miss' && e.grade === 'good') lenient++
+  }
+  return { lenient, total, rate: total === 0 ? 0 : lenient / total }
+}
+
 export interface DailySummary {
   date: string
   graded: number

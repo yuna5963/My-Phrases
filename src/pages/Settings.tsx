@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { ALL_STATUSES, useSettings } from '../store/useSettings'
 import { useDeck } from '../store/useDeck'
 import { isNativeApp } from '../lib/platform'
-import { calibration } from '../lib/kpi'
+import { calibration, leniency } from '../lib/kpi'
 import type { LearningEvent } from '../lib/events'
 import { useStock } from '../store/useStock'
 import {
@@ -374,6 +374,19 @@ export default function Settings() {
           答えを見てから採点すると「知ってた」と感じやすく、自己採点はどうしても甘くなります
           （誰でもそうなります）。開示の<strong>前</strong>に一度申告しておくと、
           そのズレを数字で確かめられます。OFFにすると従来どおりタッチで開示します。
+        </p>
+        <Row label="🎤 申告のかわりに声で答える">
+          <Toggle
+            checked={s.voiceAnswer}
+            onChange={s.setVoiceAnswer}
+          />
+        </Row>
+        <p className="text-xs t-subtle">
+          ONにすると、開示の前に<strong>英語を声に出して答え</strong>、認識した内容を
+          自動で照合します。<strong>一致しなくても減点にはしません</strong>
+          （聞き取りの誤りで「できたのに不正解」にしないため。採点は最後まであなたが決めます）。
+          この設定のときだけ、<strong>英語を言い始めるまでの速さ</strong>を計測できます。
+          コミットゲートがOFFのときと、音声認識に対応していない端末では無効です。
         </p>
         <CalibrationCard events={events} />
       </Section>
@@ -793,6 +806,20 @@ function CalibrationCard({ events }: { events: LearningEvent[] }) {
         total={cal.unsure.total}
       />
       <p className="text-xs t-subtle">{calibrationHint(cal.can.rate)}</p>
+      <LeniencyLine events={events} />
     </div>
+  )
+}
+
+/** 音声モードの「一致しなかったのに『できた』」割合。データが無ければ何も出さない。 */
+function LeniencyLine({ events }: { events: LearningEvent[] }) {
+  const len = leniency(events)
+  if (len.total < 10) return null
+  return (
+    <p className="text-xs t-subtle">
+      声で答えたうち、聞き取りと一致しないまま「できた」にしたのは{' '}
+      <strong>{Math.round(len.rate * 100)}%</strong>（{len.lenient}/{len.total}回）。
+      聞き取りの誤りも混じるので、目安として見てください。
+    </p>
   )
 }

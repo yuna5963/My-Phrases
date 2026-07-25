@@ -187,3 +187,56 @@ describe('sentence-engine.json（seed 教材）', () => {
     }
   })
 })
+
+describe('createLatencyMeter: launchMs（発話開始まで）', () => {
+  it('shown → launched の区間を measure し、開示までとは別に持つ', () => {
+    const m = createLatencyMeter()
+    m.shown(1000)
+    m.launched(3000) // 発話開始まで 2000ms
+    m.revealed(9000) // 開示まで 8000ms
+    expect(m.launchMedian()).toBe(2000)
+    expect(m.median()).toBe(8000)
+  })
+
+  it('1項目につき最初の発話開始だけを採る（中間結果は何度も来る）', () => {
+    const m = createLatencyMeter()
+    m.shown(0)
+    m.launched(1500)
+    m.launched(1800) // 同じ項目の2回目以降は無視
+    m.launched(2400)
+    expect(m.launchMedian()).toBe(1500)
+  })
+
+  it('shown を経ていない launched は無視する', () => {
+    const m = createLatencyMeter()
+    m.launched(500)
+    expect(m.launchMedian()).toBeUndefined()
+  })
+
+  it('項目をまたぐと再び採れる（中央値になる）', () => {
+    const m = createLatencyMeter()
+    m.shown(0)
+    m.launched(1000)
+    m.shown(5000)
+    m.launched(8000) // 3000ms
+    expect(m.launchMedian()).toBe(2000) // (1000+3000)/2
+  })
+
+  it('発話しなかった項目は launchMs に残らない（開示だけは記録される）', () => {
+    const m = createLatencyMeter()
+    m.shown(0)
+    m.revealed(4000) // 声を出さずに開示
+    expect(m.launchMedian()).toBeUndefined()
+    expect(m.median()).toBe(4000)
+  })
+
+  it('reset で両方が空になる', () => {
+    const m = createLatencyMeter()
+    m.shown(0)
+    m.launched(1000)
+    m.revealed(2000)
+    m.reset()
+    expect(m.launchMedian()).toBeUndefined()
+    expect(m.median()).toBeUndefined()
+  })
+})

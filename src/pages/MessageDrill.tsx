@@ -10,6 +10,7 @@ import StepNav from '../components/StepNav'
 import SeedDeckEmpty, { useSeedDeck } from '../components/SeedDeckEmpty'
 import { createLatencyMeter, DRILL_SET_SIZE, isMessage, medianMs } from '../lib/sentenceEngine'
 import type { Grade } from '../types'
+import type { MatchLevel } from '../lib/chunkMatch'
 
 /**
  * 🧠 意味ノード生成（Sentence Engine の第3層 Message）。
@@ -26,6 +27,7 @@ export default function MessageDrill() {
     requeueWeak: false,
   })
   const commitGate = useSettings((x) => x.commitGate)
+  const voiceAnswer = useSettings((x) => x.voiceAnswer)
   const navigate = useNavigate()
   const { addSeed, seeding, seedError } = useSeedDeck(s.restart)
 
@@ -39,6 +41,7 @@ export default function MessageDrill() {
   useEffect(() => {
     setCanGrade(false)
     setPredicted(undefined)
+    setAttempt(undefined)
   }, [s.pos])
 
   // 何セットやりきったか（完了画面に「セットN」を出すため）。
@@ -46,6 +49,8 @@ export default function MessageDrill() {
 
   // 開示前の申告（コミットゲート）。採点時に一緒に記録して過信の度合いを測る。
   const [predicted, setPredicted] = useState<'can' | 'unsure' | undefined>(undefined)
+  // 音声モードで拾えた発話と自動照合の結果。
+  const [attempt, setAttempt] = useState<{ text: string; level: MatchLevel } | undefined>(undefined)
 
   const c = s.current
   // 意味ノードは1枚を1項目として扱う（骨子ja → 参考出力en）。
@@ -82,7 +87,11 @@ export default function MessageDrill() {
   const grade = (g: Grade) => {
     const m = meter.median()
     if (m != null) sessionLatRef.current.push(m)
-    s.answer(g, m, predicted)
+    s.answer(g, m, predicted, {
+      launchMs: meter.launchMedian(),
+      attempt: attempt?.text,
+      autoMatch: attempt?.level,
+    })
     meter.reset()
   }
 
@@ -108,6 +117,9 @@ export default function MessageDrill() {
           accentClass="link"
           commitGate={commitGate}
           onPredict={setPredicted}
+          voiceAnswer={voiceAnswer}
+          onLaunch={() => meter.launched()}
+          onAttempt={setAttempt}
           onStep={(st) => {
             if (st.revealed) meter.revealed()
             else meter.shown()

@@ -54,6 +54,43 @@ export function matchesChunk(chunkEn: string, userText: string): boolean {
   return true
 }
 
+/** 自動照合の判定。miss は「一致しなかった」であって「間違い」ではない。 */
+export type MatchLevel = 'hit' | 'partial' | 'miss'
+
+/**
+ * 期待する英文のうち、発話にどれだけの語が現れたかの割合（0..1）。
+ *
+ * 完全一致（matchesChunk）だと、音声認識が1語でも取りこぼした時点で不一致になる。
+ * 日本語なまりの英語では誤認識が普通に起きるため、ドリルの自動照合には
+ * 「どれくらい言えたか」の連続量を使う。語の重複も数える（同じ語を2回言えば2回分）。
+ */
+export function overlapRatio(expected: string, actual: string): number {
+  const exp = normalize(expected).split(' ').filter(Boolean)
+  if (exp.length === 0) return 0
+  // 発話側の語を多重集合として持ち、一致するたびに1つ消費する。
+  const pool = new Map<string, number>()
+  for (const w of normalize(actual).split(' ').filter(Boolean)) {
+    pool.set(w, (pool.get(w) ?? 0) + 1)
+  }
+  let hit = 0
+  for (const w of exp) {
+    const n = pool.get(w) ?? 0
+    if (n > 0) {
+      hit++
+      pool.set(w, n - 1)
+    }
+  }
+  return hit / exp.length
+}
+
+/** 重なり率を3段階に落とす。しきい値は「取りこぼし1語程度は ○ のまま」を狙って決めた。 */
+export function matchLevel(expected: string, actual: string): MatchLevel {
+  const r = overlapRatio(expected, actual)
+  if (r >= 0.85) return 'hit'
+  if (r >= 0.5) return 'partial'
+  return 'miss'
+}
+
 /** 発話 text に使われている対象チャンクの id を返す。 */
 export function findUsedChunks(targets: Phrase[], text: string): string[] {
   return targets.filter((p) => matchesChunk(p.en, text)).map((p) => p.id)

@@ -67,6 +67,7 @@ interface DeckState {
     mode?: PracticeMode,
     latencyMs?: number,
     predicted?: 'can' | 'unsure',
+    extra?: { launchMs?: number; attempt?: string; autoMatch?: 'hit' | 'partial' | 'miss' },
   ) => Promise<void>
   setLearned: (id: string, learned: boolean) => Promise<void>
   reset: () => Promise<void>
@@ -333,7 +334,7 @@ export const useDeck = create<DeckState>((set, get) => ({
     await get().load()
   },
 
-  grade: async (id, g, mode, latencyMs, predicted) => {
+  grade: async (id, g, mode, latencyMs, predicted, extra) => {
     const current = get().progress[id]
     if (!current) return
     const updated = applyGrade(current, g)
@@ -348,6 +349,9 @@ export const useDeck = create<DeckState>((set, get) => ({
       ...(mode ? { mode } : {}),
       ...(latencyMs !== undefined ? { latencyMs: Math.round(latencyMs) } : {}),
       ...(predicted ? { predicted } : {}),
+      ...(extra?.launchMs !== undefined ? { launchMs: Math.round(extra.launchMs) } : {}),
+      ...(extra?.attempt ? { attempt: extra.attempt } : {}),
+      ...(extra?.autoMatch ? { autoMatch: extra.autoMatch } : {}),
     })
     let logged = false
     try {
