@@ -9,6 +9,31 @@
 
 ## [Unreleased]
 
+## [1.9.1] - 2026-07-25
+
+**再生中にアプリをスワイプで閉じると、サービスとウェイクロックが残る問題の修正。**
+
+`AndroidManifest.xml` の `PlaybackService` に `android:stopWithTask` を指定していなかった。
+この属性は**既定が `false`**＝「タスクを閉じてもサービスを止めない」で、`onTaskRemoved` も
+未実装だったため、**連続再生・長文音読の再生中にタスク一覧からスワイプで閉じると**:
+
+- フォアグラウンドサービスが生き残り、**アプリのプロセスが常駐**し続ける（WebView 込みでメモリを保持）
+- **`PARTIAL_WAKE_LOCK` を握ったまま**になり CPU がスリープできない（タイムアウトは10時間）
+- Activity は破棄され再生を進める JS も動かないため、**実体のない「再生中」通知だけが残る**
+
+CPU が眠れない状態が続くので、発熱・電池消費・端末全体の体感速度に影響する。
+
+なお **JS 側の停止処理に不備は無い**。再生停止時（`playing` が false）と画面離脱時（unmount）の
+両方で `stopBackgroundSession()` を呼んでおり、停止ボタン・戻る・ホームへ遷移では正しく解放される。
+抜けていたのは「タスクをスワイプで閉じる」経路だけ。
+
+### 修正
+- `PlaybackService` に **`android:stopWithTask="true"`** を指定（タスク終了時にシステムが停止する）
+- `PlaybackService.onTaskRemoved()` を実装し、wake lock 解放 → `stopForeground(STOP_FOREGROUND_REMOVE)`
+  → `stopSelf()` を明示的に行う。`stopWithTask` が効く端末では `onDestroy` 経由で解放されるが、
+  端末・OS バージョンによる差の保険として両方に置いた
+- wake lock の解放を `releaseWakeLock()` に集約
+
 ## [1.9.0] - 2026-07-25
 
 **声で答える。** 改善計画の Phase 3。v1.7.0 のコミットゲート（開示前の申告）を
