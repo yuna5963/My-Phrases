@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { makeEvent, type LearningEvent } from './events'
 import {
+  calibration,
   chatUsedRate,
   computeDailySummary,
   computeWeeklyStats,
@@ -184,5 +185,58 @@ describe('computeWeeklyStats', () => {
     expect(w.retained).toBe(1) // only 'a' on 07-12
     expect(w.activeDays).toBe(2) // 07-12 and 07-17
     expect(w.chatUsedRate).toBeCloseTo(0.5)
+  })
+})
+
+describe('calibration', () => {
+  const predicted = (
+    p: 'can' | 'unsure',
+    g: 'good' | 'vague' | 'bad',
+  ): LearningEvent =>
+    makeEvent(
+      'grade',
+      { chunkId: 'c', grade: g, boxFrom: 0, boxTo: 1, predicted: p },
+      D('2026-07-25'),
+    )
+
+  it('rates each prediction bucket independently', () => {
+    const c = calibration([
+      predicted('can', 'good'),
+      predicted('can', 'good'),
+      predicted('can', 'bad'), // 過信 1件
+      predicted('unsure', 'good'), // 過小評価 1件
+      predicted('unsure', 'bad'),
+      predicted('unsure', 'vague'),
+    ])
+    expect(c.can.total).toBe(3)
+    expect(c.can.hit).toBe(2)
+    expect(c.can.rate).toBeCloseTo(2 / 3)
+    expect(c.unsure.total).toBe(3)
+    expect(c.unsure.rate).toBeCloseTo(1 / 3)
+    expect(c.sample).toBe(6)
+  })
+
+  it('counts only `good` as a hit (vague is not success)', () => {
+    const c = calibration([predicted('can', 'vague')])
+    expect(c.can.total).toBe(1)
+    expect(c.can.rate).toBe(0)
+  })
+
+  it('ignores grades with no prediction and non-grade events', () => {
+    const evs: LearningEvent[] = [
+      grade('2026-07-25', 'a', 0, 1), // predicted 無し
+      makeEvent('play', { seconds: 300 }, D('2026-07-25')),
+      predicted('can', 'good'),
+    ]
+    const c = calibration(evs)
+    expect(c.sample).toBe(1)
+    expect(c.can.rate).toBe(1)
+  })
+
+  it('returns zero rates (not NaN) when a bucket is empty', () => {
+    const c = calibration([])
+    expect(c.sample).toBe(0)
+    expect(c.can.rate).toBe(0)
+    expect(c.unsure.rate).toBe(0)
   })
 })

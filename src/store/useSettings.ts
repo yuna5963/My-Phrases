@@ -23,6 +23,8 @@ export interface SettingsState {
   chatTargetCount: number // 1セッションで狙うチャンク数
   /** ネイティブアプリで、アプリ内の🎤ボタンを使う（既定 false＝キーボードのマイクを案内する）。 */
   inAppMic: boolean
+  /** 開示前に「言えた／あやしい」を申告させる（検索コミットゲート。既定 true）。 */
+  commitGate: boolean
   setVoiceURI: (v: string | null) => void
   setRate: (r: number) => void
   setAutoPlay: (b: boolean) => void
@@ -40,6 +42,7 @@ export interface SettingsState {
   setChatFeedbackJa: (b: boolean) => void
   setChatTargetCount: (n: number) => void
   setInAppMic: (b: boolean) => void
+  setCommitGate: (b: boolean) => void
 }
 
 export const ALL_STATUSES = ['未着手', '進行中', '完了']
@@ -64,6 +67,7 @@ export const useSettings = create<SettingsState>()(
       chatFeedbackJa: true,
       chatTargetCount: 4,
       inAppMic: false,
+      commitGate: true,
       setVoiceURI: (voiceURI) => set({ voiceURI }),
       setRate: (rate) => set({ rate }),
       setAutoPlay: (autoPlay) => set({ autoPlay }),
@@ -86,6 +90,7 @@ export const useSettings = create<SettingsState>()(
       setChatFeedbackJa: (chatFeedbackJa) => set({ chatFeedbackJa }),
       setChatTargetCount: (chatTargetCount) => set({ chatTargetCount }),
       setInAppMic: (inAppMic) => set({ inAppMic }),
+      setCommitGate: (commitGate) => set({ commitGate }),
     }),
     { name: 'my-phrases-settings' },
   ),

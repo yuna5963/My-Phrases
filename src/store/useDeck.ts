@@ -61,7 +61,13 @@ interface DeckState {
   noteChatComplete: (targetChunkIds: string[], usedChunkIds: string[], userMessageCount: number) => Promise<void>
   /** 意味ノード英語思考の完了（英文チェック）を学習ログに記録する。完了＝当日の最低ライン達成でストリークを維持する。 */
   noteThinkComplete: (nodeCount: number, sentenceCount: number, savedCard: boolean) => Promise<void>
-  grade: (id: string, g: Grade, mode?: PracticeMode, latencyMs?: number) => Promise<void>
+  grade: (
+    id: string,
+    g: Grade,
+    mode?: PracticeMode,
+    latencyMs?: number,
+    predicted?: 'can' | 'unsure',
+  ) => Promise<void>
   setLearned: (id: string, learned: boolean) => Promise<void>
   reset: () => Promise<void>
   importFiles: (files: File[], mode?: ImportMode) => Promise<ImportSummary>
@@ -327,7 +333,7 @@ export const useDeck = create<DeckState>((set, get) => ({
     await get().load()
   },
 
-  grade: async (id, g, mode, latencyMs) => {
+  grade: async (id, g, mode, latencyMs, predicted) => {
     const current = get().progress[id]
     if (!current) return
     const updated = applyGrade(current, g)
@@ -341,6 +347,7 @@ export const useDeck = create<DeckState>((set, get) => ({
       boxTo: updated.box,
       ...(mode ? { mode } : {}),
       ...(latencyMs !== undefined ? { latencyMs: Math.round(latencyMs) } : {}),
+      ...(predicted ? { predicted } : {}),
     })
     let logged = false
     try {

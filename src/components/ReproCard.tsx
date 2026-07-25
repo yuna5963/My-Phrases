@@ -38,6 +38,8 @@ export default function ReproCard({
   onStep,
   speakJa = true,
   revealNote,
+  commitGate = false,
+  onPredict,
 }: {
   items: ReproItem[]
   /** カード上部に表示する補足（メタ情報チップなど）。 */
@@ -50,6 +52,14 @@ export default function ReproCard({
   speakJa?: boolean
   /** 開示面の英文の下に小さく表示する注記（例: 参考出力の断り書き）。未指定なら非表示。 */
   revealNote?: string
+  /**
+   * 開示前に「言える／あやしい」の申告を挟む（検索コミットゲート）。
+   * ONのときカード全体のタップでは開示できず、2択のどちらかを押して初めて英文が出る。
+   * 声に出す前に答えを見てしまうと、自己採点が後知恵バイアスで甘くなるため。
+   */
+  commitGate?: boolean
+  /** 開示前の申告を親へ通知する（採点ログに残して過信の度合いを測る）。 */
+  onPredict?: (p: 'can' | 'unsure') => void
 }) {
   const voiceURI = useSettings((s) => s.voiceURI)
   const rate = useSettings((s) => s.rate)
@@ -118,9 +128,18 @@ export default function ReproCard({
   const it = items[st.idx]
 
   // 未公開→英文を公開、公開済み→次の項目へ即送り。
+  // コミットゲートON時は、未公開のタップでは開示しない（2択を押させる）。
   const onTap = () => {
-    if (!st.revealed) setSt((s) => ({ ...s, revealed: true }))
-    else setSt((s) => (s.idx + 1 < items.length ? { idx: s.idx + 1, revealed: false } : s))
+    if (!st.revealed) {
+      if (commitGate) return
+      setSt((s) => ({ ...s, revealed: true }))
+    } else setSt((s) => (s.idx + 1 < items.length ? { idx: s.idx + 1, revealed: false } : s))
+  }
+
+  // 申告と開示を1タップにまとめる（宣言してから見る、を最短の操作で成立させる）。
+  const predictAndReveal = (p: 'can' | 'unsure') => {
+    onPredict?.(p)
+    setSt((s) => ({ ...s, revealed: true }))
   }
 
   // 再生ボタンを内側に置くため、外側はボタンではなく div のタッチ領域にする
@@ -152,6 +171,30 @@ export default function ReproCard({
           >
             🔊 もう一度
           </button>
+        </div>
+      ) : commitGate ? (
+        <div className="mt-4 border-t border-carbon-hairline pt-4 dark:border-carbon-line-dark">
+          <p className="t-subtle text-sm">声に出してから、どちらかを選ぶ 👇</p>
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                predictAndReveal('can')
+              }}
+              className="btn-tertiary flex-1 py-3 text-sm font-medium"
+            >
+              ◯ 言えた
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                predictAndReveal('unsure')
+              }}
+              className="btn-tertiary flex-1 py-3 text-sm font-medium"
+            >
+              △ あやしい
+            </button>
+          </div>
         </div>
       ) : (
         <p className="t-subtle mt-4 border-t border-carbon-hairline pt-4 text-sm dark:border-carbon-line-dark">
