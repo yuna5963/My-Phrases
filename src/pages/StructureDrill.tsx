@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSession } from '../hooks/useSession'
+import { useSettings } from '../store/useSettings'
 import SessionHeader from '../components/SessionHeader'
 import SessionSummary from '../components/SessionSummary'
 import ReproCard, { type ReproItem } from '../components/ReproCard'
@@ -25,6 +26,7 @@ export default function StructureDrill() {
     setSize: DRILL_SET_SIZE,
     requeueWeak: false,
   })
+  const commitGate = useSettings((x) => x.commitGate)
   const navigate = useNavigate()
   const { addSeed, seeding, seedError } = useSeedDeck(s.restart)
 
@@ -38,10 +40,14 @@ export default function StructureDrill() {
   const [canGrade, setCanGrade] = useState(false)
   useEffect(() => {
     setCanGrade(false)
+    setPredicted(undefined)
   }, [s.pos])
 
   // 何セットやりきったか（完了画面に「セットN」を出すため）。
   const [setsDone, setSetsDone] = useState(0)
+
+  // 開示前の申告（コミットゲート）。採点時に一緒に記録して過信の度合いを測る。
+  const [predicted, setPredicted] = useState<'can' | 'unsure' | undefined>(undefined)
 
   const c = s.current
   // チャンク本体は含めず、構文の変形例だけを出題列にする（Compose との違い）。
@@ -78,7 +84,7 @@ export default function StructureDrill() {
   const grade = (g: Grade) => {
     const m = meter.median()
     if (m != null) sessionLatRef.current.push(m)
-    s.answer(g, m)
+    s.answer(g, m, predicted)
     meter.reset()
   }
 
@@ -102,6 +108,8 @@ export default function StructureDrill() {
             )
           }
           accentClass="link"
+          commitGate={commitGate}
+          onPredict={setPredicted}
           onStep={(st) => {
             if (st.revealed) meter.revealed()
             else meter.shown()

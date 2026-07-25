@@ -32,6 +32,13 @@ export interface GradeEvent extends BaseEvent {
   /** 和訳表示→英文開示の中央値ms。Sentence Engine の起動レイテンシKPI
    *  （Clause launch latency）の材料。計測できた採点のみ持つ。 */
   latencyMs?: number
+  /**
+   * 開示**前**に学習者が申告した見込み（JOL: judgment of learning）。
+   * 「言える」と思ったのに実際は言えなかった率＝過信の度合いを測る材料。
+   * 答えを見た後の自己採点（grade）だけでは、後知恵バイアスを取り除けないため、
+   * 開示前の予測と開示後の結果をペアで残す。コミットゲートOFF時は付かない。
+   */
+  predicted?: 'can' | 'unsure'
 }
 
 /** チャット練習を1セッション終えた（usedChunkIds はここで初めて永続化される）。 */

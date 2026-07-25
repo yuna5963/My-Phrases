@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { ALL_STATUSES, useSettings } from '../store/useSettings'
 import { useDeck } from '../store/useDeck'
 import { isNativeApp } from '../lib/platform'
+import { calibration } from '../lib/kpi'
+import type { LearningEvent } from '../lib/events'
 import { useStock } from '../store/useStock'
 import {
   getEnglishVoices,
@@ -39,6 +41,7 @@ export default function Settings() {
   const clearImported = useDeck((d) => d.clearImported)
   const source = useDeck((d) => d.source)
   const phrases = useDeck((d) => d.phrases)
+  const events = useDeck((d) => d.events)
   const phraseCount = phrases.length
   const seCount = phrases.filter(isSentenceEngine).length
   const [voices, setVoices] = useState<TtsVoice[]>([])
@@ -362,6 +365,18 @@ export default function Settings() {
           </p>
         </Section>
       )}
+
+      <Section title="🎯 学習の精度">
+        <Row label="開示前に「言えた／あやしい」を申告">
+          <Toggle checked={s.commitGate} onChange={s.setCommitGate} />
+        </Row>
+        <p className="text-xs t-subtle">
+          答えを見てから採点すると「知ってた」と感じやすく、自己採点はどうしても甘くなります
+          （誰でもそうなります）。開示の<strong>前</strong>に一度申告しておくと、
+          そのズレを数字で確かめられます。OFFにすると従来どおりタッチで開示します。
+        </p>
+        <CalibrationCard events={events} />
+      </Section>
 
       <Section title="セッション">
         <Row label={`1回の出題数 ${s.sessionSize}枚`}>
@@ -724,5 +739,60 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (b: boolean
         }`}
       />
     </button>
+  )
+}
+
+/** 較正の解釈を、責めずに一言で伝える。 */
+function calibrationHint(canRate: number): string {
+  if (canRate >= 0.9) return '予測どおりに言えています。出題を少し難しくしてもよさそうです'
+  if (canRate >= 0.75) return 'おおむね自己評価どおりです'
+  if (canRate >= 0.55) return '「言えた」と思ったうち3〜4割は取りこぼしています。これは普通のことです'
+  return '「言えた」の感覚が実際より先行しています。少しゆっくり確かめると精度が上がります'
+}
+
+/** 横棒1本（Carbon: 直角のトラック＋青いフィル）。 */
+function Bar({ label, rate, total }: { label: string; rate: number; total: number }) {
+  const pct = Math.round(rate * 100)
+  return (
+    <div>
+      <div className="flex items-baseline justify-between text-xs">
+        <span className="t-muted">{label}</span>
+        <span className="display">
+          {pct}%<span className="t-subtle ml-1 text-[11px]">／{total}回</span>
+        </span>
+      </div>
+      <div className="mt-1 h-1 w-full bg-carbon-surface-2 dark:bg-carbon-line-dark">
+        <div
+          className="h-1 bg-carbon-blue transition-all dark:bg-carbon-blue-40"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  )
+}
+
+/** 開示前の申告と、実際の採点結果のズレ（過信の度合い）を見せるカード。 */
+function CalibrationCard({ events }: { events: LearningEvent[] }) {
+  const cal = calibration(events)
+  // 母数が少ないうちは率がブレるので、数字を出さずに件数だけ示す。
+  const MIN_SAMPLE = 10
+  if (cal.sample < MIN_SAMPLE) {
+    return (
+      <div className="tile-muted p-3 text-xs t-subtle">
+        申告つきの採点が {cal.sample} 件たまりました。
+        {MIN_SAMPLE} 件を超えると、ここに「言えたと思ったうち実際に言えた率」を表示します。
+      </div>
+    )
+  }
+  return (
+    <div className="tile-muted space-y-3 p-3">
+      <Bar label="「◯ 言えた」と申告 → 実際に「できた」" rate={cal.can.rate} total={cal.can.total} />
+      <Bar
+        label="「△ あやしい」と申告 → 実際に「できた」"
+        rate={cal.unsure.rate}
+        total={cal.unsure.total}
+      />
+      <p className="text-xs t-subtle">{calibrationHint(cal.can.rate)}</p>
+    </div>
   )
 }

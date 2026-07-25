@@ -111,6 +111,52 @@ export function launchLatencyMedian(events: LearningEvent[]): number | null {
   return xs.length % 2 === 0 ? (xs[mid - 1] + xs[mid]) / 2 : xs[mid]
 }
 
+/** 予測（開示前のJOL）と結果（開示後の採点）のズレ。過信の度合いを測る。 */
+export interface Calibration {
+  /** 「言える」と予測した件数と、そのうち実際に good だった率（0..1）。 */
+  can: { total: number; hit: number; rate: number }
+  /** 「あやしい」と予測した件数と、そのうち実際に good だった率（0..1）。 */
+  unsure: { total: number; hit: number; rate: number }
+  /** 予測付きの採点の総数（これが少ないうちは率を信用しない）。 */
+  sample: number
+}
+
+/**
+ * 較正（calibration）＝「言える」という自己予測が実際どれだけ当たっているか。
+ *
+ * 自己採点は答えを見た後に押すので、後知恵バイアスで甘くなる。開示**前**の予測と
+ * 開示後の結果を突き合わせれば、その甘さを外から数値化できる。
+ * can.rate が低い＝過信。can.rate が 1.0 に張り付く＝出題が簡単すぎる。
+ * predicted を持たない採点（コミットゲートOFF時）は母数から除外する。
+ */
+export function calibration(events: LearningEvent[]): Calibration {
+  let canTotal = 0
+  let canHit = 0
+  let unsureTotal = 0
+  let unsureHit = 0
+  for (const e of events) {
+    if (e.type !== 'grade' || !e.predicted) continue
+    const hit = e.grade === 'good'
+    if (e.predicted === 'can') {
+      canTotal++
+      if (hit) canHit++
+    } else {
+      unsureTotal++
+      if (hit) unsureHit++
+    }
+  }
+  // 0件のときは率を 0 で返す（呼び出し側は sample を見て表示可否を決める）。
+  return {
+    can: { total: canTotal, hit: canHit, rate: canTotal === 0 ? 0 : canHit / canTotal },
+    unsure: {
+      total: unsureTotal,
+      hit: unsureHit,
+      rate: unsureTotal === 0 ? 0 : unsureHit / unsureTotal,
+    },
+    sample: canTotal + unsureTotal,
+  }
+}
+
 export interface DailySummary {
   date: string
   graded: number
