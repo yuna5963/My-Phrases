@@ -15,7 +15,7 @@ const tabs = [
 // '/example/'（例文カード）は末尾スラッシュ付きで判定する（'/examples' と前方一致で衝突するため）。
 // チャット練習はタブの1つなのでナビを出したまま（v1.0.1で全画面をやめ、他タブと統一。
 // 入力バーはナビの上に収まり、キーボード表示中はビューポート縮小で全体が持ち上がる）。
-const HIDDEN_PREFIXES = ['/daily', '/compose', '/long-reading', '/cloze', '/phrase', '/example/']
+const HIDDEN_PREFIXES = ['/daily', '/compose', '/long-reading', '/phrase', '/example/']
 
 export default function BottomNav() {
   const { pathname } = useLocation()
